@@ -165,7 +165,41 @@
   Example
   (resource-map [_] '{:body (fn [ctx] (format "Account number is %s" (-> ctx :request :route-params :account)))})
   (make-handler [ex] (make-async-handler (eval (resource-map ex))))
-  (path [r] [(basename r) "/" [long :account]])
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account 1234])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord PathParameterDeclared []
+  Example
+  (resource-map [_] '{:params
+                      {:account {:in :path}}
+                      :body (fn [ctx] (format "Account number is %s" (-> ctx :params :account)))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account 1234])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+#_(defrecord PathParameter []
+  Example
+  (resource-map [_] '{:body (fn [ctx] (format "Account number is %s" (-> ctx :request :route-params :account)))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account 17382343])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+#_(defrecord ParameterDeclaration []
+  Example
+  (resource-map [_] '{:params
+                      {:account {:in :path
+                                 :type Long}
+                       #_:from #_{:in :query
+                                  :type schema.core/Inst}}
+                      :body (fn [ctx] (format "Account number is %s" (-> ctx :params :account)))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
@@ -450,7 +484,7 @@
                                        (json/encode (or (try (expected-response h) (catch AbstractMethodError e))
                                                         {:status 200}))
                                        )} "Run"]]]))
-          handlers)]]
+          (filter example? handlers))]]
 
        [:script {:src "/jquery/jquery.min.js"}]
        [:script {:src "/bootstrap/js/bootstrap.min.js"}]
@@ -572,42 +606,59 @@
 
   RouteProvider
   (routes [component]
-    (let [handlers [(->BodyAsString)
-                    (->StatusAndHeaders)
-                    (->DynamicBody)
-                    (->AsyncBody)
-                    (->BodyContentTypeNegotiation)
-                    (->BodyContentTypeNegotiation2)
-                    (->ResourceExists)
-                    (->ResourceFunction)
-                    (->ResourceExistsAsync)
-                    (->ResourceDoesNotExist)
-                    (->ResourceDoesNotExistAsync)
-                    (->PathParameter)
+    (let [handlers
+          ;; This is getting unwieldy. Better to have a single markdown with <example> tags that are processed by markdown-clj
+          [(map->Chapter {:title "Introduction"})
+           (->BodyAsString)
+           (->StatusAndHeaders)
+           (->DynamicBody)
+           (->AsyncBody)
 
-                    (map->Chapter {:title "State"
-                                   :intro-text (markdown/md-to-html-string (slurp (io/resource "examples/state-intro.md")))})
-                    (->ResourceState)
-                    (->ResourceStateWithBody)
-                    (->ResourceStateTopLevel)
+           (map->Chapter {:title "Content Negotiation"})
+           (->BodyContentTypeNegotiation)
+           (->BodyContentTypeNegotiation2)
 
-                    (->LastModifiedHeader (:start-time component))
-                    (->LastModifiedHeaderAsLong (:start-time component))
-                    (->LastModifiedHeaderAsDeferred (:start-time component))
-                    (->IfModifiedSince (:start-time component))
+           (map->Chapter {:title "Resources"})
+           (->ResourceExists)
+           (->ResourceFunction)
+           (->ResourceExistsAsync)
+           (->ResourceDoesNotExist)
+           (->ResourceDoesNotExistAsync)
 
-                    (->PutResourceMatchedEtag)
-                    (->PutResourceUnmatchedEtag)
-                    (->ServiceUnavailable)
-                    (->ServiceUnavailableAsync)
-                    (->ServiceUnavailableRetryAfter)
-                    (->ServiceUnavailableRetryAfter2)
-                    (->ServiceUnavailableRetryAfter3)
-                    (->DisallowedPost)
-                    (->DisallowedGet)
-                    (->DisallowedPut)
-                    (->DisallowedDelete)
-                    ]]
+           (map->Chapter {:title "Parameters"
+                          :intro-text (-> "examples/parameters-intro.md" io/resource slurp markdown/md-to-html-string)})
+           (->PathParameter)
+           (->PathParameterDeclared)
+
+           (map->Chapter
+            {:title "State"
+             :intro-text (-> "examples/state-intro.md" io/resource slurp markdown/md-to-html-string)})
+           (->ResourceState)
+           (->ResourceStateWithBody)
+           (->ResourceStateTopLevel)
+
+           (map->Chapter {:title "Conditional Requests"})
+           (->LastModifiedHeader (:start-time component))
+           (->LastModifiedHeaderAsLong (:start-time component))
+           (->LastModifiedHeaderAsDeferred (:start-time component))
+           (->IfModifiedSince (:start-time component))
+
+           (->PutResourceMatchedEtag)
+           (->PutResourceUnmatchedEtag)
+
+           (map->Chapter {:title "Service Availability"})
+           (->ServiceUnavailable)
+           (->ServiceUnavailableAsync)
+           (->ServiceUnavailableRetryAfter)
+           (->ServiceUnavailableRetryAfter2)
+           (->ServiceUnavailableRetryAfter3)
+
+           (map->Chapter {:title "Validation"})
+           (->DisallowedPost)
+           (->DisallowedGet)
+           (->DisallowedPut)
+           (->DisallowedDelete)
+           ]]
       (s/validate [(s/either (s/protocol Example) (s/pred (partial instance? Chapter)))] handlers)
       ["/examples"
        [["/"

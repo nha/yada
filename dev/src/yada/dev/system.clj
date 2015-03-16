@@ -10,10 +10,12 @@
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
-   [modular.bidi :refer (new-router new-static-resource-service new-redirect)]
+   [modular.bidi :refer (new-router new-web-resources new-redirect)]
+   [modular.clostache :refer (new-clostache-templater)]
    [yada.dev.website :refer (new-website)]
    [yada.dev.pets :refer (new-pets-api-service)]
    [yada.dev.examples :refer (new-examples-service)]
+   [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]
    [tangrammer.component.co-dependency :refer (co-using system-co-using)]))
@@ -62,21 +64,23 @@
     (->
       (make new-pets-api-service config)
       (using {:database :database}))
-    :examples
-    (make new-examples-service config)
+
     ))
 
 (defn website-components [system config]
   (assoc
    system
+   :clostache-templater (make new-clostache-templater config)
+   :user-guide (make new-user-guide config)
+   :examples (make new-examples-service config)
    :website (make new-website config)
-   :jquery (make new-static-resource-service config
+   :jquery (make new-web-resources config
                  :uri-context "/jquery"
                  :resource-prefix "META-INF/resources/webjars/jquery/2.1.3")
-   :bootstrap (make new-static-resource-service config
+   :bootstrap (make new-web-resources config
                     :uri-context "/bootstrap"
                     :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.2")
-   :web-resources (make new-static-resource-service config
+   :web-resources (make new-web-resources config
                         :uri-context "/static"
                         :resource-prefix "public")
    ))
@@ -84,7 +88,7 @@
 (defn swagger-ui-components [system config]
   (assoc system
          :swagger-ui
-         (make new-static-resource-service config
+         (make new-web-resources config
                :uri-context "/swagger-ui"
                :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.0-alpha.6")))
 
@@ -115,7 +119,8 @@
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
-   :router [:pets-api :examples :swagger-ui :website
+   :user-guide {:templater :clostache-templater}
+   :router [:pets-api :examples :user-guide :swagger-ui :website
             :jquery :bootstrap
             :web-resources
             :redirect]
