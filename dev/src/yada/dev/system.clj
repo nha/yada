@@ -10,7 +10,7 @@
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
-   [modular.bidi :refer (new-router new-web-resources new-redirect)]
+   [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [modular.clostache :refer (new-clostache-templater)]
    [yada.dev.website :refer (new-website)]
    [yada.dev.pets :refer (new-pets-api-service)]
@@ -18,7 +18,7 @@
    [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]
-   [tangrammer.component.co-dependency :refer (co-using system-co-using)]))
+   [modular.component.co-dependency :refer (co-using system-co-using)]))
 
 (defn ^:private read-file
   [f]
@@ -63,9 +63,7 @@
     :pets-api
     (->
       (make new-pets-api-service config)
-      (using {:database :database}))
-
-    ))
+      (using {:database :database}))))
 
 (defn website-components [system config]
   (assoc
@@ -83,6 +81,8 @@
    :web-resources (make new-web-resources config
                         :uri-context "/static"
                         :resource-prefix "public")
+   :highlight-js-resources
+    (make new-archived-web-resources config :archive (io/resource "highlight.zip") :uri-context "/hljs/")
    ))
 
 (defn swagger-ui-components [system config]
@@ -123,13 +123,15 @@
    :router [:pets-api :examples :user-guide :swagger-ui :website
             :jquery :bootstrap
             :web-resources
+            :highlight-js-resources
             :redirect]
    :website {:swagger-ui :swagger-ui
              :pets-api :pets-api}})
 
 (defn new-co-dependency-map
   []
-  {:website {:router :router}})
+  {:website {:router :router}
+   :user-guide {:router :router}})
 
 (defn new-production-system
   "Create the production system"

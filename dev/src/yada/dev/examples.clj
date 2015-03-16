@@ -13,7 +13,7 @@
    [hiccup.core :refer (html h) :rename {h escape-html}]
    [markdown.core :as markdown]
    [com.stuartsierra.component :refer (using Lifecycle)]
-   [tangrammer.component.co-dependency :refer (co-using)]
+   [modular.component.co-dependency :refer (co-using)]
    [ring.mock.request :refer (request) :rename {request mock-request}]))
 
 (defn basename [r]
@@ -599,7 +599,7 @@
    :headers {"content-type" "text/html;charset=utf-8"}
    :body body})
 
-(defrecord ExamplesService [router]
+(defrecord ExamplesService [*router]
   Lifecycle
   (start [component] (assoc component :start-time (java.util.Date.)))
   (stop [component] component)
@@ -674,12 +674,12 @@
               ::index
               (fn [_]
                 (ok
-                 (index (:routes @router) handlers))))]
+                 (index (:routes @*router) handlers))))]
             ["tests.html"
              (handler
               ::tests
               (fn [_]
-                (ok (tests (:routes @router) handlers))))
+                (ok (tests (:routes @*router) handlers))))
              ]
             ["" (redirect ::index)]]))]
         ["" (redirect ::index)]]]

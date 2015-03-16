@@ -1,11 +1,12 @@
 (ns yada.dev.website
   (:require
    [schema.core :as s]
-   [bidi.bidi :refer (path-for RouteProvider handler)]
+   [bidi.bidi :refer (RouteProvider handler)]
+   [modular.bidi :refer (path-for)]
    [clojure.java.io :as io]
    [hiccup.core :refer (html)]
    [com.stuartsierra.component :refer (using)]
-   [tangrammer.component.co-dependency :refer (co-using)]))
+   [modular.component.co-dependency :refer (co-using)]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
@@ -20,7 +21,7 @@
    7239 "Forwarded HTTP Extension"
    7240 "Prefer Header for HTTP"})
 
-(defn index [router swagger-ui-resources pets-api]
+(defn index [*router swagger-ui-resources pets-api]
   (fn [req]
     {:status 200
      :body (html
@@ -41,11 +42,11 @@
             yada is and how it can help you write web apps and APIs."]
 
                [:ol
-                [:li [:a {:href (path-for (:routes @router) :yada.dev.examples/index)} "Examples"]]
+                [:li [:a {:href (path-for @*router :yada.dev.examples/index)} "Examples"]]
                 [:li [:a {:href
                           (format "%s/index.html?url=%s/swagger.json"
-                                  (path-for (:routes @router) swagger-ui-resources)
-                                  (path-for (:routes @router) pets-api)
+                                  (path-for @*router swagger-ui-resources)
+                                  (path-for @*router pets-api)
                                   )}
                       "Swagger UI"
                       ] " - to demonstrate Swagger wrapper"]
@@ -56,7 +57,7 @@
                   (for [i (range 7230 (inc 7240))]
                     [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
                           (format "RFC %d: %s" i (or (get titles i) ""))]])]]
-                [:li [:a {:href (path-for (:routes @router) :yada.dev.examples/tests)} "Tests"]]
+                [:li [:a {:href (path-for @*router :yada.dev.examples/tests)} "Tests"]]
                 ]]
 
               [:script {:src "/jquery/jquery.min.js"}]
@@ -65,11 +66,11 @@
 
             )}))
 
-(defrecord Website [router swagger-ui pets-api]
+(defrecord Website [*router swagger-ui pets-api]
   RouteProvider
   (routes [this]
     ["/index.html" (handler ::index
-                            (index router (:target swagger-ui) (:api pets-api)))]))
+                            (index *router (:target swagger-ui) (:api pets-api)))]))
 
 (defn new-website [& {:as opts}]
   (-> (->> opts

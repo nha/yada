@@ -9,6 +9,14 @@
     white-space: pre;
 }
 
+pre {
+    padding: 0;
+}
+
+pre code.clojure {
+    font-size: 12pt;
+}
+
 .body {
     font-family: monospace;
     width: 100%;

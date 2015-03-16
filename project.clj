@@ -37,10 +37,11 @@
 
           [juxt.modular/aleph "0.0.3"]
           [juxt.modular/bidi "0.9.1"]
+          [juxt.modular/clostache "0.6.1"]
+          [juxt.modular/co-dependency "0.2.0"]
           [juxt.modular/maker "0.5.0"]
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.2"]
-          [juxt.modular/clostache "0.6.1"]
 
           [org.webjars/swagger-ui "2.1.0-alpha.6"]
           [org.webjars/jquery "2.1.3"]
