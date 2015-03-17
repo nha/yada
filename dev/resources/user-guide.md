@@ -206,11 +206,20 @@ Remember, Clojure automatically boxes and unboxes Java primitives, so you can tr
 
 <example ref="PathParameterCoerced"/>
 
-There are a number of excellent reasons to declare types.
+If we try to coerce a parameter into a type that it cannot be coerced into, the parameter will be given a null value. If the parameter is specified as required, this will represent an error and produce a 400 response. Let's see this happen with an example :-
+
+<example ref="PathParameterCoercedError"/>
+
+Parameter validation is one of a number of strategies to defend against
+user agents sending malformed requests. Using yada's parameter coercion,
+validation can actually reduce the amount of code in your implementation
+since you don't have to code type transformations.
+
+In summary, there are a number of excellent reasons to declare parameters :-
 
 - the parameter will undergo a validity check, to ensure the client is sending something that can be turned into the declared type.
-- the parameter declaration can be used in the publication of API documentation (see [Swagger](#Swagger)).
 - the parameter value will be automatically coerced to the given type. This means less code to write.
+- the parameter declaration can be used in the publication of API documentation — this will be covered later in the chapter on [Swagger](#Swagger).
 
 ## State
 

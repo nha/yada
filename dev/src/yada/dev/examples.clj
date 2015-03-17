@@ -202,6 +202,17 @@
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
+(defrecord PathParameterCoercedError []
+  Example
+  (resource-map [_] '{:params
+                      {:account {:in :path :type Long :required true}}
+                      :body (fn [ctx] (format "Account is %s" (-> ctx :params :account)))})
+  (make-handler [ex] (handler (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account "wrong"])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
 #_(defrecord ParameterDeclaration []
   Example
   (resource-map [_] '{:params
@@ -637,11 +648,11 @@
            (->ResourceDoesNotExist)
            (->ResourceDoesNotExistAsync)
 
-
            (->PathParameter)
            (->PathParameterDeclared)
            (->PathParameterRequired)
            (->PathParameterCoerced)
+           (->PathParameterCoercedError)
 
            (->ResourceState)
            (->ResourceStateWithBody)

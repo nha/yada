@@ -11,6 +11,10 @@ a {
     text-decoration: underline;
 }
 
+li {
+    margin: 0.5em 0;
+}
+
 h1,h2 {
     font-family: SwedenSans, sans-serif;
     font-weight: bold;
@@ -76,7 +80,6 @@ div.example textarea {
     border: 0px solid black;
     background: black;
 }
-
 
 div.note {
     border: 5px solid #cc5;
