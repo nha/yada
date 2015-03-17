@@ -12,3 +12,9 @@ __:resource__. This is the resource's state.
 If there is no __:body__ entry, the state is automatically serialized
 into a suitable format (according to the usual rules for determining
 the content's type).
+
+<resource-map/>
+
+<request/>
+
+<response/>
