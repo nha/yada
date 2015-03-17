@@ -1,4 +1,4 @@
-In this example we want to show how to path parameters can be given a type and how they are automatically coerced to the specified type.
+In this example we want to show how path parameters can be declared with a type and how they are automatically coerced to that type.
 
 We want __account__ to be extracted as a `java.lang.Long`, and __account-type__ to be extracted as a Clojure keyword.
 

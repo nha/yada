@@ -6,7 +6,11 @@ This guide is ideal if you are new to yada and is suitable for anyone
 who is interested in building RESTful web APIs with Clojure. Previous experience
 of web development in Clojure may be helpful but is not mandatory.
 
-If you follow this guide carefully you will learn how to take advantage of the many features yada has to offer.
+If you follow this guide carefully you will learn how to take advantage
+of the many features yada has to offer. This is a big guide. If you are
+feeling a little overwhelmed at how much there is to learn, don't worry,
+yada really is easy! Start by going through the introduction at a gentle pace
+and take on the subsequent chapters one at a time.
 
 ## Introduction
 
@@ -15,12 +19,13 @@ _user agents_, using the HTTP protocol. Typically, a developer will
 build a web API to expose the functionality of a software system to
 users and other agents across the web.
 
-HTTP is a large and powerful protocol — yada is a library that helps reduce the amount of coding required for meeting its requirements.
+HTTP is a large and powerful protocol — yada is a library that helps reduce the amount of coding required for meeting its requirements, while leaving you as the developer in full control.
 
 ### Where yada fits
 
 There is a great number of libraries available to Clojure programmers to
-help develop web applications. Let's explain where yada fits into a Clojure web application.
+help develop web applications. Let's explain where yada fits into a
+Clojure web application and why you might want to use it in yours.
 
 During a web request, a browser (or other user agent) establishes a connection with a web
 server and sends a request encoded according to the HTTP standard. The
@@ -135,7 +140,20 @@ techniques. In yada, however, it's easy.
 
 <include type="note" ref="ratpack"/>
 
-That's the end of this introduction. The following chapters explain yada in more depth.
+Here is a list of yada's features :-
+
+- Easy to create RESTful API and content services
+- Support for both synchronous and asynchronous programming approaches
+- Parameter validation and coercion
+- Content negotiation
+- Cache control
+- Automatic rendering of resources into representations
+- Support for [Swagger](http:/swagger.io)
+- High performance
+
+With yada, many things you would expect to have to code yourself and taken care of automatically, leaving you to focus on other aspects of your application.
+
+That's the end of the introduction. The following chapters explain yada in more depth.
 
 <include ref="toc"/>
 
@@ -203,6 +221,8 @@ The value of __:type__ is interpreted by Prismatic's Schema library. Below is a 
 </table>
 
 Remember, Clojure automatically boxes and unboxes Java primitives, so you can treat a `java.lang.Integer` value as a Java `int` primitive.
+
+Let's show how these types work with another example :-
 
 <example ref="PathParameterCoerced"/>
 
