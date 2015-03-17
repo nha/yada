@@ -3,7 +3,7 @@
 Welcome to the yada user guide!
 
 This guide is ideal if you are new to yada and is suitable for anyone
-who is interested in building web APIs with Clojure. Previous experience
+who is interested in building RESTful web APIs with Clojure. Previous experience
 of web development in Clojure may be helpful but is not mandatory.
 
 If you follow this guide carefully you will learn how to take advantage of the many features yada has to offer.
@@ -117,7 +117,7 @@ built into yada. For further details, see Zach Tellman's
 In almost all cases, it is possible to specify _deferred values_ in a
 resource map.
 
-Let's see this in action :-
+Let's see this in action with another example :-
 
 <example ref="AsyncHelloWorld"/>
 
@@ -131,11 +131,13 @@ can be significantly improved.
 
 Normally, exploiting asynchronous operations in handling web requests is
 difficult and requires advanced knowledge of asynchronous programming
-techniques. In yada, however, it is very easy.
+techniques. In yada, however, it's easy.
 
 <include type="note" ref="ratpack"/>
 
-<example ref="StatusAndHeaders"/>
+That's the end of this introduction. The following chapters explain yada in more depth.
+
+<include ref="toc"/>
 
 ## Content Negotiation
 
@@ -152,17 +154,63 @@ techniques. In yada, however, it is very easy.
 
 ## Parameters
 
-Parameters are an important part of many requests and since APIs form
+Parameters are an integral part of many requests. Since APIs form
 the basis of integration between software, it is useful to be able to
 declare parameter expectations.
 
 These expectations form the basis of a contract between a user-agent and
 server. If a user-agent does not meet the contract set by the API, the
-server can respond with a 400 status code, indicating that the request
-is malformed.
+server can respond with a 400 status code, indicating to the user-agent
+that the request was malformed.
 
 <example ref="PathParameter"/>
+
+We can also declare the parameter in the resource map by adding a __:params__ entry whose value is a map between keys and parameter definitions.
+
+Each value in the map of parameter definitions is a map which must declare where a parameter is found, under a __:in__ entry. Valid values are __:path__, __:query__ and __:form__.
+
+When types are declared, they are extracted from the request and made
+available via the __:params__ entry in the _request context_.
+
 <example ref="PathParameterDeclared"/>
+
+If we declare that parameter is required, yada will check that the
+parameter exists and return a 400 (Malformed Request) status if it does
+not.
+
+We specify that a parameter is required by setting __:required__ to `true` in the parameter's definition map.
+
+<example ref="PathParameterRequired"/>
+
+By default, parameters are extracted as strings. However, it is often useful to declare the type of a parameter by including a __:type__ entry in the parameter's definition map.
+
+The value of __:type__ is interpreted by Prismatic's Schema library. Below is a table listing examples.
+
+<table class="table">
+<thead>
+<tr>
+<th>:type</th>
+<th>Java type</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>schema.core/Str</td><td>java.lang.String (the default)</td></tr>
+<tr><td>schema.core/Int</td><td>java.lang.Integer</td></tr>
+<tr><td>schema.core/Keyword</td><td>clojure.lang.Keyword</td></tr>
+<tr><td>Long</td><td>java.lang.Long</td></tr>
+<tr><td>schema.core/Inst</td><td>java.util.Date</td></tr>
+</tbody>
+</table>
+
+Remember, Clojure automatically boxes and unboxes Java primitives, so you can treat a `java.lang.Integer` value as a Java `int` primitive.
+
+<example ref="PathParameterCoerced"/>
+
+There are a number of excellent reasons to declare types.
+
+- the parameter will undergo a validity check, to ensure the client is sending something that can be turned into the declared type.
+- the parameter declaration can be used in the publication of API documentation (see [Swagger](#Swagger)).
+- the parameter value will be automatically coerced to the given type. This means less code to write.
 
 ## State
 
@@ -201,3 +249,10 @@ negotiated between the user agent and the server to transfer that state.
 <example ref="DisallowedGet"/>
 <example ref="DisallowedPut"/>
 <example ref="DisallowedDelete"/>
+
+
+## Misc
+
+<example ref="StatusAndHeaders"/>
+
+## Swagger

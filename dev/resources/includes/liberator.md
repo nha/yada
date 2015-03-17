@@ -1,4 +1,4 @@
-### Deja vu?
+### Déja vù?
 
 Readers who know [Liberator](http://clojure-liberator.github.io) will be
 familiar with the concept of a _resource map_. A resource map defines how

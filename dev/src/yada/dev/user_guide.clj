@@ -61,6 +61,9 @@
          (map lower)
          (str/join " "))))
 
+(defn chapter [c]
+  (str/replace (apply str c) #"\s+" ""))
+
 (defn ->meth
   [m]
   (case m
@@ -81,68 +84,71 @@
 
       (postwalk
        (fn [{:keys [tag attrs content] :as el}]
-         (cond (= tag :resource-map)
-               {:tag :div
-                :content [{:tag :pre
-                           :content [{:tag :code
-                                      :attrs {:class "clojure"}
-                                      :content [(escape-html
-                                                 (str/trim
-                                                  (with-out-str
-                                                    (binding [*print-right-margin* 52]
-                                                      (pprint (resource-map ex))))))]}]}]}
+         (cond
 
-               (= tag :request)
-               {:tag :div
-                :content [{:tag :pre
-                           :content [{:tag :code
-                                      :attrs {:class "http"}
-                                      :content [(str (->meth method) (format " %s HTTP/1.1" url)
-                                                     (apply str (for [[k v] headers] (format "\n%s: %s" k v))))]}]}
-                          ]}
 
-               (= tag :response)
-               {:tag :div
-                :attrs {:id (format "response-%s" (basename ex))}
-                :content [{:tag :p
-                           :content [{:tag :button
-                                      :attrs {:class "btn btn-primary"
-                                              :type "button"
-                                              :onClick (format "tryIt(\"%s\",\"%s\",\"%s\",%s)"
-                                                               (->meth method)
-                                                               url
-                                                               (basename ex)
-                                                               (json/encode headers))}
-                                      :content ["Try it"]}
-                                     " "
-                                     {:tag :button
-                                      :attrs {:class "btn"
-                                              :type "button"
-                                              :onClick (format "clearIt(\"%s\")"
-                                                               (basename ex))}
+           (= tag :resource-map)
+           {:tag :div
+            :content [{:tag :pre
+                       :content [{:tag :code
+                                  :attrs {:class "clojure"}
+                                  :content [(escape-html
+                                             (str/trim
+                                              (with-out-str
+                                                (binding [*print-right-margin* 52]
+                                                  (pprint (resource-map ex))))))]}]}]}
 
-                                      :content ["Reset"]}
-                                     ]}
-                          {:tag :table
-                           :attrs {:class "table"}
-                           :content [{:tag :tbody
-                                      :content [{:tag :tr
-                                                 :content [{:tag :td :content ["Status"]}
-                                                           {:tag :td :attrs {:class "status"} :content [""]}]}
-                                                {:tag :tr
-                                                 :content [{:tag :td :content ["Headers"]}
-                                                           {:tag :td :attrs {:class "headers"} :content [""]}]}
-                                                {:tag :tr
-                                                 :content [{:tag :td :content ["Body"]}
-                                                           {:tag :td :content [{:tag :textarea
-                                                                                :attrs {:class "body"}
-                                                                                :content [""]}]}]}]}]}]}
+           (= tag :request)
+           {:tag :div
+            :content [{:tag :pre
+                       :content [{:tag :code
+                                  :attrs {:class "http"}
+                                  :content [(str (->meth method) (format " %s HTTP/1.1" url)
+                                                 (apply str (for [[k v] headers] (format "\n%s: %s" k v))))]}]}
+                      ]}
 
-               ;; Raise divs in paragraphs.
-               (and (= tag :p) (= (count content) 1) (= (:tag (first content)) :div))
-               (first content)
+           (= tag :response)
+           {:tag :div
+            :attrs {:id (format "response-%s" (basename ex))}
+            :content [{:tag :p
+                       :content [{:tag :button
+                                  :attrs {:class "btn btn-primary"
+                                          :type "button"
+                                          :onClick (format "tryIt(\"%s\",\"%s\",\"%s\",%s)"
+                                                           (->meth method)
+                                                           url
+                                                           (basename ex)
+                                                           (json/encode headers))}
+                                  :content ["Try it"]}
+                                 " "
+                                 {:tag :button
+                                  :attrs {:class "btn"
+                                          :type "button"
+                                          :onClick (format "clearIt(\"%s\")"
+                                                           (basename ex))}
 
-               :otherwise el))
+                                  :content ["Reset"]}
+                                 ]}
+                      {:tag :table
+                       :attrs {:class "table"}
+                       :content [{:tag :tbody
+                                  :content [{:tag :tr
+                                             :content [{:tag :td :content ["Status"]}
+                                                       {:tag :td :attrs {:class "status"} :content [""]}]}
+                                            {:tag :tr
+                                             :content [{:tag :td :content ["Headers"]}
+                                                       {:tag :td :attrs {:class "headers"} :content [""]}]}
+                                            {:tag :tr
+                                             :content [{:tag :td :content ["Body"]}
+                                                       {:tag :td :content [{:tag :textarea
+                                                                            :attrs {:class "body"}
+                                                                            :content [""]}]}]}]}]}]}
+
+           ;; Raise divs in paragraphs.
+           (and (= tag :p) (= (count content) 1) (= (:tag (first content)) :div))
+           (first content)
+
+           :otherwise el))
        xml))))
 
 
@@ -151,6 +157,11 @@
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
+       (= tag :h2)
+       {:tag :div
+        :content [{:tag :a :attrs {:name (chapter content)} :content []}
+                  el]}
+
        (= tag :example)
        {:tag :div
         :attrs {:class "example"}

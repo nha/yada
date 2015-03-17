@@ -5,3 +5,5 @@ To ensure our compliance with proper HTTP semantics, it is better to return data
 The __:resource__ entry allows us to return meta-data about a resource.
 
 The most basic meta-data we can indicate about a resource is whether it exists. We can do this by returning a simple boolean.
+
+<request/>

@@ -10,7 +10,8 @@
    [yada.conneg :refer (best-allowed-content-type)]
    [yada.representation :as rep]
    [yada.util :refer (parse-http-date)]
-   [clojure.tools.logging :refer :all]))
+   [clojure.tools.logging :refer :all]
+   [clojure.set :as set]))
 
 ;; API specs. are created like this
 
@@ -106,7 +107,8 @@
   (let [declared-path-params (for [[k v] params :when (= (:in v) :path)] k)
         params-coercer (coercer
                         (into {} (for [[k v] params] [k (or (:type v) s/Str)]))
-                        string-coercion-matcher)]
+                        string-coercion-matcher)
+        required-params (set (for [[k v] params :when (:required v)] k))]
 
     (fn [req]
       (let [method (:request-method req)]
@@ -132,7 +134,11 @@
 
              ;; Malformed
              (fn [ctx]
-               (assoc ctx :params (params-coercer (select-keys (:route-params req) declared-path-params))))
+               (let [params (params-coercer (select-keys (:route-params req) declared-path-params))]
+                 (if (set/subset? required-params (set (keys params)))
+                   (assoc ctx :params params)
+                   (d/error-deferred (ex-info "" {:status 400
+                                                   ::http-response true})))))
 
              ;; TODO Unauthorized
              ;; TODO Forbidden

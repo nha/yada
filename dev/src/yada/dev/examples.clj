@@ -163,7 +163,7 @@
 
 (defrecord PathParameter []
   Example
-  (resource-map [_] '{:body (fn [ctx] (format "Account number is %s" (-> ctx :request :route-params :account)))})
+  (resource-map [_] '{:body (fn [ctx] (str "Account number is " (-> ctx :request :route-params :account)))})
   (make-handler [ex] (handler (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
@@ -174,19 +174,31 @@
   Example
   (resource-map [_] '{:params
                       {:account {:in :path}}
-                      :body (fn [ctx] (format "Account number is %s" (-> ctx :params :account)))})
+                      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
   (make-handler [ex] (handler (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
-#_(defrecord PathParameter []
+(defrecord PathParameterRequired []
   Example
-  (resource-map [_] '{:body (fn [ctx] (format "Account number is %s" (-> ctx :request :route-params :account)))})
+  (resource-map [_] '{:params
+                      {:account {:in :path :required true}}
+                      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
   (make-handler [ex] (handler (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :account])
-  (path-args [_] [:account 17382343])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 400}))
+
+(defrecord PathParameterCoerced []
+  Example
+  (resource-map [_] '{:params
+                      {:account {:in :path :type Long}
+                       :account-type {:in :path :type schema.core/Keyword}}
+                      :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
+  (make-handler [ex] (handler (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account-type "/" :account])
+  (path-args [_] [:account 1234 :account-type "savings"])
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
@@ -628,7 +640,8 @@
 
            (->PathParameter)
            (->PathParameterDeclared)
-
+           (->PathParameterRequired)
+           (->PathParameterCoerced)
 
            (->ResourceState)
            (->ResourceStateWithBody)

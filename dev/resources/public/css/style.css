@@ -67,13 +67,30 @@ div.example {
     background: #aaf;
 }
 
+div.example table {
+    background: black;
+    color: #65b042;
+}
+
+div.example textarea {
+    border: 0px solid black;
+    background: black;
+}
+
+
 div.note {
     border: 5px solid #cc5;
     background: #dd6;
 }
 
-div.note, div.example {
+div.example {
     padding: 10px 10px;
+    margin: 40px 5%;
+}
+
+div.note {
+    padding: 10px 10px;
+    margin: 40px 30% 0 0;
 }
 
 .example h3, .note h3 {
@@ -118,7 +135,7 @@ code.shell:before {
 }
 
 code {
-    color: black;
+    color: inherit;
     font-weight: bold;
     background: inherit;
 }
