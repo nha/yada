@@ -211,21 +211,7 @@
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account "wrong"])
   (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-#_(defrecord ParameterDeclaration []
-  Example
-  (resource-map [_] '{:params
-                      {:account {:in :path
-                                 :type Long}
-                       #_:from #_{:in :query
-                                  :type schema.core/Inst}}
-                      :body (fn [ctx] (format "Account number is %s" (-> ctx :params :account)))})
-  (make-handler [ex] (handler (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :account])
-  (path-args [_] [:account 17382343])
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
+  (expected-response [_] {:status 400}))
 
 (defrecord ResourceState []
   Example
