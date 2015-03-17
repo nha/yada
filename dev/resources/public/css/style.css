@@ -1,5 +1,44 @@
 /* Styles */
 
+html,body {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 1.1em;
+    background: #f8f8f8;
+    line-height: 1.1em;
+}
+
+a {
+    text-decoration: underline;
+}
+
+h1,h2 {
+    font-family: SwedenSans, sans-serif;
+    font-weight: bold;
+}
+
+h1 {
+    padding: 0.5em 0;
+}
+
+h2 {
+    margin-top: 1.7em;
+    padding: 0.7em 0;
+    border-top: 2px solid #888;
+}
+
+h3 {
+    margin-top: 1.7em;
+}
+
+h4 {
+    font-weight: bold;
+}
+
+p {
+    margin: 1.5em 0;
+    text-align: justify;
+}
+
 .status {
     font-family: monospace;
 }
@@ -13,7 +52,8 @@ pre {
     padding: 0;
 }
 
-pre code.clojure {
+pre code {
+    font-family: monospace;
     font-size: 12pt;
 }
 
@@ -22,17 +62,51 @@ pre code.clojure {
     width: 100%;
 }
 
-.example {
-    border: 1px solid #888;
-    padding: 0px 10px;
-    margin: 20px 0px 0px 0px;
+div.example {
+    border: 5px solid #99f;
+    background: #aaf;
 }
 
-.example h3 {
-    margin-top: 10px;
-    margin-bottom: 20px;
-    font-style: italic;
+div.note {
+    border: 5px solid #cc5;
+    background: #dd6;
 }
+
+div.note, div.example {
+    padding: 10px 10px;
+}
+
+.example h3, .note h3 {
+    font-family: 'Source Sans Pro', sans-serif;
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+.note p, .example p {
+    margin: 0.5em 0;
+}
+
+.note a {
+    color: #a00;
+    text-decoration: underline;
+}
+
+
+code.shell {
+    color: #0f0;
+    font-weight: normal;
+}
+
+code.shell span {
+    color: #0f0;
+}
+
+code.shell:before {
+    color: green;
+    font-weight: normal;
+    content: "$ ";
+}
+
 
 .green {
     color: #3a3;
@@ -45,5 +119,11 @@ pre code.clojure {
 
 code {
     color: black;
-    background: white;
+    font-weight: bold;
+    background: inherit;
+}
+
+span.yada {
+    font-family: RochesterYada, sans-serif;
+    font-size: 1.2em;
 }

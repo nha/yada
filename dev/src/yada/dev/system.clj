@@ -73,9 +73,11 @@
    :examples (make new-examples-service config)
    :website (make new-website config)
    :jquery (make new-web-resources config
+                 :key :jquery
                  :uri-context "/jquery"
                  :resource-prefix "META-INF/resources/webjars/jquery/2.1.3")
    :bootstrap (make new-web-resources config
+                    :key :bootstrap
                     :uri-context "/bootstrap"
                     :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.2")
    :web-resources (make new-web-resources config
@@ -89,6 +91,7 @@
   (assoc system
          :swagger-ui
          (make new-web-resources config
+               :key :swagger-ui
                :uri-context "/swagger-ui"
                :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.0-alpha.6")))
 
@@ -120,13 +123,16 @@
   []
   {:http-server {:request-handler :router}
    :user-guide {:templater :clostache-templater}
-   :router [:pets-api :examples :user-guide :swagger-ui :website
+   :router [:pets-api
+            :examples
+            :user-guide
+            :swagger-ui
+            :website
             :jquery :bootstrap
             :web-resources
             :highlight-js-resources
             :redirect]
-   :website {:swagger-ui :swagger-ui
-             :pets-api :pets-api}})
+   :website {:pets-api :pets-api}})
 
 (defn new-co-dependency-map
   []

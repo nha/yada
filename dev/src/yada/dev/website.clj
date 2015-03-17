@@ -1,7 +1,7 @@
 (ns yada.dev.website
   (:require
    [schema.core :as s]
-   [bidi.bidi :refer (RouteProvider handler)]
+   [bidi.bidi :refer (RouteProvider tag)]
    [modular.bidi :refer (path-for)]
    [clojure.java.io :as io]
    [hiccup.core :refer (html)]
@@ -21,7 +21,7 @@
    7239 "Forwarded HTTP Extension"
    7240 "Prefer Header for HTTP"})
 
-(defn index [*router swagger-ui-resources pets-api]
+(defn index [*router pets-api]
   (fn [req]
     {:status 200
      :body (html
@@ -42,10 +42,11 @@
             yada is and how it can help you write web apps and APIs."]
 
                [:ol
-                [:li [:a {:href (path-for @*router :yada.dev.examples/index)} "Examples"]]
+                [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User Guide"]]
+                [:li [:a {:href (path-for @*router :yada.dev.examples/index)} "Examples (deprecated)"]]
                 [:li [:a {:href
                           (format "%s/index.html?url=%s/swagger.json"
-                                  (path-for @*router swagger-ui-resources)
+                                  (path-for @*router :swagger-ui)
                                   (path-for @*router pets-api)
                                   )}
                       "Swagger UI"
@@ -66,16 +67,16 @@
 
             )}))
 
-(defrecord Website [*router swagger-ui pets-api]
+(defrecord Website [*router pets-api]
   RouteProvider
   (routes [this]
-    ["/index.html" (handler ::index
-                            (index *router (:target swagger-ui) (:api pets-api)))]))
+    ["/index.html" (-> (index *router (:api pets-api))
+                       (tag ::index))]))
 
 (defn new-website [& {:as opts}]
   (-> (->> opts
            (merge {})
            (s/validate {})
            map->Website)
-      (using [:swagger-ui :pets-api])
+      (using [:pets-api])
       (co-using [:router])))

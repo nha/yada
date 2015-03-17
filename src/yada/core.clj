@@ -66,7 +66,7 @@
   (debugf "Context is %s" ctx)
   ctx)
 
-(defn make-async-handler
+(defn handler
   [{:keys
     [service-available?                 ; async-supported
      known-method?
