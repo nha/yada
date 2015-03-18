@@ -8,11 +8,11 @@ API is assembled, you can generate one with JUXT's
 [modular](https://github.com/juxt/modular) template system. A __yada__ template exists that you can use to generate a Clojure project structure from a console with the following command :-
 
 ```shell
-lein new modular my-web-api yada
+lein new modular hacking-with-yada yada
 ```
 
-This creates an application directory named __my-web-api__ that
-demonstrates many of yada's features. You can replace __my-web-api__
+This creates an application directory named __hacking-with-yada__ that
+demonstrates many of yada's features. You can replace __hacking-with-yada__
 with a name of your own invention. To run and develop the application,
 follow the instructions in the `README.md` file that is generated inside
 the project directory.
