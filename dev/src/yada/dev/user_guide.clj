@@ -84,8 +84,6 @@
       (postwalk
        (fn [{:keys [tag attrs content] :as el}]
          (cond
-
-
            (= tag :resource-map)
            {:tag :div
             :content [{:tag :pre
@@ -230,9 +228,7 @@
        [:body
         [:div#intro
          (md-to-html-string (slurp (io/resource "tests.md")))]
-
         header
-
         [:table.table
          [:thead
           [:tr
@@ -250,7 +246,10 @@
                    {:keys [method headers]} (request ex)]
                [:tr {:id (str "test-" (link ex))}
                 [:td (inc ix)]
-                [:td [:a {:href (format "%s#example-%s" (path-for @*router ::user-guide) (link ex))} exname]]
+                [:td [:a {:href (format "%s#example-%s"
+                                        (path-for @*router ::user-guide)
+                                        (link ex))}
+                      exname]]
                 [:td (:status (try (expected-response ex) (catch AbstractMethodError e)))]
                 [:td.status ""]
                 [:td
@@ -259,21 +258,19 @@
 
                 [:td.result ""]
                 [:td [:button.btn.test
-                      {:onClick (format "testIt('%s','%s','%s',%s,%s)"
-                                        (->meth method)
-                                        url
-                                        (link ex)
-                                        (json/encode headers)
-                                        (json/encode (or (try (expected-response ex) (catch AbstractMethodError e))
-                                                         {:status 200}))
-                                        )} "Run"]]]))
-           examples)]]
+                      {:onClick (format
+                                 "testIt('%s','%s','%s',%s,%s)"
+                                 (->meth method)
+                                 url
+                                 (link ex)
+                                 (json/encode headers)
+                                 (json/encode (or (try (expected-response ex)
+                                                       (catch AbstractMethodError e))
+                                                  {:status 200}))
+                                 )} "Run"]]]))
+           examples)]]]))
+    :scripts ["/static/js/tests.js"]}))
 
-        ]))
-    :scripts ["/static/js/tests.js"]})
-
-
-  )
 
 (defrecord UserGuide [*router templater]
   Lifecycle
@@ -306,8 +303,7 @@
                 :headers {"content-type" "text/html;charset=utf-8"}
                 :body (tests component examples)}
                )
-             (tag ::tests))
-         ]]])))
+             (tag ::tests))]]])))
 
 (defn new-user-guide [& {:as opts}]
   (-> (->> opts
