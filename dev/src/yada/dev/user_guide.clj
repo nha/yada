@@ -164,6 +164,7 @@
        (let [ex (example-instance user-guide (:ref attrs))]
          {:tag :div
           :attrs {:class "example"}
+          :example ex ; store the example
           :content
           (concat
            [{:tag :h3 :content [(title (:ref attrs))]}]
@@ -200,17 +201,14 @@
       #_(str/replace #"<code([^>]*)>\s+" (fn [[_ x]] (str "<code" x ">")))
       #_(str/replace #"\s+</code>" "</code>")))
 
-(defn body [{:keys [*router templater] :as user-guide}]
-  (let [xbody (get-source)]
-    (render-template
-     templater
-     "templates/page.html.mustache"
-     {:content
-      (-> (with-out-str
-            (emit-element
-             (post-process-doc user-guide xbody)))
-          post-process-body
-          )})))
+(defn body [{:keys [*router templater] :as user-guide} doc]
+  (render-template
+   templater
+   "templates/page.html.mustache"
+   {:content
+    (-> (with-out-str (emit-element doc))
+        post-process-body
+        )}))
 
 (defrecord UserGuide [*router templater]
   Lifecycle
@@ -222,18 +220,20 @@
   (routes [component]
     ["/user-guide"
      [[".html"
-        (-> (fn [req] {:status 200
-                       :body (body component)})
-            (tag ::user-guide))]
+       (-> (fn [req]
+             (let [xbody (get-source)
+                   doc (post-process-doc component xbody)]
+               {:status 200
+                :body (body component doc)})))]
       #_["/examples"
-       [["/"
-         (vec
-          (for [h handlers
-                :when (satisfies? Example h)]
-            [(get-path h) (tag
-                           (make-handler h)
-                           (keyword (basename h)))]))]
-        ["" (redirect ::index)]]]]]))
+         [["/"
+           (vec
+            (for [h handlers
+                  :when (satisfies? Example h)]
+              [(get-path h) (tag
+                             (make-handler h)
+                             (keyword (basename h)))]))]
+          ["" (redirect ::index)]]]]]))
 
 (defn new-user-guide [& {:as opts}]
   (-> (->> opts
