@@ -56,9 +56,16 @@
 (defn title [s]
   (letfn [(lower [x]
             (if (#{"as" "and" "of" "for"}
-                 (str/lower-case x)) (str/lower-case x) x))]
-    (->> (re-seq #"[A-Z][a-z]*" s)
+                 (str/lower-case x)) (str/lower-case x) x))
+          (part [x]
+            (if (Character/isDigit (char (first x)))
+              (format "(part %s)" x)
+              x
+              )
+            )]
+    (->> (re-seq #"[A-Z1-9][a-z]*" s)
          (map lower)
+         (map part)
          (str/join " "))))
 
 (defn chapter [c]

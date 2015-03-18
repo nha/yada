@@ -5,15 +5,17 @@ complete application.
 
 If you would like to see how an application exposing a yada-based web
 API is assembled, you can generate one with JUXT's
-[modular](https://github.com/juxt/modular) template system. A __yada__ template exists that you can use to generate a Clojure project structure from a console with the following command :-
+[modular](https://github.com/juxt/modular) template system. A template named __yada__ exists that you can reference to generate a Clojure project structure with the following shell command :-
 
 ```shell
 lein new modular hacking-with-yada yada
 ```
 
 This creates an application directory named __hacking-with-yada__ that
-demonstrates many of yada's features. You can replace __hacking-with-yada__
-with a name of your own invention. To run and develop the application,
+demonstrates many of yada's features (you can replace __hacking-with-yada__
+with an alternative name of your own invention).
+
+To run and develop the application,
 follow the instructions in the `README.md` file that is generated inside
 the project directory.
 

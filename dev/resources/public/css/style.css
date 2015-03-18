@@ -57,8 +57,12 @@ pre {
 }
 
 pre code {
-    font-family: monospace;
     font-size: 12pt;
+}
+
+code {
+    font-size: 12pt;
+    font-family: monospace;
 }
 
 .body {
@@ -151,7 +155,11 @@ span.yada {
     padding-left: 0.08em;
 }
 
-code span.yada {
-    font-family: monospace;
+code span.yada, b span.yada {
+    font-family: inherit;
     font-size: inherit;
+}
+
+blockquote {
+    border-left: 5px solid #aaa;
 }

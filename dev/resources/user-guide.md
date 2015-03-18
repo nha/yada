@@ -161,12 +161,34 @@ That's the end of the introduction. The following chapters explain yada in more 
 
 ## Content Negotiation
 
+HTTP has a content negotiation feature which allows a user agent
+(browser, device) and a web server to establish the best representation
+for a given resource. This may include the mime-type of the content, its
+language, charset and transfer encoding.
+
+We shall focus on the mime-type of the content.
+
+There are multiple ways to indicate which content-types can be provided by an implementation. However, as we are discussing the __:body__ entry, we'll first introduce how the implementation can use a map between content-types and bodies.
+
 <example ref="BodyContentTypeNegotiation"/>
 <example ref="BodyContentTypeNegotiation2"/>
 
 ## Resources
 
+Until now, when we have constructed bodies we have done so explicitly.
+
+To ensure our compliance with proper HTTP semantics, it is better to return data about the resource and let yada worry about constructing the response body.
+
+The __:resource__ entry allows us to return meta-data about a resource.
+
+The most basic meta-data we can indicate about a resource is whether it exists. We can do this by returning a simple boolean.
+
 <example ref="ResourceExists"/>
+
+In some cases it is possible to say whether a given resource exists. This is especially true for _singleton_ resources.
+
+There are many cases, however, where the existence of a resource can only be determined with reference to some parameters in the request.
+
 <example ref="ResourceFunction"/>
 <example ref="ResourceExistsAsync"/>
 <example ref="ResourceDoesNotExist"/>
@@ -248,21 +270,68 @@ In summary, there are a number of excellent reasons to declare parameters :-
 REST is about resources which have state, and representations that are
 negotiated between the user agent and the server to transfer that state.
 
+While it is possible to explicitly specify the body of a response, doing
+so assumes you are prepared to format the content according to the
+negotiated content-type.
+
+Instead you can delegate that job to yada, and focus on returning the
+logical state of a resource, rather than formatting the content of its
+physical representation. Doing this will mean it is easier to support additional content-types.
+
+We provide a __:state__ entry in the map we return from the
+__:resource__. This is the resource's state.
+
+If there is no __:body__ entry, the state is automatically serialized
+into a suitable format (according to the usual rules for determining
+the content's type).
+
 <example ref="ResourceState"/>
+
+Of course, if you want full control over the rendering of the body, you
+can add a __body__ entry. If you do, you can access the state of the resource returned by the __state__ entry which is available from the `ctx` argument.
+
+If you provide a __body__ entry like this, then you should indicate the
+content-type that it produces, since it can't inferred automatically (as
+you may choose to override it), and no __Content-Type__ header will be set
+otherwise.
+
 <example ref="ResourceStateWithBody"/>
+
+A resource which has a non-nil `:state` entry is naturally assumed to
+exist. It is therefore unnecessary to provide a non-nil `:resource`
+entry, unless you wish to communicate a resource's meta-data.
+
 <example ref="ResourceStateTopLevel"/>
 
 ## Conditional Requests
 
-<example ref="LastModifiedHeader"/>
-<example ref="LastModifiedHeaderAsLong"/>
-<example ref="LastModifiedHeaderAsDeferred"/>
-<example ref="IfModifiedSince"/>
+The Last-Modified header indicates to the user agent the time that the resource was last modified.
 
+This is part of a resource's meta-data which can be return as a Date.
+
+<example ref="LastModifiedHeader"/>
+
+It's perfectly OK to return a number rather than a date for the
+resource's __:last-modified__ entry, and the header will still be returned to the user agent as a date.
+
+The number will be interpretted as the number of milliseconds since the epoch (Jan 1st, 1970, UTC).
+
+<example ref="LastModifiedHeaderAsLong"/>
+
+<example ref="LastModifiedHeaderAsDeferred"/>
+
+<example ref="IfModifiedSince"/>
 
 ## Puts
 
+PUT a resource. The resource-map returns a resource with an etag which
+matches the value of the 'If-Match' header in the request. This means
+the PUT can proceed.
+
+> If-Match is most often used with state-changing methods (e.g., POST, PUT, DELETE) to prevent accidental overwrites when multiple user agents might be acting in parallel on the same resource (i.e., to the \"lost update\" problem).
+
 <example ref="PutResourceMatchedEtag"/>
+
 <example ref="PutResourceUnmatchedEtag"/>
 
 ## Service Availability
