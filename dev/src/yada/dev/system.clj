@@ -14,7 +14,6 @@
    [modular.clostache :refer (new-clostache-templater)]
    [yada.dev.website :refer (new-website)]
    [yada.dev.pets :refer (new-pets-api-service)]
-   [yada.dev.examples :refer (new-examples-service)]
    [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]
@@ -70,7 +69,6 @@
    system
    :clostache-templater (make new-clostache-templater config)
    :user-guide (make new-user-guide config)
-   #_:examples #_(make new-examples-service config)
    :website (make new-website config)
    :jquery (make new-web-resources config
                  :key :jquery
@@ -124,7 +122,6 @@
   {:http-server {:request-handler :router}
    :user-guide {:templater :clostache-templater}
    :router [:pets-api
-            #_:examples
             :user-guide
             :swagger-ui
             :website
@@ -132,7 +129,8 @@
             :web-resources
             :highlight-js-resources
             :redirect]
-   :website {:pets-api :pets-api}})
+   :website {:pets-api :pets-api
+             :templater :clostache-templater}})
 
 (defn new-co-dependency-map
   []
