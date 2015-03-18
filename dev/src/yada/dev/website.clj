@@ -43,7 +43,6 @@
 
                [:ol
                 [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User Guide"]]
-                [:li [:a {:href (path-for @*router :yada.dev.examples/index)} "Examples (deprecated)"]]
                 [:li [:a {:href
                           (format "%s/index.html?url=%s/swagger.json"
                                   (path-for @*router :swagger-ui)
@@ -58,7 +57,7 @@
                   (for [i (range 7230 (inc 7240))]
                     [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
                           (format "RFC %d: %s" i (or (get titles i) ""))]])]]
-                [:li [:a {:href (path-for @*router :yada.dev.examples/tests)} "Tests"]]
+                [:li [:a {:href (path-for @*router :yada.dev.user-guide/tests)} "Tests"]]
                 ]]
 
               [:script {:src "/jquery/jquery.min.js"}]

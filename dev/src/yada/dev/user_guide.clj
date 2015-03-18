@@ -9,12 +9,12 @@
    [clojure.walk :refer (postwalk)]
    [clojure.xml :refer (parse)]
    [com.stuartsierra.component :refer (using Lifecycle)]
-   [hiccup.core :refer (h) :rename {h escape-html}]
+   [hiccup.core :refer (h html) :rename {h escape-html}]
    [markdown.core :refer (md-to-html-string)]
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource-map get-path-args request)]))
+   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response)]))
 
 (defn emit-element
   ;; An alternative emit-element that doesn't cause newlines to be
@@ -78,8 +78,7 @@
 
 (defn post-process-example [user-guide ex xml]
   (when xml
-    (let [
-          url (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
+    (let [url (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
           {:keys [method headers]} (request ex)]
 
       (postwalk
@@ -151,55 +150,62 @@
            :otherwise el))
        xml))))
 
-(defn post-process-doc [user-guide xml]
+(defn post-process-doc [user-guide xml examples]
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
        (= tag :h2)
+       ;; Add an HTML anchor to each chapter, for hrefs in
+       ;; table-of-contents and elsewhere
        {:tag :div
-        :content [{:tag :a :attrs {:name (chapter content)} :content []}
-                  el]}
+        :content [{:tag :a :attrs {:name (chapter content)} :content []} el]}
 
        (= tag :example)
-       (let [ex (example-instance user-guide (:ref attrs))]
-         {:tag :div
-          :attrs {:class "example"}
-          :example ex ; store the example
-          :content
-          (concat
-           [{:tag :h3 :content [(title (:ref attrs))]}]
-           (remove nil? [(post-process-example
-                          user-guide
-                          ex
-                          (some-> (format "examples/pre/%s.md" (:ref attrs))
-                                  io/resource slurp md-to-html-string enclose xml-parse))]))})
+       ;; Render the example box
+       (let [exname (:ref attrs)]
+         (if-let [ex (get examples exname)]
+           {:tag :div
+            :attrs {:class "example"}
+            :example ex ; store the example
+            :content
+            (concat
+             [{:tag :a :attrs {:name (str "example-" exname)} :content []}
+              {:tag :h3 :content [(title exname)]}]
+             (remove nil? [(post-process-example
+                            user-guide
+                            ex
+                            (some-> (format "examples/pre/%s.md" exname)
+                                    io/resource slurp md-to-html-string enclose xml-parse))]))}
+           {:tag :p :content [(str "MISSING EXAMPLE: " exname)]}))
 
        (= tag :include)
+       ;; Include some content
        {:tag :div
         :attrs {:class (:type attrs)}
         :content [{:tag :a :attrs {:name (:ref attrs)} :content []}
                   (some-> (format "includes/%s.md" (:ref attrs))
                           io/resource slurp md-to-html-string enclose xml-parse)]}
 
-       ;; Raise divs in paragraphs.
        (and (= tag :p) (= (count content) 1) (= (:tag (first content)) :div))
+       ;; Raise divs in paragraphs.
        (first content)
 
        (= tag :code)
        (update-in el [:content] (fn [x] (map (fn [y] (if (string? y) (str/trim y) y)) x)))
+
        :otherwise el))
    xml))
+
+(defn extract-examples [user-guide xml]
+  (let [xf (comp (filter #(= (:tag %) :example)) (map :attrs) (map :ref))]
+    (into {} (map (juxt identity (partial example-instance user-guide)) (sequence xf (xml-seq xml))))))
 
 (defn post-process-body
   "Some whitespace reduction"
   [s]
   (-> s
       (str/replace #"<p>\s*</p>" "")
-      (str/replace #"(yada)" "<span class='yada'>yada</span>")
-      #_(str/replace #"<pre>\s+" "<pre>")
-      #_(str/replace #"\s+</pre>" "</pre>")
-      #_(str/replace #"<code([^>]*)>\s+" (fn [[_ x]] (str "<code" x ">")))
-      #_(str/replace #"\s+</code>" "</code>")))
+      (str/replace #"(yada)" "<span class='yada'>yada</span>")))
 
 (defn body [{:keys [*router templater] :as user-guide} doc]
   (render-template
@@ -208,7 +214,66 @@
    {:content
     (-> (with-out-str (emit-element doc))
         post-process-body
-        )}))
+        )
+    :scripts ["/static/js/examples.js"]}))
+
+(defn link [r]
+  (last (str/split (.getName (type r)) #"\.")))
+
+(defn tests [{:keys [*router templater]} examples]
+  (render-template
+   templater
+   "templates/page.html.mustache"
+   {:content
+    (let [header [:button.btn.btn-primary {:onClick "testAll()"} "Repeat tests"]]
+      (html
+       [:body
+        [:div#intro
+         (md-to-html-string (slurp (io/resource "tests.md")))]
+
+        header
+
+        [:table.table
+         [:thead
+          [:tr
+           [:th "#"]
+           [:th "Title"]
+           [:th "Expected response"]
+           [:th "Status"]
+           [:th "Response"]
+           [:th "Result"]
+           ]]
+         [:tbody
+          (map-indexed
+           (fn [ix [exname ex]]
+             (let [url (apply path-for @*router (keyword (basename ex)) (get-path-args ex))
+                   {:keys [method headers]} (request ex)]
+               [:tr {:id (str "test-" (link ex))}
+                [:td (inc ix)]
+                [:td [:a {:href (format "%s#example-%s" (path-for @*router ::user-guide) (link ex))} exname]]
+                [:td (:status (try (expected-response ex) (catch AbstractMethodError e)))]
+                [:td.status ""]
+                [:td
+                 [:div.headers ""]
+                 [:textarea.body ""]]
+
+                [:td.result ""]
+                [:td [:button.btn.test
+                      {:onClick (format "testIt('%s','%s','%s',%s,%s)"
+                                        (->meth method)
+                                        url
+                                        (link ex)
+                                        (json/encode headers)
+                                        (json/encode (or (try (expected-response ex) (catch AbstractMethodError e))
+                                                         {:status 200}))
+                                        )} "Run"]]]))
+           examples)]]
+
+        ]))
+    :scripts ["/static/js/tests.js"]})
+
+
+  )
 
 (defrecord UserGuide [*router templater]
   Lifecycle
@@ -218,22 +283,31 @@
   (stop [component] component)
   RouteProvider
   (routes [component]
-    ["/user-guide"
-     [[".html"
-       (-> (fn [req]
-             (let [xbody (get-source)
-                   doc (post-process-doc component xbody)]
-               {:status 200
-                :body (body component doc)})))]
-      #_["/examples"
+    (let [xbody (get-source)
+          examples (extract-examples component xbody)]
+      ["/user-guide"
+       [[".html"
+         (->
+          (fn [req]
+            {:status 200
+             :body (body component (post-process-doc component xbody examples))})
+          (tag ::user-guide))]
+        ["/examples"
          [["/"
            (vec
-            (for [h handlers
-                  :when (satisfies? Example h)]
+            (for [[_ h] examples]
               [(get-path h) (tag
                              (make-handler h)
                              (keyword (basename h)))]))]
-          ["" (redirect ::index)]]]]]))
+          ["" (redirect ::index)]]]
+        ["/tests.html"
+         (-> (fn [_]
+               {:status 200
+                :headers {"content-type" "text/html;charset=utf-8"}
+                :body (tests component examples)}
+               )
+             (tag ::tests))
+         ]]])))
 
 (defn new-user-guide [& {:as opts}]
   (-> (->> opts
@@ -241,6 +315,3 @@
            map->UserGuide)
       (using [:templater])
       (co-using [:router])))
-
-
-#_(emit-element {:tag :div :attrs {:class "foo" :onClick "tryIt('GET')"}})

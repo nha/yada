@@ -52,8 +52,10 @@
     <script src="/hljs/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
 
-    <!-- Examples JS -->
-    <script src="/static/js/examples.js"></script>
+    <!-- Scripts -->
+    {{#scripts}}
+    <script src="{{.}}"></script>
+    {{/scripts}}
 
   </body>
 </html>

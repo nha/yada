@@ -70,7 +70,7 @@
    system
    :clostache-templater (make new-clostache-templater config)
    :user-guide (make new-user-guide config)
-   :examples (make new-examples-service config)
+   #_:examples #_(make new-examples-service config)
    :website (make new-website config)
    :jquery (make new-web-resources config
                  :key :jquery
@@ -124,7 +124,7 @@
   {:http-server {:request-handler :router}
    :user-guide {:templater :clostache-templater}
    :router [:pets-api
-            :examples
+            #_:examples
             :user-guide
             :swagger-ui
             :website
