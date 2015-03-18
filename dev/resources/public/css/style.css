@@ -15,12 +15,12 @@ li {
     margin: 0.5em 0;
 }
 
-h1,h2 {
-    font-family: SwedenSans, sans-serif;
+h2 {
     font-weight: bold;
 }
 
 h1 {
+    font-size: 5em;
     padding: 0.5em 0;
 }
 
@@ -143,7 +143,10 @@ code {
     background: inherit;
 }
 
+/* The yada logo */
 span.yada {
     font-family: RochesterYada, sans-serif;
-    font-size: 1.2em;
+    font-size: 1.25em;
+    /* Pad ever so slightly on the left */
+    padding-left: 0.08em;
 }
