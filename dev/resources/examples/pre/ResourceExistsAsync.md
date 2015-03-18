@@ -1,6 +1,0 @@
-
-<resource-map/>
-
-<request/>
-
-<response/>

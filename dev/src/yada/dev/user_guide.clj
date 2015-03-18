@@ -172,7 +172,7 @@
              (remove nil? [(post-process-example
                             user-guide
                             ex
-                            (some-> (format "examples/pre/%s.md" exname)
+                            (some-> (format "examples/%s.md" exname)
                                     io/resource slurp md-to-html-string enclose xml-parse))]))}
            {:tag :p :content [(str "MISSING EXAMPLE: " exname)]}))
 

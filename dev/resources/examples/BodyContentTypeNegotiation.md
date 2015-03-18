@@ -14,3 +14,5 @@ This example demonstrates a resource that is available in both `text/html` and `
 <request/>
 
 <response/>
+
+Notice the Content-Type header in the response.

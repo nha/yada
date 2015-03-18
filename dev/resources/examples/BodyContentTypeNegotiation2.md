@@ -5,3 +5,5 @@ Now let's try the same thing but with the client setting the `Accept` header to 
 <request/>
 
 <response/>
+
+Now the server returns the text/plain resource.
