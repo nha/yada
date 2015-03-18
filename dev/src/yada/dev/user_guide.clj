@@ -76,9 +76,9 @@
   (when-let [v (find-var (symbol "yada.dev.examples" (str "map->" (namespace-munge example))))]
     (v user-guide)))
 
-(defn post-process-example [user-guide example xml]
+(defn post-process-example [user-guide ex xml]
   (when xml
-    (let [ex (example-instance user-guide example)
+    (let [
           url (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
           {:keys [method headers]} (request ex)]
 
@@ -151,9 +151,7 @@
            :otherwise el))
        xml))))
 
-
 (defn post-process-doc [user-guide xml]
-  #_(pprint xml)
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
@@ -163,16 +161,17 @@
                   el]}
 
        (= tag :example)
-       {:tag :div
-        :attrs {:class "example"}
-        :content
-        (concat
-         [{:tag :h3 :content [(title (:ref attrs))]}]
-         (remove nil? [(post-process-example
-                        user-guide
-                        (:ref attrs)
-                        (some-> (format "examples/pre/%s.md" (:ref attrs))
-                                io/resource slurp md-to-html-string enclose xml-parse))]))}
+       (let [ex (example-instance user-guide (:ref attrs))]
+         {:tag :div
+          :attrs {:class "example"}
+          :content
+          (concat
+           [{:tag :h3 :content [(title (:ref attrs))]}]
+           (remove nil? [(post-process-example
+                          user-guide
+                          ex
+                          (some-> (format "examples/pre/%s.md" (:ref attrs))
+                                  io/resource slurp md-to-html-string enclose xml-parse))]))})
 
        (= tag :include)
        {:tag :div
@@ -216,14 +215,25 @@
 (defrecord UserGuide [*router templater]
   Lifecycle
   (start [component]
-    (assoc component :start-time (java.util.Date.)))
+    (assoc component
+           :start-time (java.util.Date.)))
   (stop [component] component)
   RouteProvider
   (routes [component]
-    ["/user-guide.html"
-     (-> (fn [req] {:status 200
-                    :body (body component)})
-         (tag ::user-guide))]))
+    ["/user-guide"
+     [[".html"
+        (-> (fn [req] {:status 200
+                       :body (body component)})
+            (tag ::user-guide))]
+      #_["/examples"
+       [["/"
+         (vec
+          (for [h handlers
+                :when (satisfies? Example h)]
+            [(get-path h) (tag
+                           (make-handler h)
+                           (keyword (basename h)))]))]
+        ["" (redirect ::index)]]]]]))
 
 (defn new-user-guide [& {:as opts}]
   (-> (->> opts
