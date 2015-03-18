@@ -6,7 +6,8 @@ a handler should respond to a request.
 
 While yada and Liberator have a lot in common conceptually, there are
 significant differences in both design and implementation. In
-particular, the resource maps are incompatible.
+particular, the resource maps are incompatible. There is also no
+flow-chart exposed in yada.
 
 The design of yada is heavily based on experience with implementing web
 APIs with Liberator. You could use Liberator to serve some web

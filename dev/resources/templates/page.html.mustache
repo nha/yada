@@ -1,15 +1,11 @@
 <!DOCTYPE html>
-<html prefix="dc: http://purl.org/dc/elements/1.1/" lang="en">
+<html lang="en">
   <head>
     <meta charset="utf-8"/>
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <meta property="dc:language" content="en"/>
-    <meta property="dc:title" content="{{webmeta.title}}"/>
-    <meta property="dc:description" content="{{webmeta.description}}"/>
 
     <title>yada</title>
 
@@ -32,6 +28,16 @@
 
   <body role="document">
 
+    <div class="row" style="margin-top: 2em">
+      <div class="col-md-2">
+      </div>
+      <div class="col-md-6">
+        <a href="https://juxt.pro">
+          <img class="juxt-logo" src="/static/img/juxt-logo.svg"></img>
+        </a>
+      </div>
+    </div>
+
     <!-- There should be content here -->
     <div class="row">
       <div class="col-md-2">
@@ -39,6 +45,20 @@
       </div>
       <div class="col-md-6">
         {{{content}}}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-2">
+        {{{sidebar}}}
+      </div>
+      <div class="col-md-6">
+        <div class="mastfoot">
+          <hr>
+          <div class="inner">
+            <p><span class="yada">yada</span><br/>Copyright © 2015, <a href="https://juxt.pro"><img class="juxt-logo-small" src="/static/img/juxt-logo.svg"/></a> LTD.</p>
+          </div>
+        </div>
       </div>
     </div>
 

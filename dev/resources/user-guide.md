@@ -12,7 +12,11 @@ feeling a little overwhelmed at how much there is to learn, don't worry,
 yada really is easy! Start by going through the introduction at a gentle pace
 and take on the subsequent chapters one at a time.
 
-<include type="note" ref="alpha"/>
+[Back to index](/)
+
+### Table of Contents
+
+<include ref="toc"/>
 
 ## Introduction
 
@@ -58,20 +62,27 @@ If you are unfamiliar with web development in Clojure, let's explain
 that again using some basic Clojure code. Here is a simple Ring-compatible handler function :-
 
 ```clojure
-(defn hello "My simple handler" [req]
+(defn hello "A handler to greet the world!" [req]
   {:status 200, :body "Hello World!"})
 ```
 
 This declares a function (in the var `hello`) that accepts a single argument (`req`) known as the _request map_. The implementation of the function returns a literal map, using Clojure's `{}` syntax. (By the way, commas are optional in Clojure).
 
-Compare this with how to create an equivalent function using yada.
+Compare this with using yada to create a handler :-
 
 ```clojure
 (require '[yada.core :refer (handler)])
-(def hello (handler {:body "Hello World!"}))
+
+(def ^{:doc "A handler to greet the world!"}
+  hello
+  (handler {:body "Hello World!"}))
 ```
 
-This calls a function built-in to yada called `handler`, with a single argument called a _resource map_. In this example, the resource map looks strikingly similar to a Ring response map but don't be deceived, there is a lot more going on under the hood as we shall soon see.
+The code above calls a function built-in to yada called `handler`, with
+a single argument known as a _resource map_. In this case, the
+resource map looks strikingly similar to a Ring response map but don't
+be deceived — there is a lot more going on under the hood as we shall
+soon see.
 
 <include type="note" ref="modular-template-intro"/>
 
@@ -159,41 +170,6 @@ That's the end of the introduction. The following chapters explain yada in more 
 
 <include ref="toc"/>
 
-## Content Negotiation
-
-HTTP has a content negotiation feature which allows a user agent
-(browser, device) and a web server to establish the best representation
-for a given resource. This may include the mime-type of the content, its
-language, charset and transfer encoding.
-
-We shall focus on the mime-type of the content.
-
-There are multiple ways to indicate which content-types can be provided by an implementation. However, as we are discussing the __:body__ entry, we'll first introduce how the implementation can use a map between content-types and bodies.
-
-<example ref="BodyContentTypeNegotiation"/>
-<example ref="BodyContentTypeNegotiation2"/>
-
-## Resources
-
-Until now, when we have constructed bodies we have done so explicitly.
-
-To ensure our compliance with proper HTTP semantics, it is better to return data about the resource and let yada worry about constructing the response body.
-
-The __:resource__ entry allows us to return meta-data about a resource.
-
-The most basic meta-data we can indicate about a resource is whether it exists. We can do this by returning a simple boolean.
-
-<example ref="ResourceExists"/>
-
-In some cases it is possible to say whether a given resource exists. This is especially true for _singleton_ resources.
-
-There are many cases, however, where the existence of a resource can only be determined with reference to some parameters in the request.
-
-<example ref="ResourceFunction"/>
-<example ref="ResourceExistsAsync"/>
-<example ref="ResourceDoesNotExist"/>
-<example ref="ResourceDoesNotExistAsync"/>
-
 ## Parameters
 
 Parameters are an integral part of many requests. Since APIs form
@@ -265,11 +241,48 @@ In summary, there are a number of excellent reasons to declare parameters :-
 - the parameter value will be automatically coerced to the given type. This means less code to write.
 - the parameter declaration can be used in the publication of API documentation — this will be covered later in the chapter on [Swagger](#Swagger).
 
+## Resource Metadata
+
+The __:resource__ entry allows us to return meta-data about a resource.
+
+The most basic meta-data we can indicate about a resource is whether it exists. We can do this by returning a simple boolean.
+
+<example ref="ResourceExists"/>
+
+In some cases it is possible to say whether a given resource exists. This is especially true for _singleton_ resources.
+
+There are many cases, however, where the existence of a resource can only be determined with reference to some parameters in the request.
+
+<example ref="ResourceFunction"/>
+
+<example ref="ResourceExistsAsync"/>
+<example ref="ResourceDoesNotExist"/>
+<example ref="ResourceDoesNotExistAsync"/>
+
+We can also return other resource meta-data to let yada construct the
+proper HTTP response headers in order to exploit opportunities for
+caching and other HTTP features.
+
+## Content Negotiation
+
+HTTP has a content negotiation feature which allows a user agent
+(browser, device) and a web server to establish the best representation
+for a given resource. This may include the mime-type of the content, its
+language, charset and transfer encoding.
+
+We shall focus on the mime-type of the content.
+
+There are multiple ways to indicate which content-types can be provided by an implementation. However, as we are discussing the __:body__ entry, we'll first introduce how the implementation can use a map between content-types and bodies.
+
+<example ref="BodyContentTypeNegotiation"/>
+<example ref="BodyContentTypeNegotiation2"/>
+
 ## State
 
 REST is about resources which have state, and representations that are
 negotiated between the user agent and the server to transfer that state.
 
+Until now, when we have constructed bodies we have done so explicitly.
 While it is possible to explicitly specify the body of a response, doing
 so assumes you are prepared to format the content according to the
 negotiated content-type.

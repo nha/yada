@@ -163,6 +163,7 @@
        ;; Add an HTML anchor to each chapter, for hrefs in
        ;; table-of-contents and elsewhere
        {:tag :div
+        :attrs {:class "chapter"}
         :content [{:tag :a :attrs {:name (chapter content)} :content []} el]}
 
        (= tag :example)

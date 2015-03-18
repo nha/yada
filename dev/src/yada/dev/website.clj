@@ -35,12 +35,9 @@
          (html
           [:div.container
            [:h1 "Welcome to " [:span.yada "yada"] "!"]
-           [:p "This is a simple console to help you understand what
-            " [:span.yada "yada"] " is and how it can help you write web apps and APIs."]
-
            [:ol
             [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User guide"]]
-            [:li "Specifications"
+            [:li "HTTP and related specifications"
              [:ul
               [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
               (for [i (range 7230 (inc 7240))]
