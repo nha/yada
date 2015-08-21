@@ -11,15 +11,10 @@
  :set-active-panel
  (fn [db [_ active-panel id]]
    (case active-panel
-     (:home-panel :about-panel)
+     :home-panel
      (assoc db :active-panel active-panel)
-     :device-panel
+     :request-panel
      (->
       db
       (assoc :active-panel active-panel)
-      (assoc :active-device (get (:devices db) id))))))
-
-(re-frame/register-handler
- :add-device
- (fn [db [_]]
-   (update-in db [:devices] conj ["7" {:name "New device"}])))
+      (assoc :active-request (get (:requests db) id))))))
