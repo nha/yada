@@ -3,9 +3,9 @@
     (:require [re-frame.core :as re-frame]))
 
 (re-frame/register-sub
- :devices
- (fn [db]
-   (reaction (:devices @db))))
+ :db
+ (fn [db _]
+   (reaction @db)))
 
 (re-frame/register-sub
  :active-panel
@@ -13,6 +13,21 @@
    (reaction (:active-panel @db))))
 
 (re-frame/register-sub
- :active-device
+ :requests
  (fn [db _]
-   (reaction (:active-device @db))))
+   (reaction (:requests @db))))
+
+(re-frame/register-sub
+ :active-request
+ (fn [db _]
+   (reaction (:active-request @db))))
+
+(re-frame/register-sub
+ :animation
+ (fn [db _]
+   (reaction (:animation @db))))
+
+(re-frame/register-sub
+ :cards
+ (fn [db [_ id]]
+   (reaction (get-in @db [:cards id]))))

@@ -1,22 +1,39 @@
-<html>
+<!doctype html>
+<html lang="en">
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="A console for visualising what happens when yada receives and processes HTTP requests.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>yada console</title>
+
     <link rel="stylesheet" href="/material.min.css">
     <script src="/mdl/material.min.js"></script>
     <link rel="stylesheet" href="/fonts.css">
+
+    <style>
+.demo-layout-transparent {
+  background: url('../assets/demos/transparent.jpg') center / cover;
+}
+.demo-layout-transparent .mdl-layout__header,
+.demo-layout-transparent .mdl-layout__drawer-button {
+  /* This background is dark, so we set text to white. Use 87% black instead if
+     your background is light. */
+  color: white;
+}
+
+.demo-card-wide.mdl-card { width: 100%; }
+.demo-card-wide > .mdl-card__title {
+  color: #fff;
+  height: 176px;
+}
+.demo-card-wide > .mdl-card__menu {
+  color: #fff;
+}
+
+    </style>
   </head>
   <body>
-    <h1>yada console</h1>
-
-    <!-- Accent-colored raised button with ripple -->
-<button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
-  Button
-</button>
-<!-- Colored FAB button -->
-<button class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored">
-  <i class="material-icons">add</i>
-</button>
-
     <div id="app"/>
     <script src="/react/react.min.js"></script>
     <script src="/cljs/out/goog/base.js"></script>

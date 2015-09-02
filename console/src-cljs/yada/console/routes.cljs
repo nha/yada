@@ -2,18 +2,32 @@
   (:require [clojure.set :refer [rename-keys]]
             [bidi.bidi :as bidi]
             [pushy.core :as pushy]
-            [re-frame.core :as re-frame]))
+            [goog.string :as gstring]
+            [re-frame.core :as re-frame]
+            [yada.xhr :as xhr]))
+
+(enable-console-print!)
 
 (def routes
   ["/console/" {"home" :home
-                "about" :about
-                ["device/" :id] :device}])
+                ["request/" :id] :request
+                }])
 
 (defn- dispatch-route [match]
   (case (:handler match)
-    (:home :about) (let [panel-name (keyword (str (name (:handler match)) "-panel"))]
-                     (re-frame/dispatch [:set-active-panel panel-name]))
-    :device (re-frame/dispatch [:set-active-panel :device-panel (-> match :route-params :id)])))
+    :home
+    (let [panel-name (keyword (str (name (:handler match)) "-panel"))]
+      (re-frame/dispatch [:set-active-panel panel-name]))
+
+    :request
+    (let [uri (gstring/format "http://localhost:8090/journal/%s" (-> match :route-params :id))]
+      (do (println "AJAX request:" uri)
+          (xhr/GET uri)
+
+
+          ))
+
+    #_(re-frame/dispatch [:set-active-panel :request-panel (-> match :route-params :id)])))
 
 (defn app-routes []
   (pushy/start! (pushy/pushy dispatch-route (partial bidi/match-route routes))))

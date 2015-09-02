@@ -4,7 +4,8 @@
               [yada.console.handlers]
               [yada.console.subs]
               [yada.console.routes :as routes]
-              [yada.console.views :as views]))
+              [yada.console.views :as views]
+              [yada.xhr :as xhr :refer (GET)]))
 
 (defn mount-root []
   (reagent/render [views/main-panel]
@@ -13,6 +14,12 @@
 (defn ^:export init []
   (routes/app-routes)
   (re-frame/dispatch-sync [:initialize-db])
+  (xhr/request GET "http://localhost:8090/journal/"
+               (fn [status body]
+                 ;;(println "Status!" status)
+                 ;;(println "Body:" body)
+
+                 ))
   (mount-root))
 
 (defn ^:export reload-hook []

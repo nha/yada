@@ -21,6 +21,7 @@
    [juxt/iota "0.1.2"]
    [manifold "0.1.1-alpha4"]
    [metosin/ring-http-response "0.6.5"]
+   [thi.ng/tweeny "0.1.0-20141215.235013-1"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
    [prismatic/schema "0.4.3" :exclusions [potemkin]]
    [potemkin "0.4.1" :exclusions [riddley]]
@@ -83,7 +84,7 @@
           [org.webjars/bootstrap "3.3.2"]
           [org.webjars.bower/material-design-lite "1.0.2" :scope "test"]
 
-          [cljsjs/react "0.13.3-0"]
+          [cljsjs/react-with-addons "0.13.3-0"]
           [reagent "0.5.0"]
           [re-frame "0.4.1"]
           [kibu/pushy "0.3.2"]]
