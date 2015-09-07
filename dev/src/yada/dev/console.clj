@@ -10,7 +10,7 @@
    [schema.core :as s]
    [yada.yada :as yada :refer [yada]]))
 
-(defrecord Console [*router templater]
+(defrecord Console [config *router]
   RouteProvider
   (routes [component]
     ["/"
@@ -27,10 +27,6 @@
 
       ]]))
 
-(defn new-console [& {:as opts}]
-  (-> (->> opts
-           (merge {})
-           (s/validate {})
-           map->Console)
-      (using [:templater])
+(defn new-console [config]
+  (-> (map->Console config)
       (co-using [:router])))

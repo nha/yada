@@ -31,7 +31,7 @@
     (let [elk (keyword (str "div.mdl-cell.mdl-cell--" width "-col"))]
       [elk content])))
 
-(defn card-view [id title background supporting-text actions content]
+#_(defn card-view [id title background supporting-text actions content]
   (fn []
     [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
      [:div.mdl-card__title
@@ -61,39 +61,58 @@
   (fn [this]
     (re-frame/dispatch-sync [:card-did-mount id (reagent/dom-node this)])))
 
-(defn card [id title background supporting-text actions & content]
+#_(defn card [id title background supporting-text actions & content]
   (reagent/create-class
    {:reagent-render (card-view id title background supporting-text actions content)
     :component-did-mount (card-did-mount id)}))
 
 (defn card-db-view [id]
-  (let [card (re-frame/subscribe [:cards id])]
+  (let [card (re-frame/subscribe [:cards id])
+        active-card (re-frame/subscribe [:active-card])]
     (fn []
-      (println "card-db-view:" @card)
-      [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
-       [:div.mdl-card__title
-        {:style
-         (merge {}
-                (let [background (:background card)]
-                  (if background
-                    {:background (cond (string? background)
-                                       (str "url('" background "') center / cover;")
-                                       (keyword? background)
-                                       (name keyword))}
-                    {:background "#002"})))
-         :on-click (fn [ev] (re-frame/dispatch-sync [:card-click id]))}
-        [:h2.mdl-card__title-text (:title @card)]]
-       [:div.mdl-card__supporting-text (:supporting-text @card)]
+      (let [active (= id (:id @active-card))]
+        (println "card-db-view id, active-card" @active-card)
+        [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
+         {:style (if active
+                   {:z-index 10
+                    :position :absolute
+                    :top 0
+                    :left 0 #_(str (:current-value @animation) "px")
+                    :width (.-width (:dimensions @active-card)) #_(str (+ 680 (* 2 (- 534 (:current-value @animation)))) "px")
+                    :height (.-height (:dimensions @active-card)) #_(str (+ 100 (- 534 (:current-value @animation))) "px")
+                    }
+                   {})}
+         [:div.mdl-card__title
+          {:style
+           (merge {}
+                  (let [background (:background card)]
+                    (if background
+                      {:background (cond (string? background)
+                                         (str "url('" background "') center / cover;")
+                                         (keyword? background)
+                                         (name keyword))}
+                      {:background "#002"})))
+           }
+          [:h2.mdl-card__title-text (:title @card)]]
+         [:div.mdl-card__supporting-text (:supporting-text @card)]
 
-       #_(:content @card)
+         #_(:content @card)
 
-       [:div.mdl-card__actions.mdl-card--border
-        (for [a (:actions @card)]
-          [:a.mdl-button.mdl-button--colored.mdl-js-button.mdl-js-ripple-effect a])]
+         [:div.mdl-card__actions.mdl-card--border
+          (if (not active)
+            (for [a (:actions @card)]
+              [:a.mdl-button.mdl-button--colored.mdl-js-button.mdl-js-ripple-effect
+               {:on-click (fn [ev] (re-frame/dispatch-sync [:card-click id]))}
+               a]))]
 
-       [:div.mdl-card__menu
-        [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
-         [:i.material-icons "share"]]]])))
+         [:div.mdl-card__menu
+          (if active
+            [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
+             {:on-click (fn [ev]
+                          (println "close please!")
+                          (re-frame/dispatch-sync
+                           [:close-card]))}
+             [:i.material-icons "close"]])]]))))
 
 (defn card-db [id]
   (reagent/create-class

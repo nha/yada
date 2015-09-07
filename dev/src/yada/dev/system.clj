@@ -50,7 +50,7 @@
                    :resource-prefix "static")
    :highlight-js-resources
    (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
-   :console (make new-console config)
+   :console (new-console config)
    ))
 
 (defn swagger-ui-components [system]
@@ -72,7 +72,7 @@
 
          :docsite-router (new-router)
 
-         :console-server (new-webserver :port (config/console-port config)
+         :console-server (new-webserver :port (config/console-port config))
          :console-router (new-router)
 
          :cors-demo-server (new-webserver :port (config/cors-demo-port config))

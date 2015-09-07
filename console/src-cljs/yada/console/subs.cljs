@@ -31,3 +31,9 @@
  :cards
  (fn [db [_ id]]
    (reaction (get-in @db [:cards id]))))
+
+(re-frame/register-sub
+ :active-card
+ (fn [db _]
+   (println "subs: active-card reaction!")
+   (reaction (:active-card @db))))
