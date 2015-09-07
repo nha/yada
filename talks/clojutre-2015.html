@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>HTTP Resources as Data</title>
+<meta name="author" content="(Malcolm Sparks)"/>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+<link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
+<link rel="stylesheet" href="static/css/hljs/zenburn.css"/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>HTTP Resources as Data</h1>
+<h2>Malcolm Sparks</h2>
+<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
+<h2></h2>
+</section>
+
+<section>
+<section id="slide-orgheadline1">
+<h2 id="orgheadline1">Introduction</h2>
+<span style="font-family: yada">yada</span>: resources as data
+
+<aside class="notes">
+nil
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2">
+<h2 id="orgheadline2">HTTP</h2>
+<ul>
+<li>Designed for long-lived services</li>
+<li>Mature and widely implemented (proxies, browsers, servers, firewalls, etc.)</li>
+<li>Since last year, new clearer specs. RFC 7231 etc.</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">Ring</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">Requests as Data</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def request
+  {:server-port 443,
+   :server-name "www.google.com",
+   :remote-addr "218.29.32.10",
+   :uri "/",
+   :query-string "q=yada",
+   :scheme :https,
+   :request-method :get,
+   :headers {"host" "www.google.com"}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline5" class="hide-heading">
+<h2 id="orgheadline5">Responses as Data</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def response
+  {:status 200
+   :headers {"content-type" "text/plain;charset=utf-8"}
+   :body "Hello World!"})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6">Ring middleware?</h2>
+<p>
+Predominant approach to HTTP in Clojure
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline7">
+<h2 id="orgheadline7">Example: wrap-head</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline8">
+<h2 id="orgheadline8">Example: wrap-modified</h2>
+
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline9" class="hide-heading">
+<h2 id="orgheadline9">Another slide</h2>
+<p>
+where we shouldn't see the heading
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline10" class="juxt_hide-heading">
+<h2 id="orgheadline10">Some more code</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn update-routes [routes f &amp; args]
+  (postwalk
+   (fn [x]
+     (if (instance? Handler x)
+       (apply f x args)
+       x))
+   routes))
+</code></pre>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline20" data-background="#f8f8f8" class="juxt_hide-heading">
+<h2 id="orgheadline20">yada</h2>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+</section>
+<section id="slide-orgheadline11">
+<h3 id="orgheadline11">Full &amp; faithful implementation of HTTP</h3>
+<ul>
+<li>Not finished, but in a useable state today</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline12">
+<h3 id="orgheadline12">Parameter coercions</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:parameters {:get {:query {"q" String}}}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline13">
+<h3 id="orgheadline13">Content Negotiation</h3>
+<ul>
+<li>media types</li>
+<li>charsets</li>
+<li>content encodings</li>
+<li>languages</li>
+
+</ul>
+
+<div class="org-src-container">
+
+<pre><code class="clojure">{:representations ...}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline14">
+<h3 id="orgheadline14">Conditional Requests</h3>
+<p>
+Dates and ETags
+If-Modified-Since
+If-Match
+If-Not-Match
+</p>
+
+</section>
+<section id="slide-orgheadline15">
+<h3 id="orgheadline15">Complementary to bidi</h3>
+<p>
+Describe your whole API in data
+</p>
+
+</section>
+<section id="slide-orgheadline16">
+<h3 id="orgheadline16">Swagger built-in</h3>
+<aside class="notes">
+<p>
+(mention Tommi's talk)
+</p>
+
+</aside>
+
+</section>
+<section id="slide-orgheadline17">
+<h3 id="orgheadline17">e.g. Postwalk</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure"></code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline18">
+<h3 id="orgheadline18">Async</h3>
+<p>
+Based on manifold
+</p>
+<ul>
+<li>not just when returning the response, but all callbacks, including those asking for data</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline19">
+<h3 id="orgheadline19">Much more</h3>
+<p>
+Basic/custom authentication, CORS, custom methods
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline26">
+<h2 id="orgheadline26">yada is easy</h2>
+<p>
+yada is just a function which produces a record
+</p>
+
+</section>
+<section id="slide-orgheadline21">
+<h3 id="orgheadline21">(yada "Hello World!")</h3>
+
+
+</section>
+<section id="slide-orgheadline22">
+<h3 id="orgheadline22">(yada (atom "Hello World!"))</h3>
+
+
+
+</section>
+<section id="slide-orgheadline23">
+<h3 id="orgheadline23">(yada (fn [ctx] "Hello World!") {:methods #{:get}})</h3>
+
+
+</section>
+<section id="slide-orgheadline24">
+<h3 id="orgheadline24">(yada (io/file "talks") {:id ::index})</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">["/talks/" (yada (io/file "talks") {:id ::index})]
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline25">
+<h3 id="orgheadline25">(yada (map-&gt;PostgresTable {:table "ACCOUNTS"}))</h3>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline27">
+<h2 id="orgheadline27">yada is Ring compatible</h2>
+<p>
+The yada record satisfies clojure.lang.Fn, and can be used as a Ring
+handler.
+</p>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: true,
+center: true,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.40,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'fade', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>

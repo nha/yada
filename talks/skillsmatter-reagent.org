@@ -1,0 +1,68 @@
+#+EXPORT_EXCLUDE_TAGS:  noexport
+#+AUTHOR:               Malcolm Sparks
+#+EMAIL:                @malcolmsparks
+#+LANGUAGE:             en
+#+OPTIONS:              toc:nil
+#+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
+#+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS:              width:1680 height:1050
+#+REVEAL_HLEVEL:        1
+#+REVEAL_MARGIN:        0.0
+#+REVEAL_MIN_SCALE:     1.0
+#+REVEAL_MAX_SCALE:     1.4
+#+REVEAL_THEME:         juxt
+#+REVEAL_TRANS:         fade
+#+REVEAL_SPEED:         fast
+#+REVEAL_ROOT:          static
+#+REVEAL_PLUGINS: (highlight markdown notes)
+#+REVEAL_EXTRA_CSS: static/css/hljs/zenburn.css
+#+TITLE:                Introduction to ClojureScript: Reagent + Re-frame
+
+* Introduction
+
+* Reagent
+
+- Hiccup rendering by default
+- Enhanced atom: 'r/atom'
+- More 'kit-like' than Om
+
+* re-frame
+
+- A set of idioms (pattern)
+- Single app-state
+- Regisration of reactions on tree (and sub-tree) changes
+- Event dispatch facility
+
+* Component logic considered harmful
+
+- In re-frame components only
+ - get state (deref atoms)
+ - render hiccup
+ - raise events
+
+* Decoupling
+
+- Om: cursors
+- Reagent:
+
+* Re-frame
+
+#+BEGIN_SRC wsd
+  title re-frame
+
+  participant Server as server
+  participant Database as db
+  participant Subscriber as sub
+  participant Component as c
+  participant Handler as h
+  participant Router as r
+
+  server->db: server-sent event
+  db->sub: reaction
+  sub->c: r/atom
+  c->h: re-frame/dispatch-sync
+#+END_SRC
+
+#  :USER:     malcolm@juxt.pro
+#  :PASSWORD: hM053sC2wwd1
+#  :API-KEY: OOwxKMniCVUcmSD_QOpN72Q3S6pjb3M_

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title></title>
+<meta name="author" content="(Malcolm Sparks)"/>
+<link rel="stylesheet" href="./reveal.js/css/reveal.css"/>
+<link rel="stylesheet" href="./reveal.js/css/theme/moon.css" id="theme"/>
+<link rel="stylesheet" href=""/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = './reveal.js/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1></h1>
+<h2>Malcolm Sparks</h2>
+<h2><a href="mailto:malcolm@congreve.com">malcolm@congreve.com</a></h2>
+<h2></h2>
+</section>
+<section id="table-of-contents">
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#/slide-orgheadline1">1. <span class="todo nilDONE">DONE</span> Move talk into yada talks</a></li>
+<li><a href="#/slide-orgheadline2">2. <span class="todo nilTODO">TODO</span> Merge in existing talk from 2 places&#xa0;&#xa0;&#xa0;<span class="tag"><span class="bus">bus</span></span></a></li>
+<li><a href="#/slide-orgheadline3">3. <span class="todo nilTODO">TODO</span> How to hide reveal headings?</a></li>
+<li><a href="#/slide-orgheadline5">4. <span class="todo nilTODO">TODO</span> Can regen custom CSS?</a>
+<ul>
+<li><a href="#/slide-orgheadline4">4.1. <span class="todo nilTODO">TODO</span> sassc</a></li>
+</ul>
+</li>
+<li><a href="#/slide-orgheadline6">5. <span class="todo nilTODO">TODO</span> Code highlighting</a></li>
+<li><a href="#/slide-orgheadline7">6. <span class="todo nilTODO">TODO</span> Speaker notes</a></li>
+<li><a href="#/slide-orgheadline30">7. Talk</a>
+<ul>
+<li><a href="#/slide-orgheadline8">7.1. Intro</a></li>
+<li><a href="#/slide-orgheadline9">7.2. Function opacity</a></li>
+<li><a href="#/slide-orgheadline10">7.3. yada</a></li>
+<li><a href="#/slide-orgheadline11">7.4. word cloud</a></li>
+<li><a href="#/slide-orgheadline29">7.5. ClojureTRE</a>
+<ul>
+<li><a href="#/slide-orgheadline12">7.5.1. What's good about HTTP?</a></li>
+<li><a href="#/slide-orgheadline17">7.5.2. The limits of Ring</a></li>
+<li><a href="#/slide-orgheadline26">7.5.3. yada features</a></li>
+<li><a href="#/slide-orgheadline27">7.5.4. That's great, but how do I use yada? yada examples</a></li>
+<li><a href="#/slide-orgheadline28">7.5.5. Conclusion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<section>
+<section id="slide-orgheadline1">
+<h2 id="orgheadline1"><span class="section-number-2">1</span> <span class="todo DONE">DONE</span> Move talk into yada talks</h2>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2">
+<h2 id="orgheadline2"><span class="section-number-2">2</span> <span class="todo TODO">TODO</span> Merge in existing talk from 2 places&#xa0;&#xa0;&#xa0;<span class="tag"><span class="bus">bus</span></span></h2>
+<ul>
+<li class="off"><code>[&#xa0;]</code> Life.org</li>
+<li class="off"><code>[&#xa0;]</code> yada's todo.org</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3"><span class="section-number-2">3</span> <span class="todo TODO">TODO</span> How to hide reveal headings?</h2>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5"><span class="section-number-2">4</span> <span class="todo TODO">TODO</span> Can regen custom CSS?</h2>
+<div class="outline-text-2" id="text-4">
+</div></section>
+<section id="slide-orgheadline4">
+<h3 id="orgheadline4"><span class="section-number-3">4.1</span> <span class="todo TODO">TODO</span> sassc</h3>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6"><span class="section-number-2">5</span> <span class="todo TODO">TODO</span> Code highlighting</h2>
+<p>
+&lt;!&#x2013; Code syntax highlighting &#x2013;&gt;
+&lt;link rel="stylesheet" href="static/css/zenburn.css"&gt;
+</p>
+
+
+<p>
+reveal deps not being generated?
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-javascript">// Optional reveal.js plugins
+dependencies: [
+        { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+        { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        { src: 'static/plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+        { src: 'static/plugin/zoom-js/zoom.js', async: true },
+        { src: 'static/plugin/notes/notes.js', async: true }
+]
+</pre>
+</div>
+
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline7">
+<h2 id="orgheadline7"><span class="section-number-2">6</span> <span class="todo TODO">TODO</span> Speaker notes</h2>
+
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline30">
+<h2 id="orgheadline30"><span class="section-number-2">7</span> Talk</h2>
+<p>
+also see talk in <a href="file:///home/malcolm/src/yada/todo.html">file:///home/malcolm/src/yada/todo.html</a>
+</p>
+
+</section>
+<section id="slide-orgheadline8">
+<h3 id="orgheadline8"><span class="section-number-3">7.1</span> Intro</h3>
+<p>
+Title:
+</p>
+
+<p>
+yada. Resources as Data
+</p>
+
+<p>
+We love Ring. Why? Requests as Data, Responses as Data.
+With routing libraries like Pedestal, bidi and silk, we can have Routes as Data
+</p>
+
+<p>
+I was inspired to write something like yada after Tommi Riemann's talk last year in Poland.
+</p>
+
+<p>
+He created Swagger on compojure, and mentioned that something similar could be done with bidi.
+But I realised that would be trivial for swagger routes, but certainly not trivial for other swagger data, unless we had some way of describing web resources, as data.
+</p>
+
+<p>
+so in some ways, yada completes the square - we have requests, responses, routes and, with yada, resources was data.
+</p>
+
+<p>
+And actually I think we've really missed out on not doing the Clojure thing and using data to describe our resources.
+</p>
+
+<p>
+Let's me explain with some examples.
+</p>
+
+<ol>
+<li>compojure</li>
+<li>wrap-head</li>
+<li>wrap-modified</li>
+
+</ol>
+
+<p>
+what's the problem? why can't we do a better job? what are we missing here? Answer: DATA
+With ring middleware, all we get at the end is a composed function
+</p>
+
+</section>
+<section id="slide-orgheadline9">
+<h3 id="orgheadline9"><span class="section-number-3">7.2</span> Function opacity</h3>
+<p>
+“Arthur Dent: What happens if I press this button?
+Ford Prefect: I wouldn't-
+Arthur Dent: Oh.
+Ford Prefect: What happened?
+Arthur Dent: A sign lit up, saying 'Please do not press this button again.”
+― Douglas Adams, The Original Hitchhiker Radio Scripts
+</p>
+
+<p>
+That's the exact interface that composed functions give us.
+</p>
+
+<p>
+Everyone goes crazy about function composition, but I think it's a very poor substitute for data composition.
+</p>
+
+</section>
+<section id="slide-orgheadline10">
+<h3 id="orgheadline10"><span class="section-number-3">7.3</span> yada</h3>
+<p>
+Let me show you what things look like when you inject data back in to web resources.
+</p>
+
+<p>
+So let's start with some data: a string: (-&gt; "Hello World!").
+</p>
+
+<p>
+We love Ring right? Requests as data, responses as data&#x2026;.
+</p>
+
+<p>
+So let's turn our data into a Ring handler. (-&gt; "Hello World!" yada).
+</p>
+
+<p>
+What does that give us?
+</p>
+
+<p>
+(pprint (yada "Hello World!")).
+</p>
+
+
+<p>
+(aside, what if we did this: (-&gt; "Hello World!" yada yada) - do we automatically get swagger???
+(and this: (-&gt; "Hello World!" yada yada yada) - ) - do get the swagger of the handler that serves the swagger spec. of the Hello World resource.
+</p>
+
+
+</section>
+<section id="slide-orgheadline11">
+<h3 id="orgheadline11"><span class="section-number-3">7.4</span> word cloud</h3>
+<p>
+<a href="https://www.jasondavies.com/">https://www.jasondavies.com/</a>
+</p>
+
+<p>
+list of words
+</p>
+
+
+
+</section>
+<section id="slide-orgheadline29">
+<h3 id="orgheadline29"><span class="section-number-3">7.5</span> ClojureTRE</h3>
+<div class="outline-text-3" id="text-7-5">
+</div></section>
+<section id="slide-orgheadline12">
+<h4 id="orgheadline12"><span class="section-number-4">7.5.1</span> What's good about HTTP?</h4>
+<p>
+Designed for long-lived services
+Mature and widely implemented (proxies, browsers, servers, firewalls, etc.)
+Since last year, new clearer specs. RFC 7231 etc.
+Mostly people's definition of REST is 'use HTTP as specified' (rather than hypermedia APIs).
+</p>
+
+</section>
+<section id="slide-orgheadline17">
+<h4 id="orgheadline17"><span class="section-number-4">7.5.2</span> The limits of Ring</h4>
+<div class="outline-text-4" id="text-7-5-2">
+</div><ol class="org-ol"><li><a id="orgheadline13"></a>Methods<br  /><p>
+(GET "/name" [] "Malcolm")
+</p>
+
+<p>
+What will this return?
+</p>
+
+<p>
+curl -X PUT /name
+</p>
+
+<p>
+404 is the right answer
+but it should be 405
+</p>
+
+<p>
+A cache or user-agent might see the 404 and think there is no representation for that resource, so would perhaps not try a future GET
+</p></li>
+
+<li><a id="orgheadline14"></a>wrap-head<br  /><p>
+For example, Ring offers middleware, namely
+`ring.middleware.head/wrap-head`, to support the implementation of HEAD
+requests. However, the implementation requires that a full GET request
+is made, from which the response body is truncated. Therefore, HEAD
+requests are always at least as expensive as GET requests. This is
+certainly not what the authors of HTTP had in mind.
+</p>
+
+<p>
+Imagine you were
+</p></li>
+
+<li><a id="orgheadline15"></a>wrap-not-modified<br  /><p>
+Similarly, Ring's `wrap-not-modified` function only runs <span class="underline">after</span> the
+response has been fully formed. The whole point of this HTTP feature is
+to remove load from the origin server. However, if the entire response
+has to be recreated each time, there are no advantages to using this
+feature.
+</p></li>
+
+<li><a id="orgheadline16"></a>But yada fixes all this, and more<br  /></li></ol>
+
+</section>
+<section id="slide-orgheadline26">
+<h4 id="orgheadline26"><span class="section-number-4">7.5.3</span> yada features</h4>
+<div class="outline-text-4" id="text-7-5-3">
+</div><ol class="org-ol"><li><a id="orgheadline18"></a>Content negotiation<br  /><p>
+all permutations of media-types, charsets, languages, encoding
+proactive negotiation, vary,
+reactive negotiation
+custom media-types,
+json,edn,yaml,transit, etc.
+</p></li>
+<li><a id="orgheadline19"></a>Conditional requests<br  /><p>
+etags use clojure (hash)
+collision detection
+</p></li>
+<li><a id="orgheadline20"></a>Methods<br  /><p>
+allowed-methods, 405, options
+custom methods (via protocols), known-methods
+method proxies to ensure HTTP semantics
+</p></li>
+<li><a id="orgheadline21"></a>Parameters<br  /><p>
+path (implicit bidi), query, header, form, body and cookie types
+</p></li>
+<li><a id="orgheadline22"></a>Swagger<br  /><p>
+(mention yada was influced by Tommi's Krakow talk)
+show yada's swagger code which demonstrates the call to ring-swagger, use of protocols and representations
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-clojure">(defrecord SwaggerSpec [spec content-type created-at]
+
+  Representations
+  (representations [_]
+    (case content-type
+      "application/json" [{:media-type #{"application/json"
+                                         "application/json;pretty=true"}
+                           :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
+
+      "application/edn" [{:media-type #{"application/edn"
+                                        "application/edn;pretty=true"}
+                          :charset #{"UTF-8"}}]
+
+      "text/html" [{:media-type "text/html"
+                    :charset charset/platform-charsets}]))
+
+  Get
+  (GET [_ ctx] (ring.swagger.swagger2/swagger-json spec))
+
+  ResourceModification
+  (last-modified [_ ctx] created-at)
+
+  ResourceVersion
+  (version [_ ctx] spec))
+</pre>
+</div>
+
+<p>
+This is code INSIDE yada, making use of yada, it's typical of the size of many of these resources.
+The record defines different types of resource, based on content-type
+</p>
+
+<p>
+Points to make:
+For application/json, there are actually 2x3=6 representations here, including pretty printing
+For application/edn, there are just 2
+swagger-json returns a data-structure, yada coerces it to json
+text/html coerced via json-html library
+</p></li>
+
+<li><a id="orgheadline23"></a>Async<br  /><p>
+Get database result
+Service availability
+Not forgetting realtime (sse)
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-clojure">(resource (chan) {:access-control {:allow-origin "*"}})
+</pre>
+</div></li>
+
+<li><a id="orgheadline24"></a>And much more<br  /><p>
+Prefer
+Reactive negotiation
+Partial content
+Large files (uploads, downloads)
+Expectations
+Range requests
+Rate limiting
+</p>
+
+<p>
+Ring middleware
+Great bidi integration
+Security (bolt)
+yada-cache
+yada-test
+yada-trace
+</p></li>
+
+<li><a id="orgheadline25"></a>Data centric<br  /><p>
+protocols, records - 'resources as data'
+postwalk bidi structures, fiddle the interceptor chain
+</p></li></ol>
+
+</section>
+<section id="slide-orgheadline27">
+<h4 id="orgheadline27"><span class="section-number-4">7.5.4</span> That's great, but how do I use yada? yada examples</h4>
+<p>
+There's just one function: resource
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-clojure">(resource "Hello World!")
+
+;; Types determine yada's behaviour
+(resource (atom "Hello World!"))
+
+;; You can create your own custom types - just satisfy some protocols!
+(resource (map-&gt;PostgresTable {:table "ACCOUNTS"}))
+
+;; Ordinary functions are types too!
+;; But you're more likely to need to add options
+(resource (fn [ctx] (case (:method ctx)...))
+          {:allowed-methods #{:get :post}})
+</pre>
+</div>
+
+</section>
+<section id="slide-orgheadline28">
+<h4 id="orgheadline28"><span class="section-number-4">7.5.5</span> Conclusion</h4>
+<p>
+HTTP is great, use it!
+Build ON, not up to, HTTP compliance
+yada can help
+</p>
+
+<p>
+Go write (less) code!
+</p>
+</section>
+</section>
+</div>
+</div>
+<script src="./reveal.js/lib/js/head.min.js"></script>
+<script src="./reveal.js/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+overview: true,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'default',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: './reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+ { src: './reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: './reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: './reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+ { src: './reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>
