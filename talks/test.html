@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>HTTP Resources as Data</title>
+<meta name="author" content="(Malcolm Sparks)"/>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+<link rel="stylesheet" href="static/css/theme/white.css" id="theme"/>
+<!-- Code syntax highlighting -->
+<link rel="stylesheet" href="static/css/zenburn.css">
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>HTTP Resources as Data</h1>
+<h2>Malcolm Sparks</h2>
+<h2><a href="mailto:malcolm@juxt.pro">malcolm@juxt.pro</a></h2>
+<h2></h2>
+</section>
+
+<section>
+<section id="slide-orgheadline1">
+<h2 id="orgheadline1">more js code</h2>
+<div class="org-src-container">
+
+<pre><code class="hljs javascript hljs">function linkify( selector ) {
+  if( supports3DTransforms ) {
+
+    var nodes = document.querySelectorAll( selector );
+
+    for( var i = 0, len = nodes.length; i &lt; len; i++ ) {
+      var node = nodes[i];
+
+      if( !node.className ) {
+        node.className += ' roll';
+      }
+    }
+  }
+}
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2">
+<h2 id="orgheadline2">js code</h2>
+<div class="org-src-container">
+
+<pre><code class="javascript">if( window.location.search.match( /print-pdf/gi ) ) {
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = 'static/css/print/pdf.css';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+}
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3" class="hide-heading">
+<h2 id="orgheadline3">Some code</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn update-routes [routes f &amp; args]
+  (postwalk
+   (fn [x]
+     (if (instance? Handler x)
+       (apply f x args)
+       x))
+   routes))
+</code></pre>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">Some more code</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn merge-options [other-options routes]
+  (update-routes routes
+                 (fn [{:keys [base options]}]
+                   ;; Recreate the resource from the base, but with new options
+                   (resource base (merge options other-options)))))
+
+(defn basic-auth [realm auth-fn routes]
+  (merge-options
+   {:security {:type :basic :realm realm}
+    :authorization auth-fn}
+   routes))
+</code></pre>
+</div>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: true,
+center: true,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.40,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'fade', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>

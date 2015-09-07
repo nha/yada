@@ -1,0 +1,172 @@
+#+EXPORT_EXCLUDE_TAGS:  noexport
+#+AUTHOR:               Malcolm Sparks
+#+EMAIL:                malcolm@juxt.pro
+#+LANGUAGE:             en
+#+OPTIONS:              toc:nil
+#+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
+#+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS:              width:1680 height:1050
+#+REVEAL_HLEVEL:        1
+#+REVEAL_MARGIN:        0.0
+#+REVEAL_MIN_SCALE:     1.0
+#+REVEAL_MAX_SCALE:     1.4
+#+REVEAL_THEME:         juxt
+#+REVEAL_TRANS:         fade
+#+REVEAL_SPEED:         fast
+#+REVEAL_ROOT:          static
+#+REVEAL_PLUGINS: (highlight markdown notes)
+#+TITLE:                HTTP Resources as Data
+
+* Introduction
+
+#+REVEAL_HTML: <span style="font-family: yada">yada</span>: resources as data
+
+#+BEGIN_NOTES
+#+END_NOTES
+
+* HTTP
+- Designed for long-lived services
+- Mature and widely implemented (proxies, browsers, servers, firewalls, etc.)
+- Since last year, new clearer specs. RFC 7231 etc.
+
+* Ring
+
+* Requests as Data
+
+#+BEGIN_SRC clojure
+{:server-port 443,
+ :server-name "www.google.com",
+ :remote-addr "218.29.32.10",
+ :uri "/",
+ :query-string "q=yada",
+ :scheme :https,
+ :request-method :get,
+ :headers {"host" "www.google.com"}}
+#+END_SRC
+
+* Responses as Data
+  :PROPERTIES:
+  :reveal_extra_attr: class="hide-heading"
+  :END:
+
+#+BEGIN_SRC clojure
+(defn update-routes [routes f & args]
+  (postwalk
+   (fn [x]
+     (if (instance? Handler x)
+       (apply f x args)
+       x))
+   routes))
+{:status 200
+ :headers {"content-type" "text/plain;charset=utf-8"}
+ :body "Hello World!"}
+#+END_SRC
+
+* Ring middleware?
+Predominant approach to HTTP in Clojure
+
+* Example: wrap-head
+
+* Example: wrap-modified
+
+
+
+* Another slide
+  :PROPERTIES:
+  :reveal_extra_attr: class="hide-heading"
+  :END:
+
+where we shouldn't see the heading
+
+* Some more code
+  :PROPERTIES:
+  :reveal_extra_attr: class="hide-heading"
+  :END:
+
+#+BEGIN_SRC clojure
+(defn update-routes [routes f & args]
+  (postwalk
+   (fn [x]
+     (if (instance? Handler x)
+       (apply f x args)
+       x))
+   routes))
+#+END_SRC
+
+
+* yada
+
+** Full & faithful implementation of HTTP
+- Not finished, but in a useable state today
+
+** Parameter coercions
+#+BEGIN_SRC clojure
+{:parameters {:get {:query {"q" String}}}}
+#+END_SRC
+
+** Content Negotiation
+- media types
+- charsets
+- content encodings
+- languages
+
+#+BEGIN_SRC clojure
+{:representations ...}
+
+#+END_SRC
+
+** Conditional Requests
+Dates and ETags
+If-Modified-Since
+If-Match
+If-Not-Match
+
+** Complementary to bidi
+
+Describe your whole API in data
+
+** Swagger built-in
+
+#+BEGIN_NOTES
+(mention Tommi's talk)
+#+END_NOTES
+
+** e.g. Postwalk
+
+#+BEGIN_SRC clojure
+
+#+END_SRC
+
+** Async
+Based on manifold
+- not just when returning the response, but all callbacks, including those asking for data
+
+** Much more
+Basic/custom authentication, CORS, custom methods
+
+* yada is easy
+
+yada is just a function which produces a record
+
+** (yada "Hello World!")
+
+
+** (yada (atom "Hello World!"))
+
+
+
+** (yada (fn [ctx] "Hello World!") {:methods #{:get}})
+
+
+** (yada (io/file "talks") {:id ::index})
+
+#+BEGIN_SRC clojure
+["/talks/" (yada (io/file "talks") {:id ::index})]
+#+END_SRC
+
+** (yada (map->PostgresTable {:table "ACCOUNTS"}))
+
+* yada is Ring compatible
+
+The yada record satisfies clojure.lang.Fn, and can be used as a Ring
+handler.
