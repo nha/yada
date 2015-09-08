@@ -17,7 +17,8 @@
      [[["console/" [#".*" :path]] (-> "console/resources/static/index.html" io/file (yada {:id ::index}))]
       ["cljs" (files {:dir "target/cljs"})]
 
-      ["react/react-with-addons.min.js" (-> "cljsjs/development/react-with-addons.inc.js" io/resource yada)]
+      #_["react/react-with-addons.min.js" (-> "cljsjs/development/react-with-addons.inc.js" io/resource yada)]
+      ["react/react.min.js" (-> "cljsjs/react/production/react.min.inc.js" io/resource yada)]
 
       ["mdl/" (resources-maybe {:prefix "META-INF/resources/webjars/material-design-lite/1.0.2/"})]
 

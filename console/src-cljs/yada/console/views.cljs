@@ -15,16 +15,17 @@
 ;; --------------------
 (defn header []
   [lo/header
+   ^{:key "header-row1"}
    [lo/header-row
-    [lo/title "yada console"]
-    [lo/spacer]
-    [nav/nav [ ^{:key "nav1"} {:label "Documentation" :href "http://yada.juxt.pro"}
-              ^{:key "nav1"} {:label "Github" :href "https://github.com/juxt/yada"}
-              ^{:key "nav1"} {:label "JUXT" :href "https://juxt.pro"}]]]])
+    ^{:key "title"} [lo/title "yada console"]
+    ^{:key "spacer"} [lo/spacer]
+    ^{:key "nav"} [nav/nav
+                   [{:label "Documentation" :href "http://yada.juxt.pro" :key "doc"}
+                    {:label "Github" :href "https://github.com/juxt/yada" :key "gh"}
+                    {:label "JUXT" :href "https://juxt.pro" :key "jx"}]]]])
 
 (defn grid [& content]
   [:div.mdl-grid {:style {:position "relative"}} content])
-
 
 (defn cell [width content]
   (fn []
@@ -37,7 +38,7 @@
     (fn []
       (let [active (= id (:id @active-card))]
         [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
-         (merge {} (when active {:class "active-card"}))
+         (when active {:class "active-card"})
          [:div.mdl-card__title
           {:on-click (fn [ev] (set-token! (path-for :card :card-id id)))
            :style
@@ -62,24 +63,29 @@
           (if active
             [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
              {:on-click (fn [ev] (set-token! (path-for :cards)))}
-             [:i.material-icons "dashboard"]]
+             [:i.material-icons "close"]]
             )]]))))
 
 (defn cards [cards]
   [grid
    (for [card-id (keys cards)]
+     ^{:key (str "cell-" card-id)}
      [cell 4 [card card-id]])])
 
 ;; --------------------
+
 (defn main-panel []
   (let [db (re-frame/subscribe [:db])]
     (fn []
       [lo/layout
-       [header]
+       ^{:key "header"} [header]
+
+       ^{:key "content"}
        [lo/content
         [:div.page-content
          [cards (:cards @db)]
 
          [:div
           [:h4 "Database"]
-          [:pre (with-out-str (pp/pprint @db))]]]]])))
+          (when @db
+            [:pre (with-out-str (pp/pprint @db))])]]]])))

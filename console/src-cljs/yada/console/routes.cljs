@@ -17,7 +17,7 @@
 
 (def history (pushy/pushy dispatch-route (partial bidi/match-route routes)))
 
-(defn app-routes []
+(defn init []
   (pushy/start! history))
 
 (defn set-token! [token]

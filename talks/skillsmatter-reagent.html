@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Introduction to ClojureScript: Reagent + Re-frame</title>
-<meta name="author" content="(Malcolm Sparks)"/>
+<title>Introduction to ClojureScript</title>
+<meta name="author" content="(Jon Pither)"/>
 <link rel="stylesheet" href="static/css/reveal.css"/>
 <link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
 <link rel="stylesheet" href="static/css/hljs/zenburn.css"/>
@@ -22,15 +22,163 @@
 <div class="reveal">
 <div class="slides">
 <section id="sec-title-slide">
-<h1>Introduction to ClojureScript: Reagent + Re-frame</h1>
-<h2>Malcolm Sparks</h2>
-<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
+<h1>Introduction to ClojureScript</h1>
+<h2>Jon Pither</h2>
+<h2><a href="mailto:@jonpither">@jonpither</a></h2>
 <h2></h2>
 </section>
 
 <section>
 <section id="slide-orgheadline1">
-<h2 id="orgheadline1">Introduction</h2>
+<h2 id="orgheadline1">React and Om</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2">
+<h2 id="orgheadline2">Why ClojureScript</h2>
+<ul>
+<li>Rich apps</li>
+<li>Why not?</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">Let's hack some CLJS</h2>
+<ul>
+<li><a href="http://github.com/juxt/fuzz">http://github.com/juxt/fuzz</a></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">React</h2>
+<ul>
+<li>Keeps data out of the DOM</li>
+
+<li>Separates concerns of rendering and application logic</li>
+
+<li>Efficient and fast</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5">Om</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6">Reagent</h2>
+<ul>
+<li>Hiccup rendering by default</li>
+<li>Enhanced atom: 'r/atom'</li>
+<li>More 'kit-like' than Om</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline7">
+<h2 id="orgheadline7">re-frame</h2>
+<ul>
+<li>A set of idioms (pattern)</li>
+<li>Single app-state</li>
+<li>Regisration of reactions on tree (and sub-tree) changes</li>
+<li>Event dispatch facility</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline8">
+<h2 id="orgheadline8">Component logic considered harmful</h2>
+<ul>
+<li>In re-frame components only
+<ul>
+<li>get state (deref atoms)</li>
+<li>render hiccup</li>
+<li>raise events</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline9">
+<h2 id="orgheadline9">Decoupling</h2>
+<ul>
+<li>Om: cursors</li>
+<li>Reagent:</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline10">
+<h2 id="orgheadline10">Re-frame</h2>
+<p>
+./static/assets/reframe.png
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline15">
+<h2 id="orgheadline15">Let's hack!</h2>
+<div class="outline-text-2" id="text-orgheadline15">
+</div></section>
+<section id="slide-orgheadline11">
+<h3 id="orgheadline11">But what to hack on?</h3>
+
+</section>
+<section id="slide-orgheadline12" data-background="#f8f8f8" class="juxt_hide-heading">
+<h3 id="orgheadline12">yada</h3>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+
+</section>
+<section id="slide-orgheadline13">
+<h3 id="orgheadline13">Start with an initial database</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def default-db
+  {:cards
+   {:resources
+    {:title "Resources"
+     :supporting-text "Resources that have been accessed,
+                showing recent requests, state changes."
+     :background :#455A64
+     :actions ["Show"]}
+
+   :active-card {:id nil}})
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline14">
+<h3 id="orgheadline14">Subscribe to changes in the database</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(re-frame/register-sub
+  :active-card
+  (fn [db _]
+    (reaction (:active-card @db))))
+</code></pre>
+</div>
 </section>
 </section>
 </div>

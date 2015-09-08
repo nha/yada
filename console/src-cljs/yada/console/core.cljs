@@ -11,8 +11,9 @@
 
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
-  (routes/app-routes)
+  (routes/init)
   (reagent/render [views/main-panel] (.getElementById js/document "app")))
 
 (defn ^:export reload-hook []
+  (println "Reload!")
   (reagent/force-update-all))

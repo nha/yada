@@ -15,4 +15,4 @@
 (re-frame/register-handler
  :show-all-cards
  (fn [db _]
-   (assoc db :active-card {:id :none})))
+   (dissoc db :active-card)))

@@ -296,5 +296,5 @@ body:after {
   bottom: 1.5em;
   left: 1.5em; }
 
-.reveal .juxt_hide-heading h2 {
+.reveal .juxt_hide-heading h2, .reveal .juxt_hide-heading h3 {
   display: none; }
