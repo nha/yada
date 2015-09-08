@@ -71,15 +71,14 @@
         active-card (re-frame/subscribe [:active-card])]
     (fn []
       (let [active (= id (:id @active-card))]
-        (println "card-db-view id, active-card" @active-card)
         [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
          {:style (if active
                    {:z-index 10
                     :position :absolute
-                    :top 0
-                    :left 0 #_(str (:current-value @animation) "px")
-                    :width (.-width (:dimensions @active-card)) #_(str (+ 680 (* 2 (- 534 (:current-value @animation)))) "px")
-                    :height (.-height (:dimensions @active-card)) #_(str (+ 100 (- 534 (:current-value @animation))) "px")
+                    :top (first (:top @active-card))
+                    :left (first (:left @active-card)) #_(str (:current-value @animation) "px")
+                    :width (first (:width @active-card)) #_(str (+ 680 (* 2 (- 534 (:current-value @animation)))) "px")
+                    :height (first (:height @active-card)) #_(str (+ 100 (- 534 (:current-value @animation))) "px")
                     }
                    {})}
          [:div.mdl-card__title
@@ -100,7 +99,7 @@
 
          [:div.mdl-card__actions.mdl-card--border
           (if (not active)
-            (for [a (:actions @card)]
+            (let [a "Show" #_(:actions @card)]
               [:a.mdl-button.mdl-button--colored.mdl-js-button.mdl-js-ripple-effect
                {:on-click (fn [ev] (re-frame/dispatch-sync [:card-click id]))}
                a]))]
@@ -261,5 +260,6 @@
 ;; (getBoundingClientRect)
 
 (defn foo [from to]
-  (for [i (range 0 1 0.1)]
-    ((tweeny/mix-cosine) from to i)))
+  (let [f (tweeny/mix-cosine)]
+    (for [i (range 0 1 0.1)]
+      (f from to i))))
