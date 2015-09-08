@@ -14,18 +14,13 @@
   RouteProvider
   (routes [component]
     ["/"
-     [["console/home" (-> "console/resources/static/index.html" io/file (yada {:id ::index}))]
-      #_["react/react.min.js" (-> "cljsjs/production/react.min.inc.js" io/resource yada)]
+     [[["console/" [#".*" :path]] (-> "console/resources/static/index.html" io/file (yada {:id ::index}))]
       ["cljs" (files {:dir "target/cljs"})]
 
       ["react/react-with-addons.min.js" (-> "cljsjs/development/react-with-addons.inc.js" io/resource yada)]
 
-      ;; Customized css
-      #_["material.min.css" (-> "console/resources/static/material.min.css" io/file yada)]
-
-      #_["mdl.woff2" (-> "console/resources/static/mdl.woff2" io/file yada)]
-
       ["mdl/" (resources-maybe {:prefix "META-INF/resources/webjars/material-design-lite/1.0.2/"})]
+
       ["" (-> "console/resources/static/" io/file yada)]
 
       ]]))

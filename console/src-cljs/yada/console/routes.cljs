@@ -9,28 +9,26 @@
 (enable-console-print!)
 
 (def routes
-  ["/console/" {"home" :home
-                ["request/" :id] :request
+  ["/console/" {"" :cards
+                ["card/" [keyword :card-id]] :card
                 }])
 
 (defn- dispatch-route [match]
+  (println "dispatch route")
   (case (:handler match)
-    :home
-    (let [panel-name (keyword (str (name (:handler match)) "-panel"))]
-      (re-frame/dispatch [:set-active-panel panel-name]))
+    :cards
+    (re-frame/dispatch [:close-card])
 
-    :request
-    (let [uri (gstring/format "http://localhost:8090/journal/%s" (-> match :route-params :id))]
-      (do (println "AJAX request:" uri)
-          (xhr/GET uri)
+    :card
+    (re-frame/dispatch [:card-click (-> match :route-params :card-id)])))
 
-
-          ))
-
-    #_(re-frame/dispatch [:set-active-panel :request-panel (-> match :route-params :id)])))
+(def history (pushy/pushy dispatch-route (partial bidi/match-route routes)))
 
 (defn app-routes []
-  (pushy/start! (pushy/pushy dispatch-route (partial bidi/match-route routes))))
+  (pushy/start! history))
+
+(defn set-token! [token]
+  (pushy/set-token! history token))
 
 (defn path-for [tag & args]
   (apply bidi/path-for routes tag args))
