@@ -290,11 +290,47 @@ body {
 
 /* JUXT logo */
 body:after {
-  content: url(../../assets/juxt.png);
+  content: url(../../assets/pres.png);
   width: 10 !important;
   position: fixed;
   bottom: 1.5em;
   left: 1.5em; }
 
-.reveal .juxt_hide-heading h2 {
+.reveal #sec-title-slide h1 i {
+  font-family: yada;
+  font-size: 1.25em;
+  font-style: normal; }
+
+.reveal .juxt_hide-heading h2, .reveal .juxt_hide-heading h3 {
+  display: none; }
+
+.reveal .juxt_jumbo h2 {
+  font-size: 4em; }
+
+.reveal .juxt_quote-bg {
+  background: rgba(0, 0, 0, 0.5); }
+
+.reveal h1, .reveal h2, .reveal h3, .reveal * {
+  text-shadow: 2px 2px 3px transparent; }
+
+.reveal h2 code, .reveal h3 code {
+  font-size: 60%; }
+
+.reveal section.juxt_quote p {
+  text-align: left;
+  font-style: italic; }
+
+.reveal section.juxt_dark-bg h2, .reveal section.juxt_dark-bg h3, .reveal section.juxt_dark-bg p {
+  color: white;
+  text-shadow: 2px 4px 3px rgba(0, 0, 0, 0.3); }
+
+.reveal section.juxt_spec blockquote {
+  text-align: left;
+  font-style: normal;
+  font-family: monospace;
+  font-size: 80%;
+  border-left: 8px dotted #888;
+  padding-left: 1em; }
+
+.reveal .slide-number {
   display: none; }

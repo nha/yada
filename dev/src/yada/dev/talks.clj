@@ -20,7 +20,13 @@
                     config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
-          ["/talks/" (yada (io/file "talks") {:id ::index})]))
+          ["" [["/talks/" (yada (io/file "talks") {:id ::index})]
+               ["/hello" (-> "Hello World!" yada)]
+               ["/hello-meta" (-> "Hello World!" yada yada)]
+               ["/hello-atom-meta" (-> "Hello World!" atom yada yada)]
+               ;; just a joke...
+               ["/hello-meta-meta" (-> "Hello World!" yada yada yada)]
+               ]]))
 
 (defn new-talks [config]
   (-> (map->Talks {:config config})

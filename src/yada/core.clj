@@ -110,6 +110,12 @@
     (d/chain
      (resource/resource-properties-on-request resource ctx)
      (fn [props]
+       ;; Canonicalize possible representations if they are reasserted.
+       (cond-> props
+         (:representations props)
+         (update-in [:representations]
+                    (comp rep/representation-seq rep/coerce-representations))))
+     (fn [props]
        (if (schema.utils/error? props)
          (d/error-deferred
           ;; TODO: More thorough error handling
@@ -524,11 +530,12 @@
                             ;; to support more media-types to render
                             ;; errors, including image and video
                             ;; formats.
-                            [{:media-type #{"text/html"
-                                            "application/edn"
-                                            "application/edn;pretty=true"
-                                            "application/json"
-                                            "application/json;pretty=true"}
+                            [{:media-type #{"text/plain"
+                                            "text/html;q=0.8"
+                                            "application/json;q=0.75"
+                                            "application/json;pretty=true;q=0.7"
+                                            "application/edn;q=0.6"
+                                            "application/edn;pretty=true;q=0.5"}
                               :charset charset/platform-charsets}])))]
                  (d/chain
                   (cond-> (make-context {})
@@ -557,7 +564,25 @@
      journal]
   clojure.lang.IFn
   (invoke [this req]
-    (handle-request this req)))
+    (handle-request this req))
+  p/ResourceProperties
+  (resource-properties
+    [this]
+    {:allowed-methods #{:get}
+     :representations [{:media-type #{"text/html"
+                                      "application/edn"
+                                      "application/json"
+                                      "application/edn;pretty=true"
+                                      "application/json;pretty=true"}}]})
+
+  (resource-properties
+    [_ ctx]
+    {}
+    )
+  methods/Get
+  (GET [this ctx] (into {} this))
+
+  )
 
 (defrecord NoAuthorizationSpecified []
   service/Service

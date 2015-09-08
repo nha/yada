@@ -1,5 +1,8 @@
 (ns juxt.mdl.layout)
 
+(defn add-keys [prefix v]
+  (map (fn [a n] (vary-meta v {:key (str prefix "-" n)})) v (range)))
+
 (defn layout [& content]
   [:div.mdl-layout.mdl-js-layout.mdl-layout--fixed-header content])
 
