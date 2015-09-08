@@ -6,7 +6,7 @@
 <meta name="author" content="(Malcolm Sparks)"/>
 <link rel="stylesheet" href="static/css/reveal.css"/>
 <link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
-<link rel="stylesheet" href=""/>
+<link rel="stylesheet" href="static/css/hljs/zenburn.css"/>
 <!-- If the query includes 'print-pdf', include the PDF print sheet -->
 <script>
     if( window.location.search.match( /print-pdf/gi ) ) {
@@ -24,7 +24,7 @@
 <section id="sec-title-slide">
 <h1>HTTP Resources as Data</h1>
 <h2>Malcolm Sparks</h2>
-<h2><a href="mailto:malcolm@juxt.pro">malcolm@juxt.pro</a></h2>
+<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
 <h2></h2>
 </section>
 
@@ -62,14 +62,15 @@ nil
 <h2 id="orgheadline4">Requests as Data</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">{:server-port 443,
- :server-name "www.google.com",
- :remote-addr "218.29.32.10",
- :uri "/",
- :query-string "q=yada",
- :scheme :https,
- :request-method :get,
- :headers {"host" "www.google.com"}}
+<pre><code class="clojure">(def request
+  {:server-port 443,
+   :server-name "www.google.com",
+   :remote-addr "218.29.32.10",
+   :uri "/",
+   :query-string "q=yada",
+   :scheme :https,
+   :request-method :get,
+   :headers {"host" "www.google.com"}})
 </code></pre>
 </div>
 
@@ -80,16 +81,10 @@ nil
 <h2 id="orgheadline5">Responses as Data</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(defn update-routes [routes f &amp; args]
-  (postwalk
-   (fn [x]
-     (if (instance? Handler x)
-       (apply f x args)
-       x))
-   routes))
-{:status 200
- :headers {"content-type" "text/plain;charset=utf-8"}
- :body "Hello World!"}
+<pre><code class="clojure">(def response
+  {:status 200
+   :headers {"content-type" "text/plain;charset=utf-8"}
+   :body "Hello World!"})
 </code></pre>
 </div>
 
@@ -128,7 +123,7 @@ where we shouldn't see the heading
 </section>
 </section>
 <section>
-<section id="slide-orgheadline10" class="hide-heading">
+<section id="slide-orgheadline10" class="juxt_hide-heading">
 <h2 id="orgheadline10">Some more code</h2>
 <div class="org-src-container">
 
@@ -146,10 +141,11 @@ where we shouldn't see the heading
 </section>
 </section>
 <section>
-<section id="slide-orgheadline20">
+<section id="slide-orgheadline20" data-background="#f8f8f8" class="juxt_hide-heading">
 <h2 id="orgheadline20">yada</h2>
-<div class="outline-text-2" id="text-orgheadline20">
-</div></section>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+</section>
 <section id="slide-orgheadline11">
 <h3 id="orgheadline11">Full &amp; faithful implementation of HTTP</h3>
 <ul>
@@ -316,6 +312,12 @@ multiplex: {
     url: '' // Location of socket.io server
 },
 
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
 });
 </script>
 </body>
