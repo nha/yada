@@ -15,5 +15,4 @@
 (re-frame/register-sub
  :active-card
  (fn [db _]
-   (println "subs: active-card reaction!")
    (reaction (:active-card @db))))

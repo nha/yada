@@ -10,11 +10,9 @@
 (re-frame/register-handler
  :card-click
  (fn [db [_ card-id]]
-   (println "card-click! card-id = " card-id)
    (assoc db :active-card {:id card-id})))
 
 (re-frame/register-handler
- :close-card
+ :show-all-cards
  (fn [db _]
-   (println "close-card, back to dashboard")
    (assoc db :active-card {:id :none})))

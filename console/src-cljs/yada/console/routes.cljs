@@ -6,21 +6,14 @@
             [re-frame.core :as re-frame]
             [yada.xhr :as xhr]))
 
-(enable-console-print!)
-
 (def routes
   ["/console/" {"" :cards
-                ["card/" [keyword :card-id]] :card
-                }])
+                ["card/" [keyword :card-id]] :card}])
 
 (defn- dispatch-route [match]
-  (println "dispatch route")
   (case (:handler match)
-    :cards
-    (re-frame/dispatch [:close-card])
-
-    :card
-    (re-frame/dispatch [:card-click (-> match :route-params :card-id)])))
+    :cards (re-frame/dispatch [:show-all-cards])
+    :card (re-frame/dispatch [:card-click (-> match :route-params :card-id)])))
 
 (def history (pushy/pushy dispatch-route (partial bidi/match-route routes)))
 

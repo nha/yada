@@ -36,19 +36,16 @@
         active-card (re-frame/subscribe [:active-card])]
     (fn []
       (let [active (= id (:id @active-card))]
-        (println "card is " @card)
         [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
          (merge {} (when active {:class "active-card"}))
          [:div.mdl-card__title
-          {:style
+          {:on-click (fn [ev] (set-token! (path-for :card :card-id id)))
+           :style
            (merge {}
                   (let [background (:background @card)]
-                    (println "background is " background)
                     (if background
-                      {:background (cond (string? background)
-                                         (str "url('" background "') center / cover;")
-                                         (keyword? background)
-                                         (-name background))}
+                      {:background (cond (string? background) (str "url('" background "') center / cover;")
+                                         (keyword? background) (-name background))}
                       {:background "#002"})))}
 
           [:h2.mdl-card__title-text (:title @card)]]
@@ -64,15 +61,9 @@
          [:div.mdl-card__menu
           (if active
             [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
-             {:on-click (fn [ev]
-                          (set-token! (path-for :cards))
-                          )}
+             {:on-click (fn [ev] (set-token! (path-for :cards)))}
              [:i.material-icons "dashboard"]]
-            [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
-             {:on-click (fn [ev]
-                          (set-token! (path-for :card :card-id id))
-                          )}
-             [:i.material-icons "open_in_new"]])]]))))
+            )]]))))
 
 (defn cards [cards]
   [grid
