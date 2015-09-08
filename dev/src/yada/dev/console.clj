@@ -15,18 +15,24 @@
   (routes [component]
     ["/"
      [["console/home" (-> "console/resources/static/index.html" io/file (yada {:id ::index}))]
-      ["react/react.min.js" (-> "cljsjs/production/react.min.inc.js" io/resource yada)]
+      #_["react/react.min.js" (-> "cljsjs/production/react.min.inc.js" io/resource yada)]
       ["cljs" (files {:dir "target/cljs"})]
 
+      ["react/react-with-addons.min.js" (-> "cljsjs/development/react-with-addons.inc.js" io/resource yada)]
+
       ;; Customized css
-      ["material.min.css" (-> "console/resources/static/material.min.css" io/file yada)]
-      ["fonts.css" (-> "console/resources/static/fonts.css" io/file yada)]
-      ["mdl.woff2" (-> "console/resources/static/mdl.woff2" io/file yada)]
+      #_["material.min.css" (-> "console/resources/static/material.min.css" io/file yada)]
+
+      #_["mdl.woff2" (-> "console/resources/static/mdl.woff2" io/file yada)]
 
       ["mdl/" (resources-maybe {:prefix "META-INF/resources/webjars/material-design-lite/1.0.2/"})]
+      ["" (-> "console/resources/static/" io/file yada)]
 
       ]]))
 
 (defn new-console [config]
   (-> (map->Console config)
       (co-using [:router])))
+
+
+;;(io/resource "cljsjs/development/react-with-addons.inc.js")

@@ -31,49 +31,21 @@
     (let [elk (keyword (str "div.mdl-cell.mdl-cell--" width "-col"))]
       [elk content])))
 
-#_(defn card-view [id title background supporting-text actions content]
-  (fn []
-    [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
-     [:div.mdl-card__title
-      {:style
-       (merge {}
-              (if background
-                {:background (cond (string? background)
-                                   (str "url('" background "') center / cover;")
-                                   (keyword? background)
-                                   (name keyword))}
-                {:background "#002"}))
-       :on-click (fn [ev] (re-frame/dispatch-sync [:card-click id]))}
-      [:h2.mdl-card__title-text title]]
-     [:div.mdl-card__supporting-text supporting-text]
-
-     content
-
-     [:div.mdl-card__actions.mdl-card--border
-      (for [a actions]
-        [:a.mdl-button.mdl-button--colored.mdl-js-button.mdl-js-ripple-effect a])]
-
-     [:div.mdl-card__menu
-      [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
-       [:i.material-icons "share"]]]]))
-
 (defn card-did-mount [id]
   (fn [this]
     (re-frame/dispatch-sync [:card-did-mount id (reagent/dom-node this)])))
 
-#_(defn card [id title background supporting-text actions & content]
-  (reagent/create-class
-   {:reagent-render (card-view id title background supporting-text actions content)
-    :component-did-mount (card-did-mount id)}))
+;;(def ctg (aget js/React "addons" "CSSTransitionGroup"))
 
-(defn card-db-view [id]
+(defn card-view [id]
   (let [card (re-frame/subscribe [:cards id])
         active-card (re-frame/subscribe [:active-card])]
     (fn []
       (let [active (= id (:id @active-card))]
         [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
-         {:style (if active
-                   {:z-index 10
+         (merge {}  (when active {:class "active-card"}))
+         #_{:style (if active
+                     {:z-index 10
                     :position :absolute
                     :top (first (:top @active-card))
                     :left (first (:left @active-card)) #_(str (:current-value @animation) "px")
@@ -111,56 +83,17 @@
                           (println "close please!")
                           (re-frame/dispatch-sync
                            [:close-card]))}
-             [:i.material-icons "close"]])]]))))
+             [:i.material-icons "dashboard"]]
+            [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
+             {:on-click (fn [ev]
+                          (re-frame/dispatch-sync
+                           [:card-click id]))}
+             [:i.material-icons "open_in_new"]])]]))))
 
-(defn card-db [id]
+(defn card [id]
   (reagent/create-class
-   {:reagent-render (card-db-view id)
+   {:reagent-render (card-view id)
     :component-did-mount (card-did-mount id)}))
-
-#_(defn cell-active [content]
-  (let [elk (keyword (str "div.mdl-cell.mdl-cell--12-col"))]
-    [elk content]))
-
-#_(defn card-active [title background supporting-text actions & content]
-  (let [animation (re-frame/subscribe [:animation])]
-    (fn []
-      [:div.demo-card-wide.mdl-card.mdl-shadow--6dp.card-big
-       {:on-click (fn [ev]
-                    (println "click on card, dispatch event")
-                    (re-frame/dispatch-sync
-                     [:animate-card {:a 534 :b 10 :dur 10}]))
-        :style {:z-index 10
-                :position :absolute
-                :top "15"
-                ;; These start at these values, then the width transitions
-                ;; to the full-width, left transitions to 0, height
-                ;; transitions to full-height
-                :left (str (:current-value @animation) "px")
-                :width (str (+ 680 (* 2 (- 534 (:current-value @animation)))) "px")
-                ;;width: "510px"
-
-                :height (str (+ 100 (- 534 (:current-value @animation))) "px")
-                }}
-       [:div.mdl-card__title
-        {:style (merge {} (if background
-                            {:background (cond (string? background)
-                                               (str "url('" background "') center / cover;")
-                                               (keyword? background)
-                                               (name keyword))}
-                            {:background "#000"}))}
-        [:h2.mdl-card__title-text title]]
-       [:div.mdl-card__supporting-text supporting-text]
-
-       content
-
-       [:div.mdl-card__actions.mdl-card--border
-        (for [a actions]
-          [:a.mdl-button.mdl-button--colored.mdl-js-button.mdl-js-ripple-effect a])]
-
-       [:div.mdl-card__menu
-        [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
-         [:i.material-icons "share"]]]])))
 
 (defn home-panel []
   (let [requests (re-frame/subscribe [:requests])]
@@ -175,20 +108,11 @@
        [lo/content
         [:div.page-content
          [grid
-          [cell 4 [card-db :resources]]
-          [cell 4 [card-db :errors]]
-          [cell 4 [card-db :routing]]
-          [cell 4 [card-db :performance]]
-          [cell 4 [card-db :documentation]]]
-
-         #_[:h3 "Requests"]
-         #_[t/table {:cols ["Id" "Date" "URI" "Method" "Status"]}
-            (for [[id {:keys [date uri method status]}] @requests]
-              [[:a {:href (path-for :request :id id)} id]
-               date uri
-               (str method)
-               status
-               ])]]]])))
+          [cell 4 [card :resources]]
+          [cell 4 [card :errors]]
+          [cell 4 [card :routing]]
+          [cell 4 [card :performance]]
+          [cell 4 [card :documentation]]]]]])))
 
 (defn home-panel-did-mount [this]
   (let [grid (.querySelector (reagent/dom-node this) ".mdl-grid")]
