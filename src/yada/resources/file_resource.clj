@@ -10,6 +10,7 @@
    [ring.util.mime-type :refer (ext-mime-type)]
    [ring.util.response :refer (redirect)]
    [ring.util.time :refer (format-date)]
+   [schema.core :as s]
    [yada.charset :as charset]
    [yada.representation :as rep]
    [yada.protocols :as p]
@@ -108,7 +109,12 @@
                       (.setTimeZone (TimeZone/getTimeZone "UTC")))
                     (java.util.Date. (.lastModified child)))]])]]]]))))
 
-(defn dir-resource-properties [dir]
+(defn dir-resource-properties [dir index-files]
+
+  ;; Look for a possible index file, (. dir list)
+
+  ;; If one matches, use it to construct a resource
+
   (let [indices (filter #{"README.md"} (seq (. dir list)))]
     {:exists? true
      :representations [{:media-type
@@ -119,7 +125,9 @@
      ::file dir
      ::indices indices}))
 
-(defrecord DirectoryResource [dir]
+(s/defrecord DirectoryResource
+    [dir :- File
+     index-files :- (s/maybe [java.util.regex.Pattern])]
   p/ResourceProperties
   (resource-properties [_]
     {:allowed-methods #{:get}
@@ -137,7 +145,7 @@
            ::file f}
 
           (.isDirectory f)
-          (dir-resource-properties f)
+          (dir-resource-properties f index-files)
 
           :otherwise
           {:exists? false}))
@@ -154,9 +162,12 @@
                    (get-in ctx [:resource-properties ::indices])
                    (-> ctx :response :representation :media-type))))))
 
+(defn new-directory-resource [dir opts]
+  (map->DirectoryResource (merge opts {:dir dir})))
+
 (extend-protocol p/ResourceCoercion
   File
   (as-resource [f]
     (if (.isDirectory f)
-      (->DirectoryResource f)
+      (map->DirectoryResource {:dir f})
       (->FileResource f))))

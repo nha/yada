@@ -118,7 +118,7 @@
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 
-(st/deftest dir-index-test
+#_(st/deftest dir-index-test
   (let [resource (yada (io/file "talks"))
         h (br/make-handler ["/" resource])
         req (request :get "/")

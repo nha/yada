@@ -254,3 +254,7 @@
 (defmethod render-error :default
   [status error representation {:keys [id options]}]
   nil)
+
+
+;; Expand on the idea that errors, org/markdown files, etc. can
+;; themselves be resources, yielding multiple representations.
