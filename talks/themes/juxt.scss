@@ -51,4 +51,43 @@ body:after {
     left: 1.5em;
 }
 
-.reveal .juxt_hide-heading h2, .reveal .juxt_hide-heading h3 { display: none; }
+.reveal .juxt_hide-heading {
+    h2, h3 { display: none; }
+}
+
+/* We want code headings to be smaller */
+
+.reveal h3 code {
+    font-size: 70%;
+}
+
+.reveal section.juxt_quote p {
+    text-align: left;
+    font-style: italic;
+}
+
+.reveal {
+    h1, h2, h3, * {
+        text-shadow: 2px 2px 3px rgba(0,0,0,0.0);
+    }
+}
+
+.reveal section.juxt_dark-bg {
+    h2, h3, p {
+        color: white;
+        text-shadow: 2px 4px 3px rgba(0,0,0,0.3);
+    }
+}
+
+.reveal section.juxt_spec blockquote {
+    text-align: left;
+    font-style: normal;
+    font-family: monospace;
+    font-size: 80%;
+    border-left: 8px dotted #888;
+    padding-left: 1em;
+}
+
+.reveal .slide-number {
+    display: none;
+}

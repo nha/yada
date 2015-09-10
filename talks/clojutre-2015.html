@@ -27,39 +27,66 @@
 <h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
 <h2></h2>
 </section>
+<aside class="notes">
+<p>
+Good afternoon, my name is Malcolm Sparks and I'm here to talk to you about HTTP Resources as Data.
+</p>
+
+</aside>
 
 <section>
-<section id="slide-orgheadline1">
-<h2 id="orgheadline1">Introduction</h2>
-<span style="font-family: yada">yada</span>: resources as data
-
+<section id="slide-orgheadline1" data-background="./static/assets/words.svg" class="juxt_hide-heading">
+<h2 id="orgheadline1">Opening</h2>
 <aside class="notes">
-nil
+<p>
+HTTP is the protocol that underpins the web.
+It's a big and complex specification.
+But why is so big?
+</p>
+
 </aside>
 
 </section>
 </section>
 <section>
 <section id="slide-orgheadline2">
-<h2 id="orgheadline2">HTTP</h2>
+<h2 id="orgheadline2">HTTP services</h2>
 <ul>
-<li>Designed for long-lived services</li>
-<li>Mature and widely implemented (proxies, browsers, servers, firewalls, etc.)</li>
-<li>Since last year, new clearer specs. RFC 7231 etc.</li>
+<li>scaleability</li>
+<li>longevity</li>
 
 </ul>
+
+<aside class="notes">
+<p>
+It's because HTTP is for services that are designed not to break under load,
+and to survive in an ever changing landscape, both as the application itself evolves and the world evolves around it.
+</p>
+
+<p>
+HTTP 1.1 has been stable for well over a decade, over which time we've seen it become implemented everywhere, from servers, from gateways and proxies, in hardware, to browsers, to mobile apps,
+</p>
+
+</aside>
 
 </section>
 </section>
 <section>
 <section id="slide-orgheadline3">
-<h2 id="orgheadline3">Ring</h2>
+<h2 id="orgheadline3">HTTP in Clojure: Ring</h2>
+<aside class="notes">
+<p>
+To build HTTP services in Clojure, we use Ring.
+We all love Ring don't we! Why?
+</p>
+
+</aside>
 
 </section>
 </section>
 <section>
 <section id="slide-orgheadline4">
-<h2 id="orgheadline4">Requests as Data</h2>
+<h2 id="orgheadline4">Ring loves Data!</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(def request
@@ -74,11 +101,6 @@ nil
 </code></pre>
 </div>
 
-</section>
-</section>
-<section>
-<section id="slide-orgheadline5" class="hide-heading">
-<h2 id="orgheadline5">Responses as Data</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(def response
@@ -88,52 +110,434 @@ nil
 </code></pre>
 </div>
 
+<aside class="notes">
+<p>
+Ring presents us an interface with our HTTP servers that is built on data. This is refreshing approach compared to object-oriented interfaces presented by Java servlets and others.
+</p>
+
+</aside>
+
 </section>
 </section>
 <section>
-<section id="slide-orgheadline6">
-<h2 id="orgheadline6">Ring middleware?</h2>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5">But&#x2026; Ring middleware?</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def api
+  (-&gt; routes
+      wrap-keyword-params
+      wrap-params
+      wrap-head
+      wrap-not-modified
+      wrap-json-response))
+</code></pre>
+</div>
+
+<aside class="notes">
 <p>
-Predominant approach to HTTP in Clojure
+But what about Ring middleware? With Ring middleware we implement HTTP, resource by resource, in bite-sized chunks.
 </p>
+
+<p>
+This is a 'pick-and-mix' approach - we pick the bits of HTTP we want to implement, or rather have time to implement, and ignore the rest.
+</p>
+
+<p>
+With Ring middleware, we compose handler functions from other handler functions.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6" data-background="./static/assets/pickmix.jpg" class="juxt_dark-bg juxt_hide-heading">
+<h2 id="orgheadline6">But&#x2026; Ring middleware?</h2>
+
 
 </section>
 </section>
 <section>
 <section id="slide-orgheadline7">
-<h2 id="orgheadline7">Example: wrap-head</h2>
-
-</section>
-</section>
-<section>
-<section id="slide-orgheadline8">
-<h2 id="orgheadline8">Example: wrap-modified</h2>
-
-
-
-</section>
-</section>
-<section>
-<section id="slide-orgheadline9" class="hide-heading">
-<h2 id="orgheadline9">Another slide</h2>
+<h2 id="orgheadline7">Ring middleware is perfect for building HTTP services. Discuss.</h2>
+<aside class="notes">
 <p>
-where we shouldn't see the heading
+Which begs the question: "Is functional composition the right tool for building HTTP services?"
 </p>
 
+<p>
+I'm a fan of functional programming in general, I enjoy the little Haskell programming I've done and I love it when I can solve a problem elegantly by composing functions together.
+</p>
+
+<p>
+But we don't often hear the case against, so let me present it.
+</p>
+
+<p>
+Here's my exhibit A.
+</p>
+
+</aside>
+
 </section>
 </section>
 <section>
-<section id="slide-orgheadline10" class="juxt_hide-heading">
-<h2 id="orgheadline10">Some more code</h2>
+<section id="slide-orgheadline8" class="juxt_spec">
+<h2 id="orgheadline8">Exhibit A: wrap-head</h2>
+<blockquote nil>
+<p>
+<b>4.3.2.  HEAD</b>
+</p>
+
+<p>
+"This method can be used for obtaining metadata about the selected
+  representation without transferring the representation data and is
+  often used for testing hypertext links for validity, accessibility,
+  and recent modification."
+</p>
+
+<p>
+― RFC 7231
+</p>
+</blockquote>
+
+<aside class="notes">
+<p>
+My first example has to do with our implementation of HTTP's HEAD method.
+First, let's remind ourselves what the HEAD method is for.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline9">
+<h2 id="orgheadline9">Exhibit A: wrap-head</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(defn update-routes [routes f &amp; args]
-  (postwalk
-   (fn [x]
-     (if (instance? Handler x)
-       (apply f x args)
-       x))
-   routes))
+<pre><code class="clojure">(defn head-request
+  "Turns a HEAD request into a GET."
+  {:added "1.2"}
+  [request]
+  (if (= :head (:request-method request))
+    (assoc request :request-method :get)
+    request))
+
+(defn head-response
+  "Returns a nil body if original request was a HEAD."
+  {:added "1.2"}
+  [response request]
+  (if (and response (= :head (:request-method request)))
+    (assoc response :body nil)
+    response))
+</code></pre>
+</div>
+
+<aside class="notes">
+<p>
+Here's the Ring middleware implementation of HEAD, taken straight out of Ring's code-base.
+</p>
+
+<p>
+In the first function, which processes the request, we take a HEAD request and turn it into a GET request. OK.
+</p>
+
+<p>
+We then process the GET request and get a full response, along with the full body.
+</p>
+
+<p>
+In the second function, we process the response. We replace the body with nil.
+</p>
+
+<p>
+Q. Can anyone see anything wrong with this approach?
+</p>
+
+<p>
+Yes, it's simple. But it's also inefficient and wasteful of resources that could be precious to you.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline10">
+<h2 id="orgheadline10">Exhibit B: Compojure routing</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(routes
+  (GET "/hello" [] (fn [req] "Hello World!"))
+  (POST "/hello" [] (fn [req] (launch-missiles)))
+  (fn [req] (not-found)))
+</code></pre>
+</div>
+
+<ul>
+<li>Q. Which HTTP status do we get from this Ring handler if we send a <code>PUT</code> request?</li>
+<li class="fragment appear">Q. Which HTTP status should we get?</li>
+
+</ul>
+
+<aside class="notes">
+<p>
+Let's move on to my second example. Here we have 2 functions, composed together. They happen to be Compojure functions, but they illustrate exactly the same problem.
+</p>
+
+<p>
+So question 1: Which HTTP status do we get from this Ring handler if we send a <code>POST</code>?
+</p>
+
+<p>
+And for the HTTP nerds in the audience: which HTTP status <b><b>should</b></b> we get?
+</p>
+
+<p>
+The very modularity of this design, causes us a problem. The fact that the GET and PUT functions don't know of each other's existence, and that the composed function has no knowledge of the nature of the functions it is composing, means that we cannot distinguish between a 404 and 405.
+</p>
+
+<p>
+And if it's OK to sacrifice HTTP on the altar of functional composition, where do we end up? Broken HTTP implementations, that miss out on the benefits the web is designed to provide.
+</p>
+
+<p>
+And there's a second issue here that I will only touch upon briefly here. The fact we are preferring functions over data, means we fall into the trap of thinking about HTTP resources as a set of functions too - and we are back to building Remote Procedure Calls. Hello CORBA!
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline11" class="juxt_spec">
+<h2 id="orgheadline11">Exhibit C: wrap-modified</h2>
+<blockquote nil>
+<p>
+<b>5.2.  Conditionals</b>
+</p>
+
+<p>
+The HTTP conditional request header fields [RFC7232] allow a client
+to place a precondition on the state of the target resource, so that
+the action corresponding to the method semantics will <b>not</b> be applied
+if the precondition evaluates to false.
+</p>
+
+<p>
+― RFC 7231
+</p>
+</blockquote>
+
+<aside class="notes">
+<p>
+For my final exhibit I present Ring's implementation of conditional requests. Again, let's remind ourselves what a conditional request is. The point of a conditional requets is to avoid wasted effort in constructing state that the requestor already has. It's part of HTTP's ability to scale services to, well, 'web-scale'.
+</p>
+
+<p>
+But let's look at Ring's implementation:
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline12">
+<h2 id="orgheadline12">Exhibit C: wrap-modified</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn wrap-not-modified
+  "Middleware that returns a 304 Not Modified from the wrapped handler
+  if the handler response has an ETag or Last-Modified header, and the
+  request has a If-None-Match or If-Modified-Since header that matches
+  the response."
+  {:added "1.2"}
+  [handler]
+  (fn [request]
+    (-&gt; (handler request) ; WAT?
+        (not-modified-response request))))
+</code></pre>
+</div>
+
+<aside class="notes">
+<p>
+Here's we see that the entire response is created <i>before</i> any predicate is evaluated. So it's a 'smoke-and-mirrors' approach to HTTP compliance. Let's try to fool the client into <i>thinking</i> we're a proper HTTP service.
+</p>
+
+<p>
+Is this the best we can do? Surely not.
+</p>
+
+<p>
+But is it a question of just improving the implementations of the standard Ring middleware functions. Unfortunately not. It's not really the fault of any single Ring middleware, because the Ring middleware has very few clues as to what the handler it is wrapping actually does.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline13" data-background="./static/assets/hhg.png" class="juxt_quote juxt_dark-bg">
+<h2 id="orgheadline13">Functions vs. Data…</h2>
+<p>
+Arthur Dent: What happens if I press this button?
+</p>
+
+<p>
+Ford Prefect: I wouldn't-
+</p>
+
+<p>
+Arthur Dent: Oh.
+</p>
+
+<p>
+Ford Prefect: What happened?
+</p>
+
+<p>
+Arthur Dent: A sign lit up, saying 'Please do not press this button again.'
+</p>
+
+<p>
+― Douglas Adams, The Original Hitchhiker Radio Scripts
+</p>
+
+<aside class="notes">
+<p>
+This reminds me of a scene in the original Hitchhiker's Guide to the Galaxy, where Arthur Dent and Ford Prefect find themselves on a highly advanced space craft.
+</p>
+
+<p>
+Arthur is curious about one of the controls and asks 'what happens if I press this button?' That's the same for Ring middleware. What happens when we call this function? We will never know unless we try. This isn't a great way of building information systems.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline14">
+<h2 id="orgheadline14">So is there an alternative?</h2>
+<aside class="notes">
+<p>
+So what's the alternative? I believe the answer has always been there, right under our noses. Of course, the answer is to go back to what we love about Ring.
+</p>
+
+<p>
+It's all about the data.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline15" data-background="#f8f8f8" class="juxt_hide-heading">
+<h2 id="orgheadline15">yada</h2>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+<aside class="notes">
+<p>
+So that's why I've created yada, and why I want to ask 10 more minutes of your time this afternoon to present it to you.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline21" data-background="#28c828" class="juxt_hide-heading">
+<h2 id="orgheadline21">yada is easy</h2>
+<span style="font-size: 150%"><span style="font-family: yada; font-size: 1.5em">yada</span> is easy</span>
+
+<p class="fragment (appear)">
+just one function
+</p>
+
+<p class="fragment (appear)">
+that returns a Ring handler
+</p>
+
+<aside class="notes">
+<p>
+DON'T PANIC! yada is just a function, which returns you a Ring handler. Let me explain with some examples.
+</p>
+
+</aside>
+
+</section>
+<section id="slide-orgheadline16">
+<h3 id="orgheadline16"><code>(yada "Hello World!")</code></h3>
+<aside class="notes">
+<p>
+yada is able to take a Java string and determine all kinds of things about it.
+</p>
+
+<p>
+And because we know when the yada function was called, we know the last possible modification date for the string.
+</p>
+
+<p>
+For instance, we know Java strings are immutable, so we can rule out PUT, POST and DELETE methods.
+</p>
+
+</aside>
+
+</section>
+<section id="slide-orgheadline17">
+<h3 id="orgheadline17"><code>(yada (atom "Hello World!"))</code></h3>
+<aside class="notes">
+<p>
+Unless the string is mutable, and then we can add in the unsafe methods too. We'll also add a watcher to the atom to know when updates are made, which will help us provide HTTP response headers to support conditional requests.
+</p>
+
+</aside>
+
+</section>
+<section id="slide-orgheadline18">
+<h3 id="orgheadline18"><code>(yada (fn [ctx] "Hello World!") {:allowed-methods #{:get}})</code></h3>
+<aside class="notes">
+<p>
+We can use functions too, and because yada can take an option map, we can augment them we data
+</p>
+
+</aside>
+
+</section>
+<section id="slide-orgheadline19">
+<h3 id="orgheadline19">clojure.java.io/file</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">["/talks/" (yada (clojure.java.io/file "talks"))]
+</code></pre>
+</div>
+
+<aside class="notes">
+<p>
+This presentation is being served by &lt;span style="font-family: yada"&gt;yada&lt;/span&gt; right now. Here's the code
+</p>
+
+</aside>
+
+</section>
+<section id="slide-orgheadline20">
+<h3 id="orgheadline20">and so on…</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(yada [1 2 3])
+
+(yada {:do "a dear, a female dear"
+       :re "(let's stop this now)"}
+
+(yada (clojure.core.async/chan))
+
+(yada (map-&gt;PostgresTable {:table "ACCOUNTS"}))
+
+(-&gt; "Let's go meta!" yada yada yada)
 </code></pre>
 </div>
 
@@ -141,21 +545,20 @@ where we shouldn't see the heading
 </section>
 </section>
 <section>
-<section id="slide-orgheadline20" data-background="#f8f8f8" class="juxt_hide-heading">
-<h2 id="orgheadline20">yada</h2>
-<span style="font-family: yada; font-size: 4em">yada</span>
-
-</section>
-<section id="slide-orgheadline11">
-<h3 id="orgheadline11">Full &amp; faithful implementation of HTTP</h3>
+<section id="slide-orgheadline32">
+<h2 id="orgheadline32">yada features</h2>
+<div class="outline-text-2" id="text-orgheadline32">
+</div></section>
+<section id="slide-orgheadline22">
+<h3 id="orgheadline22">Comprehensive faithful implementation of HTTP</h3>
 <ul>
-<li>Not finished, but in a useable state today</li>
+<li>Not 100% complete yet, but useable today</li>
 
 </ul>
 
 </section>
-<section id="slide-orgheadline12">
-<h3 id="orgheadline12">Parameter coercions</h3>
+<section id="slide-orgheadline23">
+<h3 id="orgheadline23">Parameter coercions</h3>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:parameters {:get {:query {"q" String}}}}
@@ -163,8 +566,8 @@ where we shouldn't see the heading
 </div>
 
 </section>
-<section id="slide-orgheadline13">
-<h3 id="orgheadline13">Content Negotiation</h3>
+<section id="slide-orgheadline24">
+<h3 id="orgheadline24">Content Negotiation</h3>
 <ul>
 <li>media types</li>
 <li>charsets</li>
@@ -180,8 +583,8 @@ where we shouldn't see the heading
 </div>
 
 </section>
-<section id="slide-orgheadline14">
-<h3 id="orgheadline14">Conditional Requests</h3>
+<section id="slide-orgheadline25">
+<h3 id="orgheadline25">Conditional Requests</h3>
 <p>
 Dates and ETags
 If-Modified-Since
@@ -190,44 +593,53 @@ If-Not-Match
 </p>
 
 </section>
-<section id="slide-orgheadline15">
-<h3 id="orgheadline15">Complementary to bidi</h3>
+<section id="slide-orgheadline26">
+<h3 id="orgheadline26">Complementary to bidi</h3>
 <p>
 Describe your whole API in data
 </p>
 
 </section>
-<section id="slide-orgheadline16">
-<h3 id="orgheadline16">Swagger built-in</h3>
+<section id="slide-orgheadline27">
+<h3 id="orgheadline27">Swagger built-in</h3>
+
+</section>
+<section id="slide-orgheadline28">
+<h3 id="orgheadline28"><code>(yada "Hello World!")</code></h3>
+
+<div class="figure">
+<p><img src="http://localhost:8090/static/img/hello-swagger.png" alt="hello-swagger.png" />
+</p>
+</div>
+
+</section>
+<section id="slide-orgheadline29">
+<h3 id="orgheadline29"><code>(yada (atom "Hello World!"))</code></h3>
+
+<div class="figure">
+<p><img src="http://localhost:8090/static/img/mutable-hello-swagger.png" alt="mutable-hello-swagger.png" />
+</p>
+</div>
+
 <aside class="notes">
 <p>
-(mention Tommi's talk)
+TODO: (mention Tommi's talk)
+yada is
 </p>
 
 </aside>
 
 </section>
-<section id="slide-orgheadline17">
-<h3 id="orgheadline17">e.g. Postwalk</h3>
+<section id="slide-orgheadline30">
+<h3 id="orgheadline30">e.g. Postwalk</h3>
 <div class="org-src-container">
 
 <pre><code class="clojure"></code></pre>
 </div>
 
 </section>
-<section id="slide-orgheadline18">
-<h3 id="orgheadline18">Async</h3>
-<p>
-Based on manifold
-</p>
-<ul>
-<li>not just when returning the response, but all callbacks, including those asking for data</li>
-
-</ul>
-
-</section>
-<section id="slide-orgheadline19">
-<h3 id="orgheadline19">Much more</h3>
+<section id="slide-orgheadline31">
+<h3 id="orgheadline31">Much more</h3>
 <p>
 Basic/custom authentication, CORS, custom methods
 </p>
@@ -235,50 +647,128 @@ Basic/custom authentication, CORS, custom methods
 </section>
 </section>
 <section>
-<section id="slide-orgheadline26">
-<h2 id="orgheadline26">yada is easy</h2>
+<section id="slide-orgheadline33">
+<h2 id="orgheadline33">yada does async</h2>
+<aside class="notes">
 <p>
-yada is just a function which produces a record
+Another problem with a functional composition approach taken by Ring middlware is that ties the entire request processing cycle to a single thread. Many other language communities are fully embracing an asynchronous to address the resource limitations of this approach.
 </p>
 
-</section>
-<section id="slide-orgheadline21">
-<h3 id="orgheadline21">(yada "Hello World!")</h3>
-
-
-</section>
-<section id="slide-orgheadline22">
-<h3 id="orgheadline22">(yada (atom "Hello World!"))</h3>
-
-
-
-</section>
-<section id="slide-orgheadline23">
-<h3 id="orgheadline23">(yada (fn [ctx] "Hello World!") {:methods #{:get}})</h3>
-
-
-</section>
-<section id="slide-orgheadline24">
-<h3 id="orgheadline24">(yada (io/file "talks") {:id ::index})</h3>
-<div class="org-src-container">
-
-<pre><code class="clojure">["/talks/" (yada (io/file "talks") {:id ::index})]
-</code></pre>
-</div>
-
-</section>
-<section id="slide-orgheadline25">
-<h3 id="orgheadline25">(yada (map-&gt;PostgresTable {:table "ACCOUNTS"}))</h3>
+</aside>
 
 </section>
 </section>
 <section>
-<section id="slide-orgheadline27">
-<h2 id="orgheadline27">yada is Ring compatible</h2>
+<section id="slide-orgheadline38">
+<h2 id="orgheadline38">async in yada</h2>
+<ul>
+<li>Based on <a href="https://github.com/ztellman/manifold">https://github.com/ztellman/manifold</a></li>
+<li>Async everywhere</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline34">
+<h3 id="orgheadline34">If in doubt, return a <code>future</code></h3>
+
+</section>
+<section id="slide-orgheadline35">
+<h3 id="orgheadline35">Or a <code>promise</code></h3>
+
+</section>
+<section id="slide-orgheadline36">
+<h3 id="orgheadline36">Or any kind of <code>deferred</code></h3>
 <p>
-The yada record satisfies clojure.lang.Fn, and can be used as a Ring
-handler.
+Here's a full search engine implementation!
 </p>
+
+<div class="org-src-container">
+
+<pre><code class="clojure">(defrecord SearchEngine []
+  ResourceProperties
+  (resource-properties [_]
+    {:parameters {:get {:query {"q" String}}}})
+  Get
+  (GET [_ ctx]
+    (aleph.http/get
+     (str "https://www.google.com/q=" (get-in ctx [:parameters "q"])))))
+
+;; Bidi!
+["/search" (yada (-&gt;SearchEngine))]
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline37">
+<h3 id="orgheadline37">Async everywhere!</h3>
+<aside class="notes">
+<p>
+yada allows you to do this anytime it makes sense, and even some places I'm sure where it doesn't. For the vast majority of options, protocol functions and callbacks, you can choose to return deferred values like futures, promises, core.async channels and more. yada, or rather manifold, takes care of the rest.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline39">
+<h2 id="orgheadline39">Full documentation!</h2>
+<p>
+yada.juxt.pro
+</p>
+
+
+<div class="figure">
+<p><img src="./static/assets/docs.png" alt="docs.png" />
+</p>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline40">
+<h2 id="orgheadline40">History &amp; Roadmap</h2>
+<ul>
+<li>Started 2014-12-22</li>
+<li>0.1.0 Release 2015-03-01</li>
+<li>0.2.0 Release 2015-03-20</li>
+<li>0.3.0 Release 2015-04-26</li>
+<li>0.4.0 Release 2015-05-12</li>
+<li><b>1.0-SNAPSHOT beta cycle started 2015-08-03</b></li>
+<li>1.0 final slated for early 2016</li>
+
+</ul>
+
+<p>
+JUXT will offer commercial support packages to organizations adopting 1.0 final
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline41">
+<h2 id="orgheadline41">License</h2>
+<p>
+MIT
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline42" data-background="#f8f8f8" class="juxt_hide-heading">
+<h2 id="orgheadline42">yada</h2>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+<p>
+<a href="https://github.com/juxt/yada">https://github.com/juxt/yada</a>
+</p>
+
+<aside class="notes">
+<p>
+That's the end. But we might have a couple of minutes for questions.
+</p>
+
+</aside>
 </section>
 </section>
 </div>
@@ -291,7 +781,7 @@ handler.
 // https://github.com/hakimel/reveal.js#configuration
 Reveal.initialize({
 
-controls: true,
+controls: false,
 progress: true,
 history: true,
 center: true,

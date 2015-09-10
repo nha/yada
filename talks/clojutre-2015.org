@@ -1,11 +1,12 @@
 #+EXPORT_EXCLUDE_TAGS:  noexport
 #+AUTHOR:               Malcolm Sparks
 #+EMAIL:                @malcolmsparks
+#+TITLE:                HTTP Resources as Data
 #+LANGUAGE:             en
 #+OPTIONS:              toc:nil
-#+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
+#+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:nil
 #+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
-#+OPTIONS:              width:1680 height:1050
+#+OPTIONS:              width:1600 height:900
 #+REVEAL_HLEVEL:        1
 #+REVEAL_MARGIN:        0.0
 #+REVEAL_MIN_SCALE:     1.0
@@ -16,23 +17,43 @@
 #+REVEAL_ROOT:          static
 #+REVEAL_PLUGINS: (highlight markdown notes)
 #+REVEAL_EXTRA_CSS: static/css/hljs/zenburn.css
-#+TITLE:                HTTP Resources as Data
-
-* Introduction
-
-#+REVEAL_HTML: <span style="font-family: yada">yada</span>: resources as data
 
 #+BEGIN_NOTES
+Good afternoon, my name is Malcolm Sparks and I'm here to talk to you about HTTP Resources as Data.
 #+END_NOTES
 
-* HTTP
-- Designed for long-lived services
-- Mature and widely implemented (proxies, browsers, servers, firewalls, etc.)
-- Since last year, new clearer specs. RFC 7231 etc.
+* Opening
+  :PROPERTIES:
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :reveal_background: ./static/assets/words.svg
+  :END:
 
-* Ring
+#+BEGIN_NOTES
+HTTP is the protocol that underpins the web.
+It's a big and complex specification.
+But why is so big?
+#+END_NOTES
 
-* Requests as Data
+* HTTP services
+
+- scaleability
+- longevity
+
+#+BEGIN_NOTES
+It's because HTTP is for services that are designed not to break under load,
+and to survive in an ever changing landscape, both as the application itself evolves and the world evolves around it.
+
+HTTP 1.1 has been stable for well over a decade, over which time we've seen it become implemented everywhere, from servers, from gateways and proxies, in hardware, to browsers, to mobile apps,
+#+END_NOTES
+
+* HTTP in Clojure: Ring
+
+#+BEGIN_NOTES
+To build HTTP services in Clojure, we use Ring.
+We all love Ring don't we! Why?
+#+END_NOTES
+
+* Ring loves Data!
 
 #+BEGIN_SRC clojure
   (def request
@@ -46,11 +67,6 @@
      :headers {"host" "www.google.com"}})
 #+END_SRC
 
-* Responses as Data
-  :PROPERTIES:
-  :reveal_extra_attr: class="hide-heading"
-  :END:
-
 #+BEGIN_SRC clojure
   (def response
     {:status 200
@@ -58,37 +74,213 @@
      :body "Hello World!"})
 #+END_SRC
 
-* Ring middleware?
-Predominant approach to HTTP in Clojure
+#+BEGIN_NOTES
+Ring presents us an interface with our HTTP servers that is built on data. This is refreshing approach compared to object-oriented interfaces presented by Java servlets and others.
+#+END_NOTES
 
-* Example: wrap-head
-
-* Example: wrap-modified
-
-
-
-* Another slide
-  :PROPERTIES:
-  :reveal_extra_attr: class="hide-heading"
-  :END:
-
-where we shouldn't see the heading
-
-* Some more code
-  :PROPERTIES:
-  :reveal_extra_attr: class="juxt_hide-heading"
-  :END:
+* But... Ring middleware?
+#  :PROPERTIES:
+#  :reveal_background: ./static/assets/pickmix.jpg
+#  :reveal_extra_attr: class="juxt_dark-bg"
+#  :END:
 
 #+BEGIN_SRC clojure
-(defn update-routes [routes f & args]
-  (postwalk
-   (fn [x]
-     (if (instance? Handler x)
-       (apply f x args)
-       x))
-   routes))
+  (def api
+    (-> routes
+        wrap-keyword-params
+        wrap-params
+        wrap-head
+        wrap-not-modified
+        wrap-json-response))
 #+END_SRC
 
+#+BEGIN_NOTES
+But what about Ring middleware? With Ring middleware we implement HTTP, resource by resource, in bite-sized chunks.
+
+This is a 'pick-and-mix' approach - we pick the bits of HTTP we want to implement, or rather have time to implement, and ignore the rest.
+
+With Ring middleware, we compose handler functions from other handler functions.
+#+END_NOTES
+
+* But... Ring middleware?
+  :PROPERTIES:
+  :reveal_background: ./static/assets/pickmix.jpg
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+
+* Ring middleware is perfect for building HTTP services. Discuss.
+
+#+BEGIN_NOTES
+Which begs the question: "Is functional composition the right tool for building HTTP services?"
+
+I'm a fan of functional programming in general, I enjoy the little Haskell programming I've done and I love it when I can solve a problem elegantly by composing functions together.
+
+But we don't often hear the case against, so let me present it.
+
+Here's my exhibit A.
+#+END_NOTES
+
+* Exhibit A: wrap-head
+  :PROPERTIES:
+  :reveal_extra_attr: class="juxt_spec"
+  :END:
+
+#+BEGIN_QUOTE
+*4.3.2.  HEAD*
+
+ "This method can be used for obtaining metadata about the selected
+   representation without transferring the representation data and is
+   often used for testing hypertext links for validity, accessibility,
+   and recent modification."
+
+― RFC 7231
+#+END_QUOTE
+
+#+BEGIN_NOTES
+My first example has to do with our implementation of HTTP's HEAD method.
+First, let's remind ourselves what the HEAD method is for.
+#+END_NOTES
+
+* Exhibit A: wrap-head
+
+#+BEGIN_SRC clojure
+  (defn head-request
+    "Turns a HEAD request into a GET."
+    {:added "1.2"}
+    [request]
+    (if (= :head (:request-method request))
+      (assoc request :request-method :get)
+      request))
+
+  (defn head-response
+    "Returns a nil body if original request was a HEAD."
+    {:added "1.2"}
+    [response request]
+    (if (and response (= :head (:request-method request)))
+      (assoc response :body nil)
+      response))
+#+END_SRC
+
+#+BEGIN_NOTES
+Here's the Ring middleware implementation of HEAD, taken straight out of Ring's code-base.
+
+In the first function, which processes the request, we take a HEAD request and turn it into a GET request. OK.
+
+We then process the GET request and get a full response, along with the full body.
+
+In the second function, we process the response. We replace the body with nil.
+
+Q. Can anyone see anything wrong with this approach?
+
+Yes, it's simple. But it's also inefficient and wasteful of resources that could be precious to you.
+
+#+END_NOTES
+
+* Exhibit B: Compojure routing
+
+#+BEGIN_SRC clojure
+  (routes
+    (GET "/hello" [] (fn [req] "Hello World!"))
+    (POST "/hello" [] (fn [req] (launch-missiles)))
+    (fn [req] (not-found)))
+#+END_SRC
+
+#+ATTR_REVEAL: :frag (none appear)
+- Q. Which HTTP status do we get from this Ring handler if we send a =PUT= request?
+- Q. Which HTTP status should we get?
+
+#+BEGIN_NOTES
+Let's move on to my second example. Here we have 2 functions, composed together. They happen to be Compojure functions, but they illustrate exactly the same problem.
+
+So question 1: Which HTTP status do we get from this Ring handler if we send a =POST=?
+
+And for the HTTP nerds in the audience: which HTTP status **should** we get?
+
+The very modularity of this design, causes us a problem. The fact that the GET and PUT functions don't know of each other's existence, and that the composed function has no knowledge of the nature of the functions it is composing, means that we cannot distinguish between a 404 and 405.
+
+And if it's OK to sacrifice HTTP on the altar of functional composition, where do we end up? Broken HTTP implementations, that miss out on the benefits the web is designed to provide.
+
+And there's a second issue here that I will only touch upon briefly here. The fact we are preferring functions over data, means we fall into the trap of thinking about HTTP resources as a set of functions too - and we are back to building Remote Procedure Calls. Hello CORBA!
+#+END_NOTES
+
+* Exhibit C: wrap-modified
+  :PROPERTIES:
+  :reveal_extra_attr: class="juxt_spec"
+  :END:
+
+#+BEGIN_QUOTE
+*5.2.  Conditionals*
+
+   The HTTP conditional request header fields [RFC7232] allow a client
+   to place a precondition on the state of the target resource, so that
+   the action corresponding to the method semantics will *not* be applied
+   if the precondition evaluates to false.
+
+― RFC 7231
+#+END_QUOTE
+
+#+BEGIN_NOTES
+For my final exhibit I present Ring's implementation of conditional requests. Again, let's remind ourselves what a conditional request is. The point of a conditional requets is to avoid wasted effort in constructing state that the requestor already has. It's part of HTTP's ability to scale services to, well, 'web-scale'.
+
+But let's look at Ring's implementation:
+#+END_NOTES
+
+* Exhibit C: wrap-modified
+
+#+BEGIN_SRC clojure
+  (defn wrap-not-modified
+    "Middleware that returns a 304 Not Modified from the wrapped handler
+    if the handler response has an ETag or Last-Modified header, and the
+    request has a If-None-Match or If-Modified-Since header that matches
+    the response."
+    {:added "1.2"}
+    [handler]
+    (fn [request]
+      (-> (handler request) ; WAT?
+          (not-modified-response request))))
+#+END_SRC
+
+#+BEGIN_NOTES
+Here's we see that the entire response is created /before/ any predicate is evaluated. So it's a 'smoke-and-mirrors' approach to HTTP compliance. Let's try to fool the client into /thinking/ we're a proper HTTP service.
+
+Is this the best we can do? Surely not.
+
+But is it a question of just improving the implementations of the standard Ring middleware functions. Unfortunately not. It's not really the fault of any single Ring middleware, because the Ring middleware has very few clues as to what the handler it is wrapping actually does.
+
+#+END_NOTES
+
+* Functions vs. Data…
+  :PROPERTIES:
+  :reveal_background: ./static/assets/hhg.png
+  :reveal_extra_attr: class="juxt_quote juxt_dark-bg"
+  :END:
+
+Arthur Dent: What happens if I press this button?
+
+Ford Prefect: I wouldn't-
+
+Arthur Dent: Oh.
+
+Ford Prefect: What happened?
+
+Arthur Dent: A sign lit up, saying 'Please do not press this button again.'
+
+― Douglas Adams, The Original Hitchhiker Radio Scripts
+
+#+BEGIN_NOTES
+This reminds me of a scene in the original Hitchhiker's Guide to the Galaxy, where Arthur Dent and Ford Prefect find themselves on a highly advanced space craft.
+
+Arthur is curious about one of the controls and asks 'what happens if I press this button?' That's the same for Ring middleware. What happens when we call this function? We will never know unless we try. This isn't a great way of building information systems.
+#+END_NOTES
+
+* So is there an alternative?
+
+#+BEGIN_NOTES
+So what's the alternative? I believe the answer has always been there, right under our noses. Of course, the answer is to go back to what we love about Ring.
+
+It's all about the data.
+#+END_NOTES
 
 * yada
   :PROPERTIES:
@@ -97,8 +289,80 @@ where we shouldn't see the heading
   :END:
 #+REVEAL_HTML: <span style="font-family: yada; font-size: 4em">yada</span>
 
-** Full & faithful implementation of HTTP
-- Not finished, but in a useable state today
+#+BEGIN_NOTES
+So that's why I've created yada, and why I want to ask 10 more minutes of your time this afternoon to present it to you.
+#+END_NOTES
+
+* yada is easy
+  :PROPERTIES:
+  :reveal_background: #28c828
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+
+#+REVEAL_HTML: <span style="font-size: 150%"><span style="font-family: yada; font-size: 1.5em">yada</span> is easy</span>
+
+#+ATTR_REVEAL: :frag (appear)
+just one function
+
+#+ATTR_REVEAL: :frag (appear)
+that returns a Ring handler
+
+#+BEGIN_NOTES
+DON'T PANIC! yada is just a function, which returns you a Ring handler. Let me explain with some examples.
+#+END_NOTES
+
+** =(yada "Hello World!")=
+
+#+BEGIN_NOTES
+yada is able to take a Java string and determine all kinds of things about it.
+
+And because we know when the yada function was called, we know the last possible modification date for the string.
+
+For instance, we know Java strings are immutable, so we can rule out PUT, POST and DELETE methods.
+#+END_NOTES
+
+** =(yada (atom "Hello World!"))=
+
+#+BEGIN_NOTES
+Unless the string is mutable, and then we can add in the unsafe methods too. We'll also add a watcher to the atom to know when updates are made, which will help us provide HTTP response headers to support conditional requests.
+#+END_NOTES
+
+** =(yada (fn [ctx] "Hello World!") {:allowed-methods #{:get}})=
+
+#+BEGIN_NOTES
+We can use functions too, and because yada can take an option map, we can augment them we data
+#+END_NOTES
+
+** clojure.java.io/file
+
+#+BEGIN_SRC clojure
+["/talks/" (yada (clojure.java.io/file "talks"))]
+#+END_SRC
+
+#+BEGIN_NOTES
+This presentation is being served by <span style="font-family: yada">yada</span> right now. Here's the code
+#+END_NOTES
+
+** and so on…
+
+#+BEGIN_SRC clojure
+(yada [1 2 3])
+
+(yada {:do "a dear, a female dear"
+       :re "(let's stop this now)"}
+
+(yada (clojure.core.async/chan))
+
+(yada (map->PostgresTable {:table "ACCOUNTS"}))
+
+(-> "Let's go meta!" yada yada yada)
+#+END_SRC
+
+
+* yada features
+
+** Comprehensive faithful implementation of HTTP
+- Not 100% complete yet, but useable today
 
 ** Parameter coercions
 #+BEGIN_SRC clojure
@@ -128,8 +392,17 @@ Describe your whole API in data
 
 ** Swagger built-in
 
+** =(yada "Hello World!")=
+
+[[http://localhost:8090/static/img/hello-swagger.png]]
+
+** =(yada (atom "Hello World!"))=
+
+[[http://localhost:8090/static/img/mutable-hello-swagger.png]]
+
 #+BEGIN_NOTES
-(mention Tommi's talk)
+TODO: (mention Tommi's talk)
+yada is
 #+END_NOTES
 
 ** e.g. Postwalk
@@ -138,36 +411,79 @@ Describe your whole API in data
 
 #+END_SRC
 
-** Async
-Based on manifold
-- not just when returning the response, but all callbacks, including those asking for data
-
 ** Much more
 Basic/custom authentication, CORS, custom methods
 
-* yada is easy
+* yada does async
 
-yada is just a function which produces a record
+#+BEGIN_NOTES
+Another problem with a functional composition approach taken by Ring middlware is that ties the entire request processing cycle to a single thread. Many other language communities are fully embracing an asynchronous to address the resource limitations of this approach.
+#+END_NOTES
 
-** (yada "Hello World!")
+* async in yada
 
+- Based on https://github.com/ztellman/manifold
+- Async everywhere
 
-** (yada (atom "Hello World!"))
+** If in doubt, return a =future=
 
+** Or a =promise=
 
+** Or any kind of =deferred=
 
-** (yada (fn [ctx] "Hello World!") {:methods #{:get}})
-
-
-** (yada (io/file "talks") {:id ::index})
+Here's a full search engine implementation!
 
 #+BEGIN_SRC clojure
-["/talks/" (yada (io/file "talks") {:id ::index})]
+  (defrecord SearchEngine []
+    ResourceProperties
+    (resource-properties [_]
+      {:parameters {:get {:query {"q" String}}}})
+    Get
+    (GET [_ ctx]
+      (aleph.http/get
+       (str "https://www.google.com/q=" (get-in ctx [:parameters "q"])))))
+
+  ;; Bidi!
+  ["/search" (yada (->SearchEngine))]
 #+END_SRC
 
-** (yada (map->PostgresTable {:table "ACCOUNTS"}))
+** Async everywhere!
 
-* yada is Ring compatible
+#+BEGIN_NOTES
+yada allows you to do this anytime it makes sense, and even some places I'm sure where it doesn't. For the vast majority of options, protocol functions and callbacks, you can choose to return deferred values like futures, promises, core.async channels and more. yada, or rather manifold, takes care of the rest.
+#+END_NOTES
 
-The yada record satisfies clojure.lang.Fn, and can be used as a Ring
-handler.
+* Full documentation!
+
+yada.juxt.pro
+
+[[./static/assets/docs.png]]
+
+* History & Roadmap
+
+- Started 2014-12-22
+- 0.1.0 Release 2015-03-01
+- 0.2.0 Release 2015-03-20
+- 0.3.0 Release 2015-04-26
+- 0.4.0 Release 2015-05-12
+- *1.0-SNAPSHOT beta cycle started 2015-08-03*
+- 1.0 final slated for early 2016
+
+JUXT will offer commercial support packages to organizations adopting 1.0 final
+
+* License
+
+MIT
+
+* yada
+  :PROPERTIES:
+  :reveal_background: #f8f8f8
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+#+REVEAL_HTML: <span style="font-family: yada; font-size: 4em">yada</span>
+
+https://github.com/juxt/yada
+
+#+BEGIN_NOTES
+That's the end. But we might have a couple of minutes for questions.
+#+END_NOTES
