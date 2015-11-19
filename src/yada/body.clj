@@ -227,7 +227,7 @@
 
 (defmethod render-error "text/plain"
   [status error representation {:keys [id options]}]
-  (str error \newline))
+  (str (.getMessage error) \newline))
 
 (defmethod render-error :default
   [status error representation {:keys [id options]}]

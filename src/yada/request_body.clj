@@ -5,7 +5,25 @@
    [byte-streams :as b]
    [clojure.tools.logging :refer :all]
    [ring.swagger.schema :as rs]
+   [manifold.deferred :as d]
    [manifold.stream :as s]))
+
+(defmulti process-request-body
+  (fn [ctx body-stream content-type & args]
+    (:name content-type)))
+
+(defmethod process-request-body :default
+  [ctx body-stream media-type & args]
+  (d/error-deferred (ex-info "Unsupported Media Type" {:status 418})))
+
+(defmethod process-request-body "application/octet-stream"
+  [ctx body-stream media-type & args]
+  (d/chain
+   (s/reduce (fn [acc buf] (inc acc)) 0 body-stream)
+   (fn [acc]
+     (infof ":default acc is %s" acc))
+   )
+  ctx)
 
 ;; Deprecated?
 
