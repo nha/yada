@@ -18,7 +18,7 @@
 
   m/Post
   (POST [_ ctx]
-    (throw (ex-info "TODO" {:request (:request ctx)})))
+    (throw (ex-info "TODO: body should be accessible somewhere" {:request (:request ctx)})))
 
   m/Get
   (GET [_ ctx] "Index"))

@@ -212,7 +212,6 @@
     (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
     (let [content-type (mt/string->media-type
                         (get-in request [:headers "content-type"]))]
-      ;; TODO: Unknown or unsupported Content-* header
       (rb/process-request-body
        ctx
        (stream/map bs/to-byte-array (:body request))

@@ -6,15 +6,28 @@
    [clojure.tools.logging :refer :all]
    [ring.swagger.schema :as rs]
    [manifold.deferred :as d]
-   [manifold.stream :as s]))
+   [manifold.stream :as s]
+   [yada.media-type :as mt]))
+
+(def application_octet-stream
+  (mt/string->media-type "application/octet-stream"))
 
 (defmulti process-request-body
   (fn [ctx body-stream content-type & args]
     (:name content-type)))
 
+;; We return 418 if there's a content-type which we don't
+;; recognise. Using the multimethods :default method is a nice trick for
+;; this, because it's open for extension.
 (defmethod process-request-body :default
   [ctx body-stream media-type & args]
   (d/error-deferred (ex-info "Unsupported Media Type" {:status 418})))
+
+;; A nil (or missing) Content-Type header is treated as
+;; application/octet-stream.
+(defmethod process-request-body nil
+  [ctx body-stream media-type & args]
+  (process-request-body ctx body-stream application_octet-stream))
 
 (defmethod process-request-body "application/octet-stream"
   [ctx body-stream media-type & args]
