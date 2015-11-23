@@ -185,7 +185,7 @@
   Content-Length or Transfer-Encoding header, regardless of the method
   semantics."
   [{:keys [request] :as ctx}]
-  (cond
+  (if
     (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
     (let [content-type (mt/string->media-type
                         (get-in request [:headers "content-type"]))]
@@ -194,7 +194,8 @@
        (stream/map bs/to-byte-array (:body request))
        content-type))
 
-    :otherwise ctx))
+    ;; else
+    ctx))
 
 #_(defn process-request-body [ctx]
   ;; Only read the body if the parameters include :form or :body,

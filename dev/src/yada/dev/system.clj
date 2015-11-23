@@ -109,17 +109,17 @@
   (apply system-map
     (apply concat
       (-> {}
-          #_(database-components)
-        #_(api-components)
-        #_(docsite-components config)
-        #_(swagger-ui-components)
-        #_(http-server-components config)
-        #_(hello-world-components config)
-        #_(error-components)
-        #_(cors-demo-components config)
-        #_(talks-components config)
-        (phonebook-components config)
-        #_(selfie-components config)
+          (database-components)
+          (api-components)
+          (docsite-components config)
+          (swagger-ui-components)
+          (http-server-components config)
+          (hello-world-components config)
+          (error-components)
+          (cors-demo-components config)
+          (talks-components config)
+          (phonebook-components config)
+          (selfie-components config)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
         (assoc :console-redirect (new-redirect :from "/" :to :yada.dev.console/index))
@@ -128,46 +128,46 @@
 
 (defn new-dependency-map
   []
-  {#_:docsite-server #_{:request-handler :docsite-router}
-   #_:console-server #_{:request-handler :console-router}
-   #_:cors-demo-server #_{:request-handler :cors-demo-router}
-   #_:talks-server #_{:request-handler :talks-router}
+  {:docsite-server {:request-handler :docsite-router}
+   :console-server {:request-handler :console-router}
+   :cors-demo-server {:request-handler :cors-demo-router}
+   :talks-server {:request-handler :talks-router}
 
-   #_:docsite-router #_[:swagger-ui
-                        :hello-world
-                        :error-example
-                        :user-api
-                        :user-manual
-                        :docsite
-                        :jquery :bootstrap
-                        :web-resources
-                        :highlight-js-resources
-                        :docsite-redirect]
+   :docsite-router [:swagger-ui
+                    :hello-world
+                    :error-example
+                    :user-api
+                    :user-manual
+                    :docsite
+                    :jquery :bootstrap
+                    :web-resources
+                    :highlight-js-resources
+                    :docsite-redirect]
 
-   #_:console-router #_[:console
-                        :console-redirect]
+   :console-router [:console
+                    :console-redirect]
 
-   #_:cors-demo-router #_[:cors-demo
-                          :jquery :bootstrap
-                          :web-resources
-                          :highlight-js-resources
-                          :cors-demo-redirect]
+   :cors-demo-router [:cors-demo
+                      :jquery :bootstrap
+                      :web-resources
+                      :highlight-js-resources
+                      :cors-demo-redirect]
 
-   #_:talks-router #_[:talks
-                      :talks-redirect]})
+   :talks-router [:talks
+                  :talks-redirect]})
 
 (defn new-co-dependency-map
   []
-  {#_:docsite #_{:router :docsite-router
-                 :cors-demo-router :cors-demo-router
-                 :talks-router :talks-router
-                 :console-router :console-router
-                 :phonebook :phonebook
-                 :selfie :selfie}
-   #_:user-manual #_{:router :docsite-router}
-   #_:console #_{:router :console-router}
-   #_:cors-demo #_{:router :cors-demo-router}
-   #_:talks #_{:router :talks-router}})
+  {:docsite {:router :docsite-router
+             :cors-demo-router :cors-demo-router
+             :talks-router :talks-router
+             :console-router :console-router
+             :phonebook :phonebook
+             :selfie :selfie}
+   :user-manual {:router :docsite-router}
+   :console {:router :console-router}
+   :cors-demo {:router :cors-demo-router}
+   :talks {:router :talks-router}})
 
 (defn new-production-system
   "Create the production system"
