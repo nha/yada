@@ -137,29 +137,32 @@
   (idempotent? [_] true)
   (request [this ctx]
 
-    (infof "ctx is %s" ctx)
-
-    ;; TODO: exists? could be still deferred
-    (when-not (ctx/exists? ctx)
-      (throw (ex-info "" {:status 404})))
-
-    (when-not (-> ctx :response :representation)
-      (throw
-       (ex-info "" {:status 406})))
-
     (->
      (d/chain
 
+      (ctx/exists? ctx)
+
+      (fn [exists?]
+        (if exists?
+          (-> ctx :response :representation)
+          (d/error-deferred (ex-info "" {:status 404}))))
+
+      (fn [representation]
+        (if representation
+          :ok
+          (d/error-deferred (ex-info "" {:status 406}))))
+
       ;; function normally returns a (possibly deferred) body.
-      (if-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
-        (try
-          (f ctx)
-          (catch Exception e
-            (d/error-deferred e)))
-        ;; No handler!
-        (d/error-deferred
-         (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
-                  {:status 500})))
+      (fn [x]
+        (if-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
+          (try
+            (f ctx)
+            (catch Exception e
+              (d/error-deferred e)))
+          ;; No handler!
+          (d/error-deferred
+           (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
+                    {:status 500}))))
 
       (fn [res]
         (interpret-get-result res ctx))

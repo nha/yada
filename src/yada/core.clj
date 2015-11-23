@@ -44,30 +44,6 @@
 
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
-(defn round-seconds-up
-  "Round up to the nearest second. The rationale here is that
-  last-modified times from resources have a resolution of a millisecond,
-  but HTTP dates have a resolution of a second. This makes testing 304
-  harder. By ceiling every date to the nearest (future) second, we
-  side-step this problem, constructing a 'weak' validator. See
-  rfc7232.html 2.1. If an update happens a split-second after the
-  previous update, it's possible that a client might miss an
-  update. However, the point is that user agents using dates don't
-  generally care about having the very latest if they're using
-  If-Modified-Since, otherwise they'd omit the header completely. In the
-  spec. this is allowable semantics under the rules of weak validators.
-
-  TODO: This violates this part of the spec. Need an alternative implementation
-  \"An origin server with a clock MUST NOT send a Last-Modified date that
-   is later than the server's time of message origination (Date).\" — RFC7232 2.2.1 "
-  [d]
-  (when d
-    (let [n (.getTime d)
-          m (mod n 1000)]
-      (if (pos? m)
-        (Date. (+ (- n m) 1000))
-        d))))
-
 (def realms-xf
   (comp
    (filter (comp (partial = :basic) :type))
@@ -371,42 +347,24 @@
         ;; Otherwise
         ctx)))
 
-#_(defn get-properties
+(defn get-properties
   [ctx]
-  (let [resource (:resource ctx)]
-    (infof "get-properties, existing is %s" (:properties ctx))
+  (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
     (d/chain
 
-     (resource/properties-on-request resource ctx)
+     (propsfn ctx) ; propsfn can returned a deferred
 
      (fn [props]
-       (infof "properties on request yields: %s" props)
-       props)
+       (infof "Properties is %s" props)
+       (assoc ctx :properties props))
 
-     ;; TODO: It is now illegal to return :parameters from
-     ;; properties-on-request because it's TOO LATE. parse-parameters
-     ;; has already been called. Ensure that the resource's
-     ;; properties-on-request is not attempting to return :parameters
-
-     (fn [props]
+     ;; Need a way of allowing produces to be dynamic
+     #_(fn [props]
        ;; Canonicalize possible representations if they are reasserted.
        (cond-> props
          (:representations props)
          (update-in [:representations]
-                    (comp rep/representation-seq rep/coerce-representations))))
-     (fn [props]
-       (if (schema.utils/error? props)
-         (d/error-deferred
-          ;; TODO: More thorough error handling
-          ;; TODO: Test me!
-          (ex-info "Internal Server Error"
-                   {:status 500
-                    :error props}))
-
-         (-> ctx
-             (assoc-in [:representations] (or (:representations props)
-                                              (-> ctx :handler :representations)))
-             (update-in [:properties] merge props)))))))
+                    (comp rep/representation-seq rep/coerce-representations)))))))
 
 #_(defn authentication
   "Authentication"
@@ -452,7 +410,9 @@
     (-> ctx :properties :last-modified))
 
    (fn [last-modified]
-     (if-let [last-modified (round-seconds-up last-modified)]
+     (infof "last-modified: %s" last-modified)
+
+     (if last-modified
 
        (if-let [if-modified-since
                 (some-> (:request ctx)
@@ -789,7 +749,7 @@
 
    process-request-body
 
-   ;; get-properties
+   get-properties
 
 ;;   authentication
 ;;   authorization
@@ -810,7 +770,6 @@
    ])
 
 (defn expand-shorthand [resource]
-  (infof "Expanding: resource %s" resource)
   (let [res (->> resource
                  (postwalk
                   (fn [x]
@@ -819,7 +778,6 @@
                                      rep/coerce-representations
                                      rep/representation-seq)]
                       x))))]
-    (infof "Final resource: %s" (into {} res))
     res))
 
 (defn handler
