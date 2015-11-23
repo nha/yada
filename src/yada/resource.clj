@@ -114,7 +114,6 @@
       (catch IllegalArgumentException e {})
       (catch AbstractMethodError e {})))))
 
-
 ;; --
 (defrecord CustomResource []
   p/ResourceCoercion
