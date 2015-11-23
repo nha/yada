@@ -370,11 +370,17 @@
         ;; Otherwise
         ctx)))
 
-(defn get-properties
+#_(defn get-properties
   [ctx]
   (let [resource (:resource ctx)]
+    (infof "get-properties, existing is %s" (:properties ctx))
     (d/chain
+
      (resource/properties-on-request resource ctx)
+
+     (fn [props]
+       (infof "properties on request yields: %s" props)
+       props)
 
      ;; TODO: It is now illegal to return :parameters from
      ;; properties-on-request because it's TOO LATE. parse-parameters
@@ -782,7 +788,7 @@
 
    process-request-body
 
-   get-properties
+   ;; get-properties
 
 ;;   authentication
 ;;   authorization

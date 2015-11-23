@@ -25,7 +25,7 @@
   (as-resource [o] {})
 
   nil
-  (as-resource [_] {})
+  (as-resource [_] {:methods {:get {}}})
   )
 
 (defprotocol Properties

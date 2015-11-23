@@ -18,6 +18,7 @@
 (defn new-index-resource [db *routes]
   (new-custom-resource
    {:description "Phonebook index"
+    :exists? true
     :methods
     {:get {:parameters {:query {(s/optional-key :q) String}}
            :produces [{:media-type
@@ -46,10 +47,10 @@
                          (yada/redirect-after-post
                           ctx (path-for @*routes :phonebook.api/entry :entry id))))}}}))
 
-
 (defn new-entry-resource [db *routes]
   (new-custom-resource
    {:description "Phonebook entry"
+    :exists? true
     :parameters {:path {:entry Long}}
     :methods
     {:get

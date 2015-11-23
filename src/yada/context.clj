@@ -3,4 +3,4 @@
 (ns yada.context)
 
 (defn exists? [ctx]
-  (-> ctx :properties :exists?))
+  (-> ctx :handler :exists?))

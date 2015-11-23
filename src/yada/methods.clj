@@ -137,6 +137,8 @@
   (idempotent? [_] true)
   (request [this ctx]
 
+    (infof "ctx is %s" ctx)
+
     ;; TODO: exists? could be still deferred
     (when-not (ctx/exists? ctx)
       (throw (ex-info "" {:status 404})))
@@ -148,8 +150,7 @@
     (->
      (d/chain
 
-      ;; GET function normally returns a (possibly deferred) body.
-
+      ;; function normally returns a (possibly deferred) body.
       (if-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
         (try
           (f ctx)
@@ -157,7 +158,7 @@
             (d/error-deferred e)))
         ;; No handler!
         (d/error-deferred
-         (ex-info (format "Resource %s does not provide GET handler" (type (:resource ctx)))
+         (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
                   {:status 500})))
 
       (fn [res]
