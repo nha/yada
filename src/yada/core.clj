@@ -33,7 +33,7 @@
    [yada.request-body :as rb]
    [yada.service :as service]
    [yada.media-type :as mt]
-   [yada.util :refer [parse-csv remove-nil-vals]])
+   [yada.util :as util])
   (:import [java.util Date]))
 
 (def CHUNK-SIZE 16384)
@@ -105,37 +105,6 @@
       (methods/request (:method-instance ctx) ctx))
     ctx))
 
-(defn get-properties
-  [ctx]
-  (let [resource (:resource ctx)]
-    (d/chain
-     (resource/properties-on-request resource ctx)
-
-     ;; TODO: It is now illegal to return :parameters from
-     ;; properties-on-request because it's TOO LATE. parse-parameters
-     ;; has already been called. Ensure that the resource's
-     ;; properties-on-request is not attempting to return :parameters
-
-     (fn [props]
-       ;; Canonicalize possible representations if they are reasserted.
-       (cond-> props
-         (:representations props)
-         (update-in [:representations]
-                    (comp rep/representation-seq rep/coerce-representations))))
-     (fn [props]
-       (if (schema.utils/error? props)
-         (d/error-deferred
-          ;; TODO: More thorough error handling
-          ;; TODO: Test me!
-          (ex-info "Internal Server Error"
-                   {:status 500
-                    :error props}))
-
-         (-> ctx
-             (assoc-in [:representations] (or (:representations props)
-                                              (-> ctx :handler :representations)))
-             (update-in [:properties] merge props)))))))
-
 (defn method-allowed?
   "Is method allowed on this resource?"
   [ctx]
@@ -154,50 +123,56 @@
   (let [method (:method ctx)
         request (:request ctx)
 
-        parameters (-> ctx :handler :parameters)
-        coercers (-> ctx :handler :parameter-coercers)
+        schemas (merge (get-in ctx [:handler :parameters])
+                       (get-in ctx [:handler :methods method :parameters]))
 
-        parameters
-        (when parameters
-          {:path
-           (when-let [schema (get-in parameters [method :path])]
-             (rs/coerce schema (:route-params request) :query))
+        parameters {:path (when-let [schema (:path schemas)]
+                            (rs/coerce schema (:route-params request) :query))}
 
-           :query
-           (when-let [coercer (get-in coercers [method :query])]
-             ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
-             ;; Also, read this:
-             ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
+        #_parameters #_(-> ctx :handler :parameters)
+        #_coercers #_(-> ctx :handler :parameter-coercers)
 
-             (coercer
-              (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params)))
+        #_parameters
+        #_(when parameters
+            {:path
+             (when-let [schema (get-in parameters [method :path])]
+               (rs/coerce schema (:route-params request) :query))
 
-           #_:form
-           #_(cond
-             (and (req/urlencoded-form? request) (get-in coercers [method :form]))
-             (when-let [coercer (get-in coercers [method :form])]
-               (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                     (req/character-encoding request)))))
+             :query
+             (when-let [coercer (get-in coercers [method :query])]
+               ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
+               ;; Also, read this:
+               ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
 
-           #_:body
-           #_(when-let [schema (get-in parameters [method :body])]
-             (let [body (read-body (-> ctx :request))]
-               (body/coerce-request-body
-                body
-                ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
-                (or (req/content-type request) "application/octet-stream")
-                schema)))
+               (coercer
+                (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params)))
 
-           :header
-           (when-let [schema (get-in parameters [method :header])]
-             (let [params (-> request :headers)]
-               (rs/coerce (assoc schema String String) params :query)))})]
+             #_:form
+             #_(cond
+                 (and (req/urlencoded-form? request) (get-in coercers [method :form]))
+                 (when-let [coercer (get-in coercers [method :form])]
+                   (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
+                                                         (req/character-encoding request)))))
+
+             #_:body
+             #_(when-let [schema (get-in parameters [method :body])]
+                 (let [body (read-body (-> ctx :request))]
+                   (body/coerce-request-body
+                    body
+                    ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
+                    (or (req/content-type request) "application/octet-stream")
+                    schema)))
+
+             :header
+             (when-let [schema (get-in parameters [method :header])]
+               (let [params (-> request :headers)]
+                 (rs/coerce (assoc schema String String) params :query)))})]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
                                        :errors errors}))
-        (assoc ctx :parameters (remove-nil-vals parameters))))))
+        (assoc ctx :parameters (util/remove-nil-vals parameters))))))
 
 (defn process-request-body
   "Process the request body, if necessary. RFC 7230 section 3.3 states
@@ -395,6 +370,37 @@
         ;; Otherwise
         ctx)))
 
+(defn get-properties
+  [ctx]
+  (let [resource (:resource ctx)]
+    (d/chain
+     (resource/properties-on-request resource ctx)
+
+     ;; TODO: It is now illegal to return :parameters from
+     ;; properties-on-request because it's TOO LATE. parse-parameters
+     ;; has already been called. Ensure that the resource's
+     ;; properties-on-request is not attempting to return :parameters
+
+     (fn [props]
+       ;; Canonicalize possible representations if they are reasserted.
+       (cond-> props
+         (:representations props)
+         (update-in [:representations]
+                    (comp rep/representation-seq rep/coerce-representations))))
+     (fn [props]
+       (if (schema.utils/error? props)
+         (d/error-deferred
+          ;; TODO: More thorough error handling
+          ;; TODO: Test me!
+          (ex-info "Internal Server Error"
+                   {:status 500
+                    :error props}))
+
+         (-> ctx
+             (assoc-in [:representations] (or (:representations props)
+                                              (-> ctx :handler :representations)))
+             (update-in [:properties] merge props)))))))
+
 #_(defn authentication
   "Authentication"
   [ctx]
@@ -423,23 +429,13 @@
 
     (d/error-deferred (ex-info "" {:status 403}))))
 
-;; Content negotiation
-;; TODO: Unknown Content-Type? (incorporate this into conneg)
 (defn select-representation
   [ctx]
-  (let [produces (get-in ctx [:handler :methods
-                              (:method ctx)
-                              :produces])
-        representation
-        (rep/select-representation (:request ctx) produces)]
-
-    (infof "select-representation: representation=%s" representation)
+  (let [produces (get-in ctx [:handler :methods (:method ctx) :produces])
+        rep (rep/select-representation (:request ctx) produces)]
     (cond-> ctx
-      representation
-      (assoc-in [:response :representation] representation)
-
-      (and representation (-> ctx :handler :vary))
-      (assoc-in [:response :vary] (-> ctx :handler :vary)))))
+      rep (assoc-in [:response :representation] rep)
+      (and rep (-> ctx :handler :vary)) (assoc-in [:response :vary] (-> ctx :handler :vary)))))
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
@@ -480,7 +476,7 @@
 (defn if-match
   [ctx]
 
-  (if-let [matches (some->> (get-in (:request ctx) [:headers "if-match"]) parse-csv set)]
+  (if-let [matches (some->> (get-in (:request ctx) [:headers "if-match"]) util/parse-csv set)]
 
     ;; We have an If-Match to process
     (cond
@@ -518,7 +514,7 @@
 (defn if-none-match
   [ctx]
 
-  (if-let [matches (some->> (get-in (:request ctx) [:headers "if-none-match"]) parse-csv set)]
+  (if-let [matches (some->> (get-in (:request ctx) [:headers "if-none-match"]) util/parse-csv set)]
 
     ;; TODO: Weak comparison. Since we don't (yet) support the issuance
     ;; of weak entity tags, weak and strong comparison are identical
@@ -828,9 +824,7 @@
    (let [base resource
 
          resource (if (satisfies? p/ResourceCoercion resource)
-                    (do
-                      (infof "Coercion of %s" resource)
-                      (p/as-resource resource))
+                    (p/as-resource resource)
                     resource)
 
          ;; This handler services a collection of resources

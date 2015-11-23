@@ -15,7 +15,7 @@
 (defn create-routes [api]
   ["" [["/" (fn [req] {:body "Phonebook"})]
        (bidi/routes api)
-       ;;[true (yada nil)] ; TODO: uncomment this when pure-data branch done
+       [true (yada nil)] ; TODO: uncomment this when pure-data branch done
        ]])
 
 (defrecord ServerComponent [api port]
