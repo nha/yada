@@ -15,7 +15,7 @@
 
 (extend-type URL
   p/ResourceCoercion
-  (as-resource [url] url)
+  (as-resource [url] {})
 
   p/Properties
   (properties

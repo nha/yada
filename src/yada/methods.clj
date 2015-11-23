@@ -100,7 +100,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Get
+(defprotocol ^:deprecated Get
   (GET [_ ctx]
     "Return the state. Can be formatted to a representation of the given
   media-type and charset. Returning nil results in a 404. Get the
@@ -123,14 +123,10 @@
     (assoc-in ctx [:response :body] o))
   nil
   (interpret-get-result [_ ctx]
-    (d/error-deferred (ex-info "" {:status 404}))
-
-    #_(throw (ex-info "" {:status 404})))
+    (d/error-deferred (ex-info "" {:status 404})))
   clojure.lang.Fn
   (interpret-get-result [f ctx]
-    (interpret-get-result (f ctx) ctx))
-
-  )
+    (interpret-get-result (f ctx) ctx)))
 
 (deftype GetMethod [])
 
@@ -152,17 +148,16 @@
     (->
      (d/chain
 
-      ;; GET request normally returns a (possibly deferred) body.
+      ;; GET function normally returns a (possibly deferred) body.
 
-      (if (satisfies? Get (:resource ctx))
+      (if-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
         (try
-          (GET (:resource ctx) ctx)
+          (f ctx)
           (catch Exception e
             (d/error-deferred e)))
-
-        ;; No GET
+        ;; No handler!
         (d/error-deferred
-         (ex-info (format "Resource %s does not implement GET" (type (:resource ctx)))
+         (ex-info (format "Resource %s does not provide GET handler" (type (:resource ctx)))
                   {:status 500})))
 
       (fn [res]
@@ -404,7 +399,7 @@
 
 ;; The function is a very useful type to extend, so we do so here.
 
-(extend-type clojure.lang.Fn
+#_(extend-type clojure.lang.Fn
   Get (GET [f ctx] (f ctx))
   Put (PUT [f ctx] (f ctx))
   Post (POST [f ctx] (f ctx))
@@ -412,7 +407,7 @@
   Options (OPTIONS [f ctx] (f ctx)))
 
 
-(defn infer-methods
+(defn ^:deprecated infer-methods
   "Determine methods from an object based on the protocols it
   satisfies."
   [o]

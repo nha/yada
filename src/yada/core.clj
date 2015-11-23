@@ -5,6 +5,7 @@
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all :exclude [trace]]
+   [clojure.walk :refer [postwalk]]
    [byte-streams :as bs]
    [bidi.bidi :as bidi]
    [manifold.deferred :as d]
@@ -138,6 +139,7 @@
 (defn method-allowed?
   "Is method allowed on this resource?"
   [ctx]
+
   (if-not (contains? (-> ctx :handler :allowed-methods) (:method ctx))
     (d/error-deferred
      (ex-info "Method Not Allowed"
@@ -425,9 +427,13 @@
 ;; TODO: Unknown Content-Type? (incorporate this into conneg)
 (defn select-representation
   [ctx]
-  (let [representation
-        (rep/select-representation (:request ctx) (:representations ctx))]
+  (let [produces (get-in ctx [:handler :methods
+                              (:method ctx)
+                              :produces])
+        representation
+        (rep/select-representation (:request ctx) produces)]
 
+    (infof "select-representation: representation=%s" representation)
     (cond-> ctx
       representation
       (assoc-in [:response :representation] representation)
@@ -690,7 +696,6 @@
   (let [method (:request-method request)
         interceptor-chain (:interceptor-chain handler)
         options (:options handler)
-        journal-entry (atom {:chain []})
         id (java.util.UUID/randomUUID)
         error-handler (or (:error-handler options)
                           default-error-handler)
@@ -704,87 +709,66 @@
               :resource (:resource handler)
               :request request
               :allowed-methods (:allowed-methods handler)
-              :options options
-              :journal journal-entry})]
+              :options options})]
 
     (->
-     (->> interceptor-chain
-          (mapv (wrap-journaling journal-entry))
-          (apply d/chain ctx))
+     (apply d/chain ctx interceptor-chain)
 
      (d/catch
          clojure.lang.ExceptionInfo
          (fn [e]
            (error-handler e)
            (let [data (error-data e)]
-             (do
-               (when-let [journal (:journal handler)]
-                 (swap! journal assoc id (swap! journal-entry assoc :error {:exception e :data data})))
+             (let [status (or (:status data) 500)
+                   rep (rep/select-representation
+                        (:request ctx)
+                        (rep/representation-seq
+                         (rep/coerce-representations
+                          ;; Possibly in future it will be possible
+                          ;; to support more media-types to render
+                          ;; errors, including image and video
+                          ;; formats.
+                          [{:media-type #{"text/plain"
+                                          "text/html;q=0.8"
+                                          "application/json;q=0.75"
+                                          "application/json;pretty=true;q=0.7"
+                                          "application/edn;q=0.6"
+                                          "application/edn;pretty=true;q=0.5"}
+                            :charset charset/platform-charsets}])))]
 
-               (let [status (or (:status data) 500)
-                     rep (rep/select-representation
-                          (:request ctx)
-                          (rep/representation-seq
-                           (rep/coerce-representations
-                            ;; Possibly in future it will be possible
-                            ;; to support more media-types to render
-                            ;; errors, including image and video
-                            ;; formats.
-                            [{:media-type #{"text/plain"
-                                            "text/html;q=0.8"
-                                            "application/json;q=0.75"
-                                            "application/json;pretty=true;q=0.7"
-                                            "application/edn;q=0.6"
-                                            "application/edn;pretty=true;q=0.5"}
-                              :charset charset/platform-charsets}])))]
+               ;; TODO: Custom error handlers
 
-                 ;; TODO: Custom error handlers
+               (d/chain
+                (cond-> (make-context {})
+                  status (assoc-in [:response :status] status)
+                  (:headers data) (assoc-in [:response :headers] (:headers data))
+                  (not (:body data)) ((fn [ctx]
+                                        (let [b (body/to-body (body/render-error status e rep ctx) rep)]
+                                          (-> ctx
+                                              (assoc-in [:response :body] b)
+                                              (assoc-in [:response :headers "content-length"] (body/content-length b))))))
 
-                 (d/chain
-                  (cond-> (make-context {})
-                    status (assoc-in [:response :status] status)
-                    (:headers data) (assoc-in [:response :headers] (:headers data))
-                    (not (:body data)) ((fn [ctx]
-                                          (let [b (body/to-body (body/render-error status e rep ctx) rep)]
-                                            (-> ctx
-                                                (assoc-in [:response :body] b)
-                                                (assoc-in [:response :headers "content-length"] (body/content-length b))))))
+                  rep (assoc-in [:response :representation] rep))
+                create-response))))))))
 
-                    rep (assoc-in [:response :representation] rep))
-                  create-response))
-               )))))))
-
-(defrecord Handler
-    [id
-     resource
-     base
-     interceptor-chain
-     options
-     allowed-methods
-     known-methods
-     parameters
-     representations
-     vary
-     #_security
-     service-available?
-     #_authorization
-     journal]
+(defrecord Handler []
   clojure.lang.IFn
   (invoke [this req]
     (handle-request this req))
-  p/Properties
-  (properties
-    [this]
-    {:allowed-methods #{:get}
-     :representations [{:media-type #{"text/html"
-                                      "application/edn"
-                                      "application/json"
-                                      "application/edn;pretty=true"
-                                      "application/json;pretty=true"}}]})
 
-  (properties [_ ctx] {})
-  methods/Get
-  (GET [this ctx] (into {} this)))
+  #_p/Properties
+  #_(properties
+      [this]
+      {:allowed-methods #{:get}
+       :representations [{:media-type #{"text/html"
+                                        "application/edn"
+                                        "application/json"
+                                        "application/edn;pretty=true"
+                                        "application/json;pretty=true"}}]})
+
+  #_(properties [_ ctx] {})
+  #_methods/Get
+  #_(GET [this ctx] (into {} this)))
 
 (defrecord NoAuthorizationSpecified []
   service/Service
@@ -822,6 +806,19 @@
    create-response
    ])
 
+(defn expand-shorthand [resource]
+  (infof "Expanding: resource %s" resource)
+  (let [res (->> resource
+                 (postwalk
+                  (fn [x]
+                    (if (and (vector? x) (= (first x) :produces))
+                      [:produces (-> (second x)
+                                     rep/coerce-representations
+                                     rep/representation-seq)]
+                      x))))]
+    (infof "Final resource: %s" (into {} res))
+    res))
+
 (defn handler
   "Create a Ring handler"
   ([resource]                   ; Single-arity form with default options
@@ -831,92 +828,85 @@
    (let [base resource
 
          resource (if (satisfies? p/ResourceCoercion resource)
-                    (p/as-resource resource)
+                    (do
+                      (infof "Coercion of %s" resource)
+                      (p/as-resource resource))
                     resource)
 
-         properties (if (satisfies? p/Properties resource)
-                      (resource/properties resource)
-                      resource/default-properties)
-
          ;; This handler services a collection of resources
+         ;; (TODO: this is ambiguous, what do we mean exactly?)
          collection? (or (:collection? options)
-                         (:collection? properties))
+                         (:collection? resource))
 
          known-methods (methods/known-methods)
 
-         allowed-methods (or
-                          ;; TODO: Test for this
-                          (when-let [methods (or (:all-allowed-methods options)
-                                                 (:all-allowed-methods properties))]
-                            (set methods))
-                          (conj
-                           (set
-                            (or (:allowed-methods options)
-                                (:allowed-methods properties)
-                                (methods/infer-methods resource)))
-                           :head :options))
+         allowed-methods (let [methods (set
+                                        (or (:allowed-methods options)
+                                            (keys (:methods resource))))]
+                           (cond-> methods
+                             (#{:get} methods) (conj :head)
+                             true (conj :options)))
 
-         parameters (or (:parameters options)
-                        (:parameters properties))
+         #_parameter-coercers
+         #_(->> (for [[method schemas] parameters]
+                  [method
+                   (merge
+                    (when-let [schema (:query schemas)]
+                      {:query (when-let [schema (:query schemas)]
+                                (sc/coercer schema
+                                            (or
+                                             coerce/+parameter-key-coercions+
+                                             (rsc/coercer :query)
+                                             )))})
+                    (when-let [schema (:form schemas)]
+                      {:form (when-let [schema (:form schemas)]
+                               (sc/coercer schema
+                                           (or
+                                            coerce/+parameter-key-coercions+
+                                            (rsc/coercer :json)
+                                            )))}))])
+                (filter (comp not nil? second))
+                (into {}))
 
-         parameter-coercers
-         (->> (for [[method schemas] parameters]
-                [method
-                 (merge
-                  (when-let [schema (:query schemas)]
-                    {:query (when-let [schema (:query schemas)]
-                              (sc/coercer schema
-                                          (or
-                                           coerce/+parameter-key-coercions+
-                                           (rsc/coercer :query)
-                                           )))})
-                  (when-let [schema (:form schemas)]
-                    {:form (when-let [schema (:form schemas)]
-                             (sc/coercer schema
-                                         (or
-                                          coerce/+parameter-key-coercions+
-                                          (rsc/coercer :json)
-                                          )))}))])
-              (filter (comp not nil? second))
-              (into {}))
+         #_representations #_(rep/representation-seq
+                              (rep/coerce-representations
+                               (or
+                                (get :produces properties)
+                                ;; Default
+                                [{}])))
 
-         representations (rep/representation-seq
-                          (rep/coerce-representations
-                           (or
-                            (:representations options)
-                            (when-let [rep (:representation options)] [rep])
-                            (let [m (select-keys options [:media-type :charset :encoding :language])]
-                              (when (not-empty m) [m]))
-                            (:representations properties)
-                            ;; Default
-                            [{}])))
+         #_vary #_(rep/vary representations)
 
-         vary (rep/vary representations)
-
-         journal (:journal options)
          ]
 
+     (when-not (map? resource)
+       (throw (ex-info "Resource is not a map" {:resource resource
+                                                :type (type resource)})))
+
      (map->Handler
-      (merge
-       {:allowed-methods allowed-methods
-        ;;        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
-        :base base
-        :id (or (:id options) (java.util.UUID/randomUUID))
-        :interceptor-chain default-interceptor-chain
-        :known-methods known-methods
-        :options options
-        :parameters parameters
-        :parameter-coercers parameter-coercers
-        :representations representations
-        :resource resource
-        :properties properties
+      (merge {
+              :id (or (:id options) (java.util.UUID/randomUUID))
 
-        :collection? collection?
+              :base base
+              :resource resource
+              :options options
 
-        ;;        :security (as-sequential (:security options))
-        :vary vary}
-       (when journal {:journal journal}))))))
+              :allowed-methods allowed-methods
+              :known-methods known-methods
+
+              :interceptor-chain default-interceptor-chain
+
+              ;;        :parameters parameters
+              ;;        :parameter-coercers parameter-coercers
+              ;;        :representations representations
+              ;;        :properties properties
+              ;;        :vary vary
+
+              :collection? collection?
+              }
+
+             (expand-shorthand resource)
+
+             )))))
 
 (def yada handler)
-
-(def ^:deprecated resource handler)

@@ -3,7 +3,8 @@
 (ns yada.protocols
   (:import
    [java.io File]
-   [java.util Date]))
+   [java.util Date]
+   [clojure.lang APersistentMap]))
 
 ;; Resource protocols
 
@@ -17,11 +18,15 @@
   Last-Modified-Date."))
 
 (extend-protocol ResourceCoercion
+  clojure.lang.Fn
+  (as-resource [f] {})
+
   Object
-  (as-resource [o] o)
+  (as-resource [o] {})
 
   nil
-  (as-resource [_] nil))
+  (as-resource [_] {})
+  )
 
 (defprotocol Properties
   (properties [_] [_ ctx] "If the semantics of the method are
