@@ -275,13 +275,14 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Delete
+#_(defprotocol Delete
   (DELETE [_ ctx]
     "Delete the state. If a deferred is returned, the HTTP response
   status is set to 202. Side-effects are permissiable. Can return a
   deferred result."))
 
 (deftype DeleteMethod [])
+
 (extend-protocol Method
   DeleteMethod
   (keyword-binding [_] :delete)
@@ -289,7 +290,15 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     (DELETE (:resource ctx) ctx)
+     (if-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
+       (try
+         (f ctx)
+         (catch Exception e
+           (d/error-deferred e)))
+       ;; No handler!
+       (d/error-deferred
+        (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
+                 {:status 500})))
      (fn [res]
        ;; TODO: Could we support 202 somehow?
        (assoc-in ctx [:response :status] 204)))))
@@ -411,7 +420,7 @@
   Options (OPTIONS [f ctx] (f ctx)))
 
 
-(defn ^:deprecated infer-methods
+#_(defn ^:deprecated infer-methods
   "Determine methods from an object based on the protocols it
   satisfies."
   [o]
@@ -419,5 +428,5 @@
     (satisfies? Get o) (conj :get)
     (satisfies? Put o) (conj :put)
     (satisfies? Post o) (conj :post)
-    (satisfies? Delete o) (conj :delete)
+    #_(satisfies? Delete o) #_(conj :delete)
     (satisfies? Options o) (conj :options)))

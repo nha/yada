@@ -38,8 +38,8 @@
     (when-let [body (get-in ctx [:parameters :body])]
       (reset! *a body)))
 
-  m/Delete
-  (DELETE [_ ctx] (reset! *a nil))
+  #_m/Delete ; commented in the move to pure-data
+  #_(DELETE [_ ctx] (reset! *a nil))
   )
 
 (extend-protocol p/ResourceCoercion

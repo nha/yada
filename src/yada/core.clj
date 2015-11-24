@@ -150,6 +150,14 @@
                                        :errors errors}))
         (assoc ctx :parameters (util/remove-nil-vals parameters))))))
 
+(defn safe-read-content-length [req]
+  (let [len (get-in req [:headers "content-length"])]
+    (when len
+      (try
+        (Long/parseLong len)
+        (catch Exception e
+          (throw (ex-info "Malformed Content-Length" {:value len})))))))
+
 (defn process-request-body
   "Process the request body, if necessary. RFC 7230 section 3.3 states
   \"The presence of a message body in a request is signaled by a
@@ -161,14 +169,17 @@
   Content-Length or Transfer-Encoding header, regardless of the method
   semantics."
   [{:keys [request] :as ctx}]
-  (if
-    (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
-    (let [content-type (mt/string->media-type
-                        (get-in request [:headers "content-type"]))]
-      (rb/process-request-body
-       ctx
-       (stream/map bs/to-byte-array (:body request))
-       content-type))
+  (if (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
+    (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
+          content-length (safe-read-content-length request)]
+
+      ;; TODO: Check if we consume...
+      (infof "content-type is %s" (:name content-type))
+
+      (cond-> ctx
+        ;; TODO: Check options to see if we have a maximum requested entity size, default is no.
+        (and content-length (pos? content-length))
+        (rb/process-request-body (stream/map bs/to-byte-array (:body request)) content-type)))
 
     ;; else
     ctx))
@@ -355,7 +366,6 @@
      (propsfn ctx) ; propsfn can returned a deferred
 
      (fn [props]
-       (infof "Properties is %s" props)
        (assoc ctx :properties props))
 
      ;; Need a way of allowing produces to be dynamic
@@ -397,7 +407,7 @@
 (defn select-representation
   [ctx]
   (let [produces (get-in ctx [:handler :methods (:method ctx) :produces])
-        rep (rep/select-representation (:request ctx) produces)]
+        rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       rep (assoc-in [:response :representation] rep)
       (and rep (-> ctx :handler :vary)) (assoc-in [:response :vary] (-> ctx :handler :vary)))))
@@ -410,8 +420,6 @@
     (-> ctx :properties :last-modified))
 
    (fn [last-modified]
-     (infof "last-modified: %s" last-modified)
-
      (if last-modified
 
        (if-let [if-modified-since
@@ -683,7 +691,7 @@
            (error-handler e)
            (let [data (error-data e)]
              (let [status (or (:status data) 500)
-                   rep (rep/select-representation
+                   rep (rep/select-best-representation
                         (:request ctx)
                         (rep/representation-seq
                          (rep/coerce-representations
@@ -770,15 +778,23 @@
    ])
 
 (defn expand-shorthand [resource]
-  (let [res (->> resource
-                 (postwalk
-                  (fn [x]
-                    (if (and (vector? x) (= (first x) :produces))
-                      [:produces (-> (second x)
-                                     rep/coerce-representations
-                                     rep/representation-seq)]
-                      x))))]
-    res))
+  ;; TODO: Allow produces and consumes to appear at the top-level too
+  ;; (like Swagger)
+  (->> resource
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :produces))
+            [:produces (-> (second x)
+                           rep/coerce-representations
+                           rep/representation-seq)]
+            x)))
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :consumes))
+            [:consumes (-> (second x)
+                           rep/coerce-representations
+                           rep/representation-seq)]
+            x)))))
 
 (defn handler
   "Create a Ring handler"

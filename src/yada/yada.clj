@@ -9,7 +9,6 @@
    yada.resources.atom-resource
    yada.resources.collection-resource
    yada.resources.file-resource
-   yada.resources.misc
    yada.resources.string-resource
    yada.resources.url-resource
    yada.resources.sse
