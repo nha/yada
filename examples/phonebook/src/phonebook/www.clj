@@ -83,8 +83,6 @@
       (fn [ctx]
         (let [entry (get-in ctx [:parameters :path :entry])
               body (get-in ctx [:parameters :body])]
-          (throw (ex-info "TODO" {:entry entry
-                                  :body body}))
           (db/update-entry db entry body)))}
 
      :delete
