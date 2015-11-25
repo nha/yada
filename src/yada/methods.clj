@@ -186,7 +186,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Put
+#_(defprotocol Put
   (PUT [_ ctx]
     "Overwrite the state with the data. To avoid inefficiency in
   abstraction, satisfying types are required to manage the parsing of
@@ -202,14 +202,21 @@
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [res (PUT (:resource ctx) ctx)]
-      (assoc-in ctx [:response :status]
-                (cond
-                  ;; TODO: A 202 may be not what the developer wants!
-                  ;; TODO: See RFC7240
-                  (d/deferred? res) 202
-                  (ctx/exists? ctx) 204
-                  :otherwise 201)))))
+    (let [f (get-in ctx [:handler :methods (:method ctx) :handler]
+                    (constantly (d/error-deferred
+                                 (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
+                                          {:status 500}))))]
+      (d/chain
+       (f ctx)
+       (fn [res]
+         (assoc-in ctx [:response :status]
+                   (cond
+                     ;; TODO: A 202 may be not what the user wants!
+                     ;; TODO: See RFC7240
+                     (d/deferred? res) 202
+                     (ctx/exists? ctx) 204
+                     :otherwise 201)))))))
+
 
 ;; --------------------------------------------------------------------------------
 

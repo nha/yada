@@ -25,7 +25,6 @@
    [yada.coerce :as coerce]
    [yada.journal :as journal]
    [yada.methods :as methods]
-   [yada.multipart :refer [parse-multipart reduce-piece ->DefaultPartReceiver xf-add-header-info xf-parse-content-disposition]]
    [yada.representation :as rep]
    [yada.protocols :as p]
    [yada.response :refer [->Response]]
@@ -36,7 +35,7 @@
    [yada.util :as util])
   (:import [java.util Date]))
 
-(def CHUNK-SIZE 16384)
+#_(def CHUNK-SIZE 16384)
 
 (defn make-context [properties]
   {:properties properties
@@ -99,8 +98,7 @@
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas (merge (get-in ctx [:handler :parameters])
-                       (get-in ctx [:handler :methods method :parameters]))
+        schemas  (get-in ctx [:handler :methods method :parameters])
 
         parameters {:path (when-let [schema (:path schemas)]
                             (rs/coerce schema (:route-params request) :query))}
@@ -175,6 +173,7 @@
 
       ;; TODO: Check if we consume...
       (infof "content-type is %s" (:name content-type))
+      (infof "content-length is %s" content-length)
 
       (cond-> ctx
         ;; TODO: Check options to see if we have a maximum requested entity size, default is no.
@@ -777,9 +776,18 @@
    create-response
    ])
 
-(defn expand-shorthand [resource]
-  ;; TODO: Allow produces and consumes to appear at the top-level too
-  ;; (like Swagger)
+(defn merge-schemas [m]
+  (let [p (:parameters m)]
+    (assoc m :methods
+           (reduce-kv
+            (fn [acc k v]
+              (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
+            {} (:methods m)))))
+
+(defn expand-shorthand
+  "Turns a resource into handler properties by expanding a
+  human-author-friendly short-forms."
+  [resource]
   (->> resource
        (postwalk
         (fn [x]
@@ -794,7 +802,8 @@
             [:consumes (-> (second x)
                            rep/coerce-representations
                            rep/representation-seq)]
-            x)))))
+            x)))
+       (merge-schemas)))
 
 (defn handler
   "Create a Ring handler"

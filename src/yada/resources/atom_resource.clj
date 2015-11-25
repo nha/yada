@@ -31,8 +31,8 @@
   m/Get
   (GET [_ ctx] @*a)
 
-  m/Put
-  (PUT [_ ctx]
+  #_m/Put
+  #_(PUT [_ ctx]
     ;; We can't PUT a nil, because nils mean no representation and yield
     ;; 404s on GET, hence this when guard
     (when-let [body (get-in ctx [:parameters :body])]
