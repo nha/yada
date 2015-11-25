@@ -543,22 +543,16 @@
   (consume-part [_ state part] (update state :parts (fnil conj []) (map->DefaultPart part)))
   (start-partial [_ piece] (->DefaultPartial piece))
   (part-coercion-matcher [_]
-    (infof "Getting coercion matcher")
-    (fn [schema]
-      (infof "schema %s" (pr-str schema))
-      (get
-       {String (fn [part]
-                 (infof "Coercing default-part to String")
-                 (let [offset (get part :body-offset 0)]
-                   (String. (:bytes part) offset (- (count (:bytes part)) offset))))}
-       schema))))
+    ;; Coerce a DefaultPart into the following keys
+    {String (fn [^DefaultPart part]
+              (let [offset (get part :body-offset 0)]
+                (String. (:bytes part) offset (- (count (:bytes part)) offset))))}))
 
 (defn reduce-piece
   "Reducing function for assembling pieces into parts. Seed the reduce
   with a map that contains an entry for :consumer with a value
   satisfying PartConsumer."
   [{:keys [state consumer partial] :as acc} piece]
-  (infof "reduce-piece, new piece, type %s" (:type piece))
   (case (:type piece)
     :preamble acc
     :preamble-continuation acc
