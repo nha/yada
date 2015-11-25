@@ -59,7 +59,6 @@
       (fn [ctx]
         (let [id (get-in ctx [:parameters :path :entry])
               {:keys [firstname surname phone] :as entry} (db/get-entry db id)]
-          (infof "Phonebook entry is %s" entry)
           (when entry
             (case (yada/content-type ctx)
               "text/html"
