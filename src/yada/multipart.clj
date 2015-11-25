@@ -506,8 +506,9 @@
 ;; to plug-in their own support for large http payloads.
 
 (defprotocol PartConsumer
-  (receive-part [_ state part] "Return state with part attached")
-  (start-partial [_ piece] "Return a partial"))
+  (consume-part [_ state part] "Return state with part attached")
+  (start-partial [_ piece] "Return a partial")
+  (part-coercion-matcher [_] "Return a coercer that can coerce the part into a declared parameter type"))
 
 (defprotocol Partial
   (continue [_ piece] "Return thyself")
@@ -519,7 +520,8 @@
 ;; These default implementations are in-memory. Other implementations
 ;; could stream to storage.
 
-;; This DefaultPartial record returns {:parts [part]}
+(defrecord DefaultPart [])
+
 (defrecord DefaultPartial [initial]
   Partial
   (continue [this piece] (update this :pieces (fnil conj []) piece))
@@ -532,26 +534,37 @@
                               (concat [(:bytes initial)]
                                       (map :bytes (:pieces this))
                                       [(:bytes piece)]))))
-              (assoc :pieces (map (fn [x] (update x :bytes count)) (concat [initial] (:pieces this) [piece]))))]
+              (assoc :pieces (map (fn [x] (update x :bytes count)) (concat [initial] (:pieces this) [piece])))
+              map->DefaultPart)]
       (update state :parts conj part))))
 
 (defrecord DefaultPartConsumer []
   PartConsumer
-  (receive-part [_ state part] (update state :parts (fnil conj []) part))
-  (start-partial [_ piece] (->DefaultPartial piece)))
+  (consume-part [_ state part] (update state :parts (fnil conj []) (map->DefaultPart part)))
+  (start-partial [_ piece] (->DefaultPartial piece))
+  (part-coercion-matcher [_]
+    (infof "Getting coercion matcher")
+    (fn [schema]
+      (infof "schema %s" (pr-str schema))
+      (get
+       {String (fn [part]
+                 (infof "Coercing default-part to String")
+                 (let [offset (get part :body-offset 0)]
+                   (String. (:bytes part) offset (- (count (:bytes part)) offset))))}
+       schema))))
 
 (defn reduce-piece
   "Reducing function for assembling pieces into parts. Seed the reduce
-  with a map that contains an entry for :receiver with a value
+  with a map that contains an entry for :consumer with a value
   satisfying PartConsumer."
-  [{:keys [state receiver partial] :as acc} piece]
+  [{:keys [state consumer partial] :as acc} piece]
   (infof "reduce-piece, new piece, type %s" (:type piece))
   (case (:type piece)
     :preamble acc
     :preamble-continuation acc
     :preamble-completion acc
-    :part (update acc :state (fn [state] (receive-part receiver state piece)))
-    :partial (assoc acc :partial (start-partial receiver piece))
+    :part (update acc :state (fn [state] (consume-part consumer state piece)))
+    :partial (assoc acc :partial (start-partial consumer piece))
     :partial-continuation (update acc :partial (fn [p] (continue p piece)))
     :partial-completion (-> acc
                             (update :state (fn [s] (if-let [p partial]
@@ -571,7 +584,8 @@
   (let [content-type (mt/string->media-type (get-in ctx [:request :headers "content-type"]))
         boundary (get-in content-type [:parameters "boundary"])
         request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
-        window-size (* 4 request-buffer-size)]
+        window-size (* 4 request-buffer-size)
+        part-consumer (get-in ctx [:handler :options :part-consumer] (->DefaultPartConsumer))]
     (infof "process-request-body multipart/form-data")
     (d/chain
      (->> (parse-multipart boundary window-size request-buffer-size body-stream)
@@ -587,8 +601,7 @@
           ;; database, as a file. etc.
           (s/reduce
            reduce-piece
-           {:receiver (->DefaultPartConsumer)
-            :state {}}))
+           {:consumer part-consumer :state {}}))
      (fn [{:keys [parts] :as body}]
 
        ;; Regardless of parameter schemas, we use the
@@ -611,14 +624,17 @@
          (cond
            (:form schemas)
            (let [coercer (sc/coercer
-                          (:form schemas)
-                          (or coerce/+parameter-key-coercions+
-                              (rsc/coercer :json)))
+                                (:form schemas)
+                                (fn [schema]
+                                  (or
+                                   (coerce/+parameter-key-coercions+ schema)
+                                   ((part-coercion-matcher part-consumer) schema)
+                                   ((rsc/coercer :json) schema))))
                  params (coercer fields)]
+             (infof "params is %s" params)
              (if-not (schema.utils/error? params)
                (assoc-in ctx [:parameters :body] params)
-               (d/error-deferred (ex-info "Bad form fields" {:status 400
-                                                             :error params}))))
+               (d/error-deferred (ex-info "Bad form fields" {:status 400 :error params}))))
 
            (:body schemas) (throw (ex-info "TODO" {}))
 
@@ -649,5 +665,4 @@
                                       (if (schema.utils/error? params)
                                         (throw (ex-info "Unexpected body" {:status 400}))
                                         params))
-                                    params)))))))
-    ))
+                                    params)))))))))
