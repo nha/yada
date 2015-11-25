@@ -624,17 +624,18 @@
          (cond
            (:form schemas)
            (let [coercer (sc/coercer
-                                (:form schemas)
-                                (fn [schema]
-                                  (or
-                                   (coerce/+parameter-key-coercions+ schema)
-                                   ((part-coercion-matcher part-consumer) schema)
-                                   ((rsc/coercer :json) schema))))
+                          (:form schemas)
+                          (fn [schema]
+                            (or
+                             (coerce/+parameter-key-coercions+ schema)
+                             ((part-coercion-matcher part-consumer) schema)
+                             ((rsc/coercer :json) schema))))
                  params (coercer fields)]
              (infof "params is %s" params)
              (if-not (schema.utils/error? params)
                (assoc-in ctx [:parameters :body] params)
-               (d/error-deferred (ex-info "Bad form fields" {:status 400 :error params}))))
+               (d/error-deferred (ex-info "Bad form fields"
+                                          {:status 400 :error params}))))
 
            (:body schemas) (throw (ex-info "TODO" {}))
 
