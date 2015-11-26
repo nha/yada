@@ -104,7 +104,6 @@
                             (rs/coerce schema (:route-params request) :query))}
 
         #_parameters #_(-> ctx :handler :parameters)
-        #_coercers #_(-> ctx :handler :parameter-coercers)
 
         #_parameters
         #_(when parameters
@@ -197,7 +196,6 @@
   (let [method (:method ctx)
         request (:request ctx)
         parameters (-> ctx :handler :parameters)
-        coercers (-> ctx :handler :parameter-coercers)
 
         ;; TODO: What if content-type is malformed?
         content-type (mt/string->media-type (get-in request [:headers "content-type"]))
@@ -756,6 +754,10 @@
 
    process-request-body
 
+   (fn [ctx]
+     (infof "ctx parameters is %s" (:parameters ctx))
+     ctx)
+
    get-properties
 
 ;;   authentication
@@ -881,7 +883,6 @@
               :interceptor-chain default-interceptor-chain
 
               ;;        :parameters parameters
-              ;;        :parameter-coercers parameter-coercers
               ;;        :representations representations
               ;;        :properties properties
               ;;        :vary vary

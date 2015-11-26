@@ -13,13 +13,13 @@
 
   :dependencies
   [[bidi "1.21.0" :exclusions [ring/ring-core]]
-   [byte-streams "0.2.1-alpha1" :exclusions [clj-tuple]]
+   [byte-streams "0.2.1-alpha2" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.1.4"]
    [cheshire "5.4.0"]
    [clj-time "0.9.0"]
    [hiccup "1.0.5"]
    [json-html "0.3.1"]
-   [manifold "0.1.1"]
+   [manifold "0.1.2-alpha1"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
    [prismatic/schema "0.4.3" :exclusions [potemkin]]

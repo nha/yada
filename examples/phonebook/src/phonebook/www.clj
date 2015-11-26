@@ -34,10 +34,7 @@
 
      :post {:parameters {:form {:surname String :firstname String :phone String}}
             :consumes [{:media-type
-                        #{"multipart/form-data"
-                          "application/x-www-form-urlencoded"
-                          "application/json"
-                          "application/edn"}
+                        #{"application/x-www-form-urlencoded"}
                         :charset "UTF-8"}]
             :handler (fn [ctx]
                        (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
@@ -81,8 +78,8 @@
       :handler
       (fn [ctx]
         (let [entry (get-in ctx [:parameters :path :entry])
-              body (get-in ctx [:parameters :body])]
-          (db/update-entry db entry body)))}
+              form (get-in ctx [:parameters :form])]
+          (db/update-entry db entry form)))}
 
      :delete
      {:handler

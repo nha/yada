@@ -166,6 +166,13 @@
         (db/update-entry db entry body)))}}
 #+END_SRC
 
+* multipart/form-data
+
+#+BEGIN_QUOTE
+I don't really care about the minutia of what's involved here, but I'd
+glad that someone with your level of OCD does.
+#+END_QUOTE
+
 * yada roadmap
 
 (Tolkien map with location, somewhere around The Dead Marshes)
