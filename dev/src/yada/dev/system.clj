@@ -42,6 +42,8 @@
    :user-manual (new-user-manual :prefix (config/docsite-origin config))
 
    :docsite (new-docsite :config config)
+
+   ;; TODO: Replace new-web-resources with a yada equivalent
    :jquery (new-web-resources
             :key :jquery
             :uri-context "/jquery"

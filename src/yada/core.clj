@@ -401,8 +401,8 @@
 
 (defn select-representation
   [ctx]
-  (let [produces (or (some-> ctx :properties :representations)
-                     (some-> ctx :handler :methods (:method ctx) :produces))
+  (let [produces (or (get-in ctx [:properties :representations])
+                     (get-in ctx [:handler :methods (:method ctx) :produces]))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       rep (assoc-in [:response :representation] rep)
