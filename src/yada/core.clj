@@ -360,18 +360,16 @@
   (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
     (d/chain
 
-     (propsfn ctx) ; propsfn can returned a deferred
+     (propsfn ctx)                     ; propsfn can returned a deferred
 
      (fn [props]
-       (assoc ctx :properties props))
-
-     ;; Need a way of allowing produces to be dynamic
-     #_(fn [props]
-       ;; Canonicalize possible representations if they are reasserted.
-       (cond-> props
-         (:representations props)
-         (update-in [:representations]
-                    (comp rep/representation-seq rep/coerce-representations)))))))
+       (assoc
+        ctx
+        :properties
+        (cond-> props
+          (:representations props) ; representations shorthand is expanded
+          (update-in [:representations]
+                     (comp rep/representation-seq rep/coerce-representations))))))))
 
 #_(defn authentication
   "Authentication"
@@ -403,7 +401,8 @@
 
 (defn select-representation
   [ctx]
-  (let [produces (get-in ctx [:handler :methods (:method ctx) :produces])
+  (let [produces (or (some-> ctx :properties :representations)
+                     (some-> ctx :handler :methods (:method ctx) :produces))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       rep (assoc-in [:response :representation] rep)

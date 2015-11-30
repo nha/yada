@@ -159,6 +159,7 @@
 
     ;; This tells the handler to match a route, even if there is some
     ;; remaining path-info.
+    ;; TODO: Rename to 'path-info?' ?
     :collection? true
 
     :properties
@@ -185,7 +186,8 @@
                         {:status 302
                          :headers {"Location" (str (get-in ctx [:request :uri]) index-file)}}))
               {:exists? true
-               :representations [{:media-type #{"text/html" "text/plain;q=0.9"}}]
+               :representations [{:media-type #{"text/html"
+                                                "text/plain;q=0.9"}}]
                :last-modified (Date. (.lastModified f))
                ::file f})
 
@@ -196,15 +198,15 @@
 
     :methods
     {:get
-     {:handler (fn [ctx]
-                 (infof "properties is %s" (:properties ctx))
-                 (let [f (get-in ctx [:properties ::file])]
-                   (assert f)
-                   (cond
-                     (.isFile f) f
-                     (.isDirectory f)
-                     (dir-index f
-                                (-> ctx :response :representation :media-type)))))
+     {:handler
+      (fn [ctx]
+        (infof "properties is %s" (:properties ctx))
+        (let [f (get-in ctx [:properties ::file])]
+          (assert f)
+          (cond
+            (.isFile f) (respond-with-file ctx f (get-in ctx [:properties ::reader]))
+            (.isDirectory f) (dir-index f
+                                        (-> ctx :response :representation :media-type)))))
       :produces [{:media-type #{"text/plain"}}]}}}))
 
 #_(s/defrecord DirectoryResource

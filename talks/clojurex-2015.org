@@ -182,7 +182,7 @@ Delete: DELETE
 - Would need more thinking to be an API
 ** Vulnerable to attack
 - No security headers
-- No parameter validation
+- Ad-hoc parameter validation
 ** Blocking I/O
 ** No service metadata
 - No data about what the service does (e.g. Swagger, RAML)
