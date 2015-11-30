@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Phonebook</title>
-<meta name="author" content="(Malcolm Sparks)"/>
+<title>Clojure and REST Full Web</title>
+<meta name="author" content="(Thomas van der Veen, Malcolm Sparks)"/>
 <link rel="stylesheet" href="static/css/reveal.css"/>
 <link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
 <link rel="stylesheet" href="static/css/extra.css"/>
@@ -22,38 +22,257 @@
 <div class="reveal">
 <div class="slides">
 <section id="sec-title-slide">
-<h1>Phonebook</h1>
-<h2>Malcolm Sparks</h2>
-<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
+<h1>Clojure and REST Full Web</h1>
+<h2>Thomas van der Veen, Malcolm Sparks</h2>
+<h2><a href="mailto:@thomasvdv007">@thomasvdv007</a>, <a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
 <h2></h2>
 </section>
 
-<section>
-<section id="slide-orgheadline10">
-<h2 id="orgheadline10">Some pedantic observations about Tom's code</h2>
-<div class="outline-text-2" id="text-orgheadline10">
-</div></section>
+</section>
 <section id="slide-orgheadline1">
-<h3 id="orgheadline1">Only serves humans (who read English)</h3>
+<h3 id="orgheadline1">Acceptance Criteria</h3>
+<ul>
+<li>List all entries in the phone book</li>
+<li>Create a new entry in the phone book</li>
+<li>Remove an existing entry from the phone book</li>
+<li>Update an existing entry in the phone book</li>
+<li>Search for entries by surname</li>
+<li><p>
+An entry has the following
+</p>
+<ul>
+<li>Surname</li>
+<li>First name</li>
+
+</ul>
+<p>
+-Address
+</p></li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline2">
+<h3 id="orgheadline2">CRUD</h3>
+<p>
+Create: POST
+</p>
+
+<p>
+Read: GET
+</p>
+
+<p>
+Update: PUT
+</p>
+
+<p>
+Delete: DELETE
+</p>
+
+</section>
+<section id="slide-orgheadline3">
+<h3 id="orgheadline3">Compojure Routes</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defroutes app-routes
+  (GET "/v1/phonebook" [ ] (get-phonebook))
+  (POST "/v1/phonebook" {body :body}
+        (add-user (slurp body)))
+  (PUT "/v1/phonebook/:id"
+       {body :body params :params}
+       (update-user (:id params)
+                    (slurp body)))
+  (DELETE "/v1/phonebook/:id" [id]
+          (delete-user id))
+  (GET "/v1/phonebook/search"
+       {params :params}
+       (search-users params))
+  (route/not-found "Not Found"))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline4">
+<h3 id="orgheadline4">Our main data-structure</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def phonebook
+  {"80a8ea00-…"
+   {:first-name "Thomas"
+    :surname "van der Veen"
+    :phonenumber "0783312345"
+    :address {:street "High Street"
+               :postcode "SO21 1QQ"}}
+   "38d77ce0-…"
+   {:firstname "Malcolm"
+    :surname "Sparks"
+    :phonenumber "07123456"} }
+  :last-added "38d77ce0-…"})
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline5">
+<h3 id="orgheadline5">Adding a new entry</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn atomic-user-add [db data]
+  (let [new-uuid (.toString (UUID/randomUUID))
+        new-db (assoc-in db [:db new-uuid] data)]
+    (assoc-in new-db [:last-added] new-uuid )))
+
+(defn add-user [data]
+  (let [parsed-data (edn/read-string data)
+        validated (validate parsed-data)]
+    (if (contains? validated :valid)
+      (do (let [{id :last-added}
+                (swap! phonebook-db atomic-user-add parsed-data )]
+            {:status 201 :body (pr-str id)}))
+      {:status 400 :body (str "malformed request\n"
+                              (:reason validated))})))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline6">
+<h3 id="orgheadline6">Getting the entries</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn get-phonebook []
+  (let [data (pr-str (:db @phonebook-db))]
+    (-&gt; (r/response data)
+        (r/content-type
+         "application/edn"))))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline7">
+<h3 id="orgheadline7">Updating an entry</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn update-user [id data]
+  (let [parsed-data (edn/read-string data)
+        validated (validate parsed-data)]
+    (if (contains? (:db @phonebook-db) id)
+      (if (contains? validated :valid )
+        (do
+          (swap! phonebook-db assoc-in [:db id] parsed-data)
+          {:status 200})
+        {:status 400 :body (str "malformed request\n"
+                                (:reason validated))}))
+    {:status 404 :body (str id " does not exist\n")})))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline8">
+<h3 id="orgheadline8">Deleting an entry</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn delete-user [id]
+  (if (contains? (:db @phonebook-db ) id)
+    (do (swap! phonebook-db update-in
+               [:db] dissoc id)
+        {:status 200})
+    {:status 404 :body
+     (str id " does not exist\n")}))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline9">
+<h3 id="orgheadline9">Searching for an entry</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn search-users [params]
+  (let [surname (:surname params)
+        filtered (into {}
+                       (filter
+                        #(= surname (:surname (second %)))
+                        (:db @phonebook-db)))]
+    (-&gt; (r/response (pr-str filtered))
+        (r/content-type
+         "application/edn"))))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline10">
+<h3 id="orgheadline10">Validating input using Prismatic Schema</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def schema
+  {:firstname s/Str
+   :surname s/Str
+   :phonenumber s/Str
+   (s/optional-key :address)
+   {:place s/Str
+    :country s/Str}})
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline11">
+<h3 id="orgheadline11">Validating</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn validate [data]
+  (try
+    (s/validate schema data)
+    {:valid true}
+    (catch Exception e
+      {:invalid true :reason
+       (.getMessage e)})))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline22">
+<h2 id="orgheadline22">Some observations about Tom's code</h2>
+<div class="outline-text-2" id="text-orgheadline22">
+</div></section>
+<section id="slide-orgheadline12">
+<h3 id="orgheadline12">It's good.</h3>
+<ul>
+<li>Simple &amp; easy</li>
+<li>Idiomatic</li>
+
+</ul>
+</section>
+<section id="slide-orgheadline13">
+<h3 id="orgheadline13">Only serves humans (who read English)</h3>
 <ul>
 <li>Only supports HTML, encourages scraping</li>
 <li>Only English supported</li>
 <li>Would need more thinking to be an API</li>
 
 </ul>
-
 </section>
-<section id="slide-orgheadline2">
-<h3 id="orgheadline2">Vulnerable to attack</h3>
+<section id="slide-orgheadline14">
+<h3 id="orgheadline14">Vulnerable to attack</h3>
 <ul>
 <li>No security headers</li>
 <li>No parameter validation</li>
 
 </ul>
-
 </section>
-<section id="slide-orgheadline3">
-<h3 id="orgheadline3">Wasteful</h3>
+<section id="slide-orgheadline15">
+<h3 id="orgheadline15">Blocking I/O</h3>
+</section>
+<section id="slide-orgheadline16">
+<h3 id="orgheadline16">No service metadata</h3>
+<ul>
+<li>No data about what the service does (e.g. Swagger, RAML)</li>
+<li>No HEAD, OPTIONS or TRACE methods</li>
+
+</ul>
+</section>
+<section id="slide-orgheadline17">
+<h3 id="orgheadline17">Doesn't support conditional requests</h3>
 <ul>
 <li>Doesn't support If-Modified-Since (dates)</li>
 <li>Doesn't support If-Not-Match (etags)</li>
@@ -61,31 +280,13 @@
 <li>No content-encoding (e.g. gzip)</li>
 
 </ul>
+</section>
+<section id="slide-orgheadline18">
+<h3 id="orgheadline18">(diagram of Om/Next)</h3>
 
 </section>
-<section id="slide-orgheadline4">
-<h3 id="orgheadline4">Blocking I/O</h3>
-
-</section>
-<section id="slide-orgheadline5">
-<h3 id="orgheadline5">Incorrect (with respect to HTTP)</h3>
-<ul>
-<li>Wrong method yields 404 (Not Found) instead of 405 (No Such Method)</li>
-
-</ul>
-
-</section>
-<section id="slide-orgheadline6">
-<h3 id="orgheadline6">No service metadata</h3>
-<ul>
-<li>No data about what the service does (e.g. Swagger, RAML)</li>
-<li>No HEAD, OPTIONS or TRACE methods</li>
-
-</ul>
-
-</section>
-<section id="slide-orgheadline7">
-<h3 id="orgheadline7">Ad-hoc</h3>
+<section id="slide-orgheadline19">
+<h3 id="orgheadline19">Ad-hoc</h3>
 <ul>
 <li>'Hand-crafted'</li>
 <li>Hypermedia links are hand-coded</li>
@@ -95,8 +296,8 @@
 </ul>
 
 </section>
-<section id="slide-orgheadline8">
-<h3 id="orgheadline8">DON'T PANIC</h3>
+<section id="slide-orgheadline20">
+<h3 id="orgheadline20">DON'T PANIC</h3>
 <ul>
 <li>There are solutions for most of these issues</li>
 <li>Trouble is, things get <i>complex</i></li>
@@ -105,15 +306,15 @@
 </ul>
 
 </section>
-<section id="slide-orgheadline9" data-background="#f8f8f8" class="juxt_hide-heading">
-<h3 id="orgheadline9">Solution</h3>
+<section id="slide-orgheadline21" data-background="#f8f8f8" class="juxt_hide-heading">
+<h3 id="orgheadline21">Solution</h3>
 <span style="font-family: yada; font-size: 4em">yada</span>
 
 </section>
 </section>
 <section>
-<section id="slide-orgheadline13">
-<h2 id="orgheadline13">The phonebook index</h2>
+<section id="slide-orgheadline25">
+<h2 id="orgheadline25">The phonebook index</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:description "Phonebook index"
@@ -124,8 +325,8 @@
 </div>
 
 </section>
-<section id="slide-orgheadline11">
-<h3 id="orgheadline11">GET</h3>
+<section id="slide-orgheadline23">
+<h3 id="orgheadline23">GET</h3>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:get {:parameters {:query {(s/optional-key :q) String}}
@@ -143,8 +344,8 @@
 </div>
 
 </section>
-<section id="slide-orgheadline12">
-<h3 id="orgheadline12">POST</h3>
+<section id="slide-orgheadline24">
+<h3 id="orgheadline24">POST</h3>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:post
@@ -161,8 +362,8 @@
 </section>
 </section>
 <section>
-<section id="slide-orgheadline17">
-<h2 id="orgheadline17">The phonebook entry</h2>
+<section id="slide-orgheadline29">
+<h2 id="orgheadline29">The phonebook entry</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:description "Phonebook entry"
@@ -174,8 +375,8 @@
 </div>
 
 </section>
-<section id="slide-orgheadline14">
-<h3 id="orgheadline14">Phonebook entry GET</h3>
+<section id="slide-orgheadline26">
+<h3 id="orgheadline26">Phonebook entry GET</h3>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:get
@@ -199,8 +400,8 @@
 </div>
 
 </section>
-<section id="slide-orgheadline15">
-<h3 id="orgheadline15">Phonebook entry DELETE</h3>
+<section id="slide-orgheadline27">
+<h3 id="orgheadline27">Phonebook entry DELETE</h3>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:delete
@@ -212,8 +413,8 @@
 </div>
 
 </section>
-<section id="slide-orgheadline16">
-<h3 id="orgheadline16">Phonebook entry PUT</h3>
+<section id="slide-orgheadline28">
+<h3 id="orgheadline28">Phonebook entry PUT</h3>
 <div class="org-src-container">
 
 <pre><code class="clojure">{:put
@@ -233,8 +434,8 @@
 </section>
 </section>
 <section>
-<section id="slide-orgheadline18">
-<h2 id="orgheadline18">multipart/form-data</h2>
+<section id="slide-orgheadline30">
+<h2 id="orgheadline30">multipart/form-data</h2>
 <blockquote nil>
 <p>
 I don't really care about the minutia of what's involved here, but I'd
@@ -245,10 +446,26 @@ glad that someone with your level of OCD does.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline19">
-<h2 id="orgheadline19">yada roadmap</h2>
+<section id="slide-orgheadline31">
+<h2 id="orgheadline31">yada roadmap</h2>
 <p>
 (Tolkien map with location, somewhere around The Dead Marshes)
+</p>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline32">
+<h2 id="orgheadline32">Add</h2>
+<p>
+Allow
+Vary
+</p>
+
+<p>
+All these complaints are fully addressed by the library I'm going to
+mention at the end.
 </p>
 </section>
 </section>

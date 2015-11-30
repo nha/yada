@@ -1,7 +1,7 @@
 #+EXPORT_EXCLUDE_TAGS:  noexport
-#+AUTHOR:               Malcolm Sparks
-#+EMAIL:                @malcolmsparks
-#+TITLE:                Phonebook
+#+AUTHOR:               Thomas van der Veen, Malcolm Sparks
+#+TITLE:                Clojure and REST Full Web
+#+EMAIL:                @thomasvdv007, @malcolmsparks
 #+LANGUAGE:             en
 #+OPTIONS:              toc:nil
 #+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:nil
@@ -18,39 +18,183 @@
 #+REVEAL_PLUGINS: (highlight markdown notes)
 #+REVEAL_EXTRA_CSS: static/css/extra.css
 
-* Some pedantic observations about Tom's code
+** Acceptance Criteria
 
+- List all entries in the phone book
+- Create a new entry in the phone book
+- Remove an existing entry from the phone book
+- Update an existing entry in the phone book
+- Search for entries by surname
+- An entry has the following
+ - Surname
+ - First name
+ -Address
+
+** CRUD
+
+Create: POST
+
+Read: GET
+
+Update: PUT
+
+Delete: DELETE
+
+** Compojure Routes
+
+#+BEGIN_SRC clojure
+  (defroutes app-routes
+    (GET "/v1/phonebook" [ ] (get-phonebook))
+    (POST "/v1/phonebook" {body :body}
+          (add-user (slurp body)))
+    (PUT "/v1/phonebook/:id"
+         {body :body params :params}
+         (update-user (:id params)
+                      (slurp body)))
+    (DELETE "/v1/phonebook/:id" [id]
+            (delete-user id))
+    (GET "/v1/phonebook/search"
+         {params :params}
+         (search-users params))
+    (route/not-found "Not Found"))
+#+END_SRC
+
+** Our main data-structure
+
+#+BEGIN_SRC clojure
+  (def phonebook
+    {"80a8ea00-…"
+     {:first-name "Thomas"
+      :surname "van der Veen"
+      :phonenumber "0783312345"
+      :address {:street "High Street"
+                 :postcode "SO21 1QQ"}}
+     "38d77ce0-…"
+     {:firstname "Malcolm"
+      :surname "Sparks"
+      :phonenumber "07123456"} }
+    :last-added "38d77ce0-…"})
+#+END_SRC
+
+** Adding a new entry
+
+#+BEGIN_SRC clojure
+(defn atomic-user-add [db data]
+  (let [new-uuid (.toString (UUID/randomUUID))
+        new-db (assoc-in db [:db new-uuid] data)]
+    (assoc-in new-db [:last-added] new-uuid )))
+
+(defn add-user [data]
+  (let [parsed-data (edn/read-string data)
+        validated (validate parsed-data)]
+    (if (contains? validated :valid)
+      (do (let [{id :last-added}
+                (swap! phonebook-db atomic-user-add parsed-data )]
+            {:status 201 :body (pr-str id)}))
+      {:status 400 :body (str "malformed request\n"
+                              (:reason validated))})))
+#+END_SRC
+
+** Getting the entries
+
+#+BEGIN_SRC clojure
+  (defn get-phonebook []
+    (let [data (pr-str (:db @phonebook-db))]
+      (-> (r/response data)
+          (r/content-type
+           "application/edn"))))
+#+END_SRC
+
+** Updating an entry
+
+#+BEGIN_SRC clojure
+  (defn update-user [id data]
+    (let [parsed-data (edn/read-string data)
+          validated (validate parsed-data)]
+      (if (contains? (:db @phonebook-db) id)
+        (if (contains? validated :valid )
+          (do
+            (swap! phonebook-db assoc-in [:db id] parsed-data)
+            {:status 200})
+          {:status 400 :body (str "malformed request\n"
+                                  (:reason validated))}))
+      {:status 404 :body (str id " does not exist\n")})))
+#+END_SRC
+
+** Deleting an entry
+
+#+BEGIN_SRC clojure
+  (defn delete-user [id]
+    (if (contains? (:db @phonebook-db ) id)
+      (do (swap! phonebook-db update-in
+                 [:db] dissoc id)
+          {:status 200})
+      {:status 404 :body
+       (str id " does not exist\n")}))
+#+END_SRC
+
+** Searching for an entry
+
+#+BEGIN_SRC clojure
+  (defn search-users [params]
+    (let [surname (:surname params)
+          filtered (into {}
+                         (filter
+                          #(= surname (:surname (second %)))
+                          (:db @phonebook-db)))]
+      (-> (r/response (pr-str filtered))
+          (r/content-type
+           "application/edn"))))
+#+END_SRC
+
+** Validating input using Prismatic Schema
+
+#+BEGIN_SRC clojure
+  (def schema
+    {:firstname s/Str
+     :surname s/Str
+     :phonenumber s/Str
+     (s/optional-key :address)
+     {:place s/Str
+      :country s/Str}})
+#+END_SRC
+
+** Validating
+
+#+BEGIN_SRC clojure
+  (defn validate [data]
+    (try
+      (s/validate schema data)
+      {:valid true}
+      (catch Exception e
+        {:invalid true :reason
+         (.getMessage e)})))
+#+END_SRC
+
+* Some observations about Tom's code
+
+** It's good.
+- Simple & easy
+- Idiomatic
 ** Only serves humans (who read English)
-
 - Only supports HTML, encourages scraping
 - Only English supported
 - Would need more thinking to be an API
-
 ** Vulnerable to attack
-
 - No security headers
 - No parameter validation
-
-** Wasteful
-
+** Blocking I/O
+** No service metadata
+- No data about what the service does (e.g. Swagger, RAML)
+- No HEAD, OPTIONS or TRACE methods
+** Doesn't support conditional requests
 - Doesn't support If-Modified-Since (dates)
 - Doesn't support If-Not-Match (etags)
 - No cache-control headers
 - No content-encoding (e.g. gzip)
-
-** Blocking I/O
-
-** Incorrect (with respect to HTTP)
-
-- Wrong method yields 404 (Not Found) instead of 405 (No Such Method)
-
-** No service metadata
-
-- No data about what the service does (e.g. Swagger, RAML)
-- No HEAD, OPTIONS or TRACE methods
+** (diagram of Om/Next)
 
 ** Ad-hoc
-
 - 'Hand-crafted'
 - Hypermedia links are hand-coded
 - Service can't be generated
@@ -176,3 +320,11 @@ glad that someone with your level of OCD does.
 * yada roadmap
 
 (Tolkien map with location, somewhere around The Dead Marshes)
+
+
+* Add
+Allow
+Vary
+
+All these complaints are fully addressed by the library I'm going to
+mention at the end.

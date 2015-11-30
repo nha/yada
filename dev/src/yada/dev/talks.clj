@@ -40,7 +40,7 @@
                                           (str (md-to-html-string (slurp f)) \newline)
                                           :otherwise f)
                                         )}
-                        "org" {:representations [{:media-type "text/plain"}]}}
+                        "org" {:representations [{:media-type #{"text/plain"}}]}}
 
                        :index-files ["README.md"]
                        })

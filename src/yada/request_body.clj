@@ -47,9 +47,12 @@
      (infof ":default acc is %s" acc)))
   ctx)
 
-#_(defn read-body-to-string [request]
+(defn read-body-to-string [request]
   (d/chain
-   #_(s/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
+   (s/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
+   (fn [bufs]
+     (bs/to-byte-array (seq bufs)))
+
    #_(s/connect (yada.util/to-manifold-stream (:body request)) (java.io.ByteArrayOutputStream.))
    #_(fn [x]
      (bs/transfer (seq x) String))
@@ -63,7 +66,7 @@
 
 (defmethod process-request-body "application/x-www-form-urlencoded"
   [ctx body-stream media-type & args]
-  (throw (ex-info "TODO: check body against parameters" {#_:body #_(read-body-to-string (:request ctx))})))
+  (throw (ex-info "TODO: check body against parameters" {:body (read-body-to-string (:request ctx))})))
 
 ;; Deprecated?
 

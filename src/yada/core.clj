@@ -411,34 +411,34 @@
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
-  (d/chain
-   (or
-    (-> ctx :options :last-modified)
-    (-> ctx :properties :last-modified))
+  (if-let [last-modified
+           (or
+            (-> ctx :options :last-modified)
+            (-> ctx :properties :last-modified))]
 
-   (fn [last-modified]
-     (if last-modified
+    (do
+      (infof "last-modified is %s, type %s" last-modified (type last-modified))
 
-       (if-let [if-modified-since
-                (some-> (:request ctx)
-                        (get-in [:headers "if-modified-since"])
-                        ring.util.time/parse-date)]
-         (if (<=
-              (.getTime last-modified)
-              (.getTime if-modified-since))
+      (if-let [if-modified-since
+               (some-> (:request ctx)
+                       (get-in [:headers "if-modified-since"])
+                       ring.util.time/parse-date)]
+        (if (<=
+             (.getTime last-modified)
+             (.getTime if-modified-since))
 
-           ;; exit with 304
-           (d/error-deferred
-            (ex-info "" (merge {:status 304} ctx)))
+          ;; exit with 304
+          (d/error-deferred
+           (ex-info "" (merge {:status 304} ctx)))
 
-           (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
+          (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
 
-         (or
-          (some->> last-modified
-                   ring.util.time/format-date
-                   (assoc-in ctx [:response :last-modified]))
-          ctx))
-       ctx))))
+        (or
+         (some->> last-modified
+                  ring.util.time/format-date
+                  (assoc-in ctx [:response :last-modified]))
+         ctx)))
+    ctx))
 
 ;; Check ETag - we already have the representation details,
 ;; which are necessary for a strong validator. See
@@ -679,6 +679,8 @@
               :allowed-methods (:allowed-methods handler)
               :options options})]
 
+    ;;(infof "handle-request, handler is %s" (into {} handler))
+
     (->
      (apply d/chain ctx interceptor-chain)
 
@@ -753,10 +755,6 @@
    parse-parameters
 
    process-request-body
-
-   (fn [ctx]
-     (infof "ctx parameters is %s" (:parameters ctx))
-     ctx)
 
    get-properties
 
