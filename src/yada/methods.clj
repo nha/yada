@@ -220,7 +220,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Post
+#_(defprotocol Post
   (POST [_ ctx]
     "Post the new data. Return a result.  If a function is returned, it
   is invoked with the context as the only parameter. If a string is
@@ -271,7 +271,8 @@
   (idempotent? [_] false)
   (request [_ ctx]
     (d/chain
-     (POST (:resource ctx) ctx)
+     (when-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
+       (f ctx))
      (fn [res]
        (interpret-post-result res ctx))
      (fn [ctx]

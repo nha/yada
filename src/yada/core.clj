@@ -404,6 +404,7 @@
   (let [produces (or (get-in ctx [:properties :representations])
                      (get-in ctx [:handler :methods (:method ctx) :produces]))
         rep (rep/select-best-representation (:request ctx) produces)]
+    (infof "best-rep is %s" rep)
     (cond-> ctx
       rep (assoc-in [:response :representation] rep)
       (and rep (-> ctx :handler :vary)) (assoc-in [:response :vary] (-> ctx :handler :vary)))))

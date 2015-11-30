@@ -5,45 +5,41 @@
    [clojure.test :refer :all]
    [juxt.iota :refer [given]]
    [ring.mock.request :as mock]
-   [yada.methods :refer [Get Post]]
+   [yada.resource :refer [new-custom-resource]]
    [yada.protocols :as p]
    [yada.test.util :refer (etag?)]
    [yada.yada :as yada :refer [yada]]))
 
 ;; ETags -------------------------------------------------------------
 
-;; TODO Extract out into dedicated ns.
+(defn etag-test-resource [v]
+  (new-custom-resource
+   {:properties (fn [ctx] {:version @v})
+    :methods {:get {;; TODO: test with just map, or even just "text/plain"
+                    :produces [{:media-type "text/plain"}]
 
-(defrecord ETagTestResource [v]
-  p/Properties
-  (properties [_]
-    {:representations [{:media-type "text/plain"}]})
-  (properties [_ ctx]
-    {:version @v})
-  Get
-  (GET [_ ctx] "foo")
-  Post
-  (POST [_ {:keys [response]}] (assoc response :version (swap! v inc))))
+                    :handler (fn [ctx] "foo")}
+              :post {:handler (fn [{:keys [response]}]
+                                (assoc response :version (swap! v inc)))}}}))
 
 (deftest etag-test
   (testing "etags-identical-for-consecutive-gets"
     (let [v (atom 1)
-          handler (yada (->ETagTestResource v))
+          handler (yada (etag-test-resource v))
           r1 @(handler (mock/request :get "/"))
           r2 @(handler (mock/request :get "/"))]
       (given [r1 r2]
         [first :status] := 200
         [second :status] := 200
         [first :headers "etag"] :? etag?
-        [second :headers "etag"] :? etag?
-        )
+        [second :headers "etag"] :? etag?)
       ;; ETags are the same in both responses
       (is (= (get-in r1 [:headers "etag"])
              (get-in r2 [:headers "etag"])))))
 
   (testing "etags-different-after-post"
     (let [v (atom 1)
-          handler (yada (->ETagTestResource v))
+          handler (yada (etag-test-resource v))
           r1 @(handler (mock/request :get "/"))
           r2 @(handler (mock/request :post "/"))
           r3 @(handler (mock/request :get "/"))]
@@ -58,9 +54,9 @@
       (is (not (= (get-in r1 [:headers "etag"])
                   (get-in r3 [:headers "etag"]))))))
 
-  (testing "post-using-etags"
+  #_(testing "post-using-etags"
     (let [v (atom 1)
-          handler (yada (->ETagTestResource v))
+          handler (yada (etag-test-resource v))
           r1 @(handler (mock/request :get "/"))
           ;; Someone else POSTs, causing the etag given in r1 to become stale
           r2 @(handler (mock/request :post "/"))]
