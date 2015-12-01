@@ -60,7 +60,7 @@
 
 (defn known-method?
   [ctx]
-  (if-not (:method-instance ctx)
+  (if-not (:method-wrapper ctx)
     (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))
 
@@ -77,7 +77,7 @@
       (d/error-deferred
        (ex-info "Method Not Allowed"
                 {:status 405}))
-      (methods/request (:method-instance ctx) ctx))
+      (methods/request (:method-wrapper ctx) ctx))
     ctx))
 
 (defn method-allowed?
@@ -421,8 +421,6 @@
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
                              (get-in ctx [:handler :produces])))
         rep (rep/select-best-representation (:request ctx) produces)]
-    (infof "sr (%s): produces: %s" (:method ctx) produces)
-    (infof "sr (%s): rep: %s" (:method ctx) rep)
     (cond-> ctx
       produces (assoc :produces produces)
       rep (assoc-in [:response :produces] rep)
@@ -435,28 +433,25 @@
             (-> ctx :options :last-modified)
             (-> ctx :properties :last-modified))]
 
-    (do
-      (infof "last-modified is %s, type %s" last-modified (type last-modified))
+    (if-let [if-modified-since
+             (some-> (:request ctx)
+                     (get-in [:headers "if-modified-since"])
+                     ring.util.time/parse-date)]
+      (if (<=
+           (.getTime last-modified)
+           (.getTime if-modified-since))
 
-      (if-let [if-modified-since
-               (some-> (:request ctx)
-                       (get-in [:headers "if-modified-since"])
-                       ring.util.time/parse-date)]
-        (if (<=
-             (.getTime last-modified)
-             (.getTime if-modified-since))
+        ;; exit with 304
+        (d/error-deferred
+         (ex-info "" (merge {:status 304} ctx)))
 
-          ;; exit with 304
-          (d/error-deferred
-           (ex-info "" (merge {:status 304} ctx)))
+        (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
 
-          (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
-
-        (or
-         (some->> last-modified
-                  ring.util.time/format-date
-                  (assoc-in ctx [:response :last-modified]))
-         ctx)))
+      (or
+       (some->> last-modified
+                ring.util.time/format-date
+                (assoc-in ctx [:response :last-modified]))
+       ctx))
     ctx))
 
 ;; Check ETag - we already have the representation details,
@@ -484,11 +479,6 @@
             etags (into {}
                         (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
-
-        (infof "matches of %s" matches)
-        (infof "version from properties is %s" version)
-        (infof "produces in ctx is %s" (:produces ctx))
-        (infof "etags by rep is %s" etags)
 
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
@@ -538,16 +528,49 @@
 (defn invoke-method
   "Methods"
   [ctx]
-  (methods/request (:method-instance ctx) ctx))
+  (methods/request (:method-wrapper ctx) ctx))
 
+
+#_(let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
+    (d/chain
+
+     (propsfn ctx)                     ; propsfn can returned a deferred
+
+     (fn [props]
+       (assoc
+        ctx
+        :properties
+        (cond-> props
+          (:produces props) ; representations shorthand is expanded
+          (update-in [:produces]
+                     (comp rep/representation-seq rep/coerce-representations)))))))
 (defn get-new-properties
   "If the method is unsafe, call properties again. This will
   pick up any changes that are used in subsequent interceptors, such as
   the new version of the resource."
   [ctx]
   (let [resource (:resource ctx)]
-    (if (not (methods/safe? (:method-instance ctx)))
-      (d/chain
+    (if (not (methods/safe? (:method-wrapper ctx)))
+
+      (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
+        (d/chain
+
+         (propsfn ctx)                 ; propsfn can returned a deferred
+
+         (fn [props]
+           (assoc
+            ctx
+            :new-properties
+            (cond-> props
+              (:produces props)  ; representations shorthand is
+                                 ; expanded, is this necessary at this
+                                 ; stage?
+              (update-in [:produces]
+                         (comp rep/representation-seq rep/coerce-representations)))))))
+
+
+      ;; Old code to indicate how to do schema validation/coercion on properties
+      #_(d/chain
        (try
          (resource/properties-on-request resource ctx)
          (catch AbstractMethodError e {}))
@@ -695,15 +718,13 @@
              (make-context (:properties handler))
              {:id id
               :method method
-              :method-instance (get (:known-methods handler) method)
+              :method-wrapper (get (:known-methods handler) method)
               :interceptor-chain interceptor-chain
               :handler handler
               :resource (:resource handler)
               :request request
               :allowed-methods (:allowed-methods handler)
               :options options})]
-
-    ;;(infof "handle-request, handler is %s" (into {} handler))
 
     (->
      (apply d/chain ctx interceptor-chain)
@@ -750,6 +771,7 @@
   (invoke [this req]
     (handle-request this req))
 
+  ;; see new-custom-resource, want this for meta-yada, i.e. (-> x yada yada yada)
   #_p/Properties
   #_(properties
       [this]
@@ -829,10 +851,10 @@
             x)))
        (merge-schemas)))
 
-(defn handler
+(defn yada
   "Create a Ring handler"
   ([resource]                   ; Single-arity form with default options
-   (yada.core/handler resource {}))
+   (yada resource {}))
 
   ([resource options]
    (let [base resource
@@ -921,5 +943,3 @@
              (expand-shorthands resource)
 
              )))))
-
-(def yada handler)
