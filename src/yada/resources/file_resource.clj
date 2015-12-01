@@ -43,14 +43,14 @@
   ;; another file, string or other body content.
   (assoc (:response ctx)
          :body (if reader
-                 (reader file (-> ctx :response :representation))
+                 (reader file (-> ctx :response :produces))
                  file)))
 
 (s/defn new-file-resource
   [file :- File
-   {:keys [reader representations]}
+   {:keys [reader produces]}
    :- {(s/optional-key :reader) (s/=> s/Any File Representation)
-       (s/optional-key :representations) RepresentationSets}]
+       (s/optional-key :produces) RepresentationSets}]
 
   (new-custom-resource
    {::type :file
@@ -60,34 +60,15 @@
                    ;; A representation can be given as a parameter, or deduced from
                    ;; the filename. The latter is unreliable, as it depends on file
                    ;; suffixes.
-                   :representations (or representations
-                                        [{:media-type (or (ext-mime-type (.getName file))
-                                                          "application/octet-stream")}])})
+                   :produces (or produces
+                                 [{:media-type (or (ext-mime-type (.getName file))
+                                                   "application/octet-stream")}])
+                   :exists? (.exists file)
+                   :last-modified (Date. (.lastModified file))})
 
-    :methods {:get {:handler (fn [ctx]
-                               (respond-with-file ctx file reader))}}})
-  #_p/Properties
-  #_(properties [_]
-                {:allowed-methods #{:get}
-
-                 ;; A representation can be given as a parameter, or deduced from
-                 ;; the filename. The latter is unreliable, as it depends on file
-                 ;; suffixes.
-                 :representations (or representations
-                                      [{:media-type (or (ext-mime-type (.getName file))
-                                                        "application/octet-stream")}])})
-
-  #_(properties [_ ctx]
-                {:exists? (.exists file)
-                 :last-modified (Date. (.lastModified file))
-                 })
-
-
-  #_Put ;; Commented during the move to pure-data
-  #_(PUT [_ ctx] (bs/transfer (-> ctx :request :body) file))
-
-  #_Delete ;; Commented during the move to pure-data
-  #_(DELETE [_ ctx] (.delete file)))
+    :methods {:get {:handler (fn [ctx] (respond-with-file ctx file reader))}
+              :put {:handler (fn [ctx] (bs/transfer (-> ctx :request :body) file))}
+              :delete {:handler (fn [ctx] (.delete file))}}}))
 
 (defn filename-ext
   "Returns the file extension of a filename or filepath."
@@ -149,11 +130,13 @@
    ;; (e.g. markdown, org-mode) to be handled. The reader entry calls
    ;; a function to return the body (arguments are the file and the
    ;; negotiated representation)
-   {:keys [custom-suffices index-files]} :- {(s/optional-key :custom-suffices)
-                                             {String ; suffix
-                                              {(s/optional-key :reader) (s/=> s/Any File Representation)
-                                               :representations RepresentationSets}}
-                                             (s/optional-key :index-files) [String]}]
+   {:keys [custom-suffices index-files]}
+   :- {(s/optional-key :custom-suffices)
+       {String                          ; suffix
+        {(s/optional-key :reader) (s/=> s/Any File Representation)
+         :representations RepresentationSets}}
+       (s/optional-key :index-files) [String]}]
+
   (new-custom-resource
    {:description (format "Directory listing of %s" dir)
 
@@ -172,9 +155,9 @@
           (cond
             (.isFile f)
             {:exists? (.exists f)
-             :representations (if custom-suffix-args
-                                (:representations custom-suffix-args)
-                                [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
+             :produces (if custom-suffix-args
+                         (:produces custom-suffix-args)
+                         [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
              :last-modified (Date. (.lastModified f))
              ::reader (some-> custom-suffix-args :reader)
              ::file f}
@@ -186,8 +169,8 @@
                         {:status 302
                          :headers {"Location" (str (get-in ctx [:request :uri]) index-file)}}))
               {:exists? true
-               :representations [{:media-type #{"text/html"
-                                                "text/plain;q=0.9"}}]
+               :produces [{:media-type #{"text/html"
+                                         "text/plain;q=0.9"}}]
                :last-modified (Date. (.lastModified f))
                ::file f})
 
@@ -206,7 +189,7 @@
           (cond
             (.isFile f) (respond-with-file ctx f (get-in ctx [:properties ::reader]))
             (.isDirectory f) (dir-index f
-                                        (-> ctx :response :representation :media-type)))))
+                                        (-> ctx :response :produces :media-type)))))
       :produces [{:media-type #{"text/plain"}}]}}}))
 
 #_(s/defrecord DirectoryResource

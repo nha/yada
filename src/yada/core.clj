@@ -98,10 +98,23 @@
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas  (get-in ctx [:handler :methods method :parameters])
+        schemas (get-in ctx [:handler :methods method :parameters])
 
-        parameters {:path (when-let [schema (:path schemas)]
-                            (rs/coerce schema (:route-params request) :query))}
+        parameters {:path (if-let [schema (:path schemas)]
+                            (rs/coerce schema (:route-params request) :query)
+                            (:route-params request))
+                    :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
+                             (if-let [schema (:query schemas)]
+                               (let [coercer (sc/coercer schema
+                                                         (or
+                                                          coerce/+parameter-key-coercions+
+                                                          (rsc/coercer :query)
+                                                          ))]
+                                 (coercer qp))
+                               qp
+                               ))}
+
+
 
         #_parameters #_(-> ctx :handler :parameters)
 
@@ -367,8 +380,8 @@
         ctx
         :properties
         (cond-> props
-          (:representations props) ; representations shorthand is expanded
-          (update-in [:representations]
+          (:produces props) ; representations shorthand is expanded
+          (update-in [:produces]
                      (comp rep/representation-seq rep/coerce-representations))))))))
 
 #_(defn authentication
@@ -401,12 +414,18 @@
 
 (defn select-representation
   [ctx]
-  (let [produces (or (get-in ctx [:properties :representations])
-                     (get-in ctx [:handler :methods (:method ctx) :produces]))
+  ;; TODO: Need metadata to say whether the :produces property 'replaces'
+  ;; or 'augments' the static produces declaration. Currently only
+  ;; 'replaces' is supported.
+  (let [produces (or (get-in ctx [:properties :produces])
+                     (concat (get-in ctx [:handler :methods (:method ctx) :produces])
+                             (get-in ctx [:handler :produces])))
         rep (rep/select-best-representation (:request ctx) produces)]
-    (infof "best-rep is %s" rep)
+    (infof "sr (%s): produces: %s" (:method ctx) produces)
+    (infof "sr (%s): rep: %s" (:method ctx) rep)
     (cond-> ctx
-      rep (assoc-in [:response :representation] rep)
+      produces (assoc :produces produces)
+      rep (assoc-in [:response :produces] rep)
       (and rep (-> ctx :handler :vary)) (assoc-in [:response :vary] (-> ctx :handler :vary)))))
 
 ;; Conditional requests - last modified time
@@ -452,7 +471,7 @@
 
     ;; We have an If-Match to process
     (cond
-      (and (contains? matches "*") (-> ctx :representations count pos?))
+      (and (contains? matches "*") (-> ctx :produces count pos?))
       ;; No need to compute etag, exit
       ctx
 
@@ -463,8 +482,13 @@
       (-> ctx :properties :version)
       (let [version (-> ctx :properties :version)
             etags (into {}
-                        (for [rep (:representations ctx)]
+                        (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
+
+        (infof "matches of %s" matches)
+        (infof "version from properties is %s" version)
+        (infof "produces in ctx is %s" (:produces ctx))
+        (infof "etags by rep is %s" etags)
 
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
@@ -479,7 +503,7 @@
           ;; resource state didn't change), then this
           ;; etag will do for the response.
           (assoc-in ctx [:response :etag]
-                    (get etags (:representation ctx))))))
+                    (get etags (:produces ctx))))))
     ctx))
 
 ;; If-None-Match check
@@ -500,7 +524,7 @@
         (-> ctx :properties :version)
       (let [version (-> ctx :properties :version)
             etags (into {}
-                        (for [rep (:representations ctx)]
+                        (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
 
         (when (not-empty (set/intersection matches (set (vals etags))))
@@ -557,7 +581,7 @@
   (if-let [version (or
                     (-> ctx :new-properties :version)
                     (-> ctx :properties :version))]
-    (let [etag (p/to-etag version (get-in ctx [:response :representation]))]
+    (let [etag (p/to-etag version (get-in ctx [:response :produces]))]
       (assoc-in ctx [:response :etag] etag))
     ctx))
 
@@ -596,14 +620,14 @@
                    ;; effect of this change.
                    (when (not= (:method ctx) :options)
                      (merge {}
-                            (when-let [x (get-in ctx [:response :representation :media-type])]
-                              (let [y (get-in ctx [:response :representation :charset])]
+                            (when-let [x (get-in ctx [:response :produces :media-type])]
+                              (let [y (get-in ctx [:response :produces :charset])]
                                 (if (and y (= (:type x) "text"))
                                   {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
                                   {"content-type" (mt/media-type->string x)})))
-                            (when-let [x (get-in ctx [:response :representation :encoding])]
+                            (when-let [x (get-in ctx [:response :produces :encoding])]
                               {"content-encoding" x})
-                            (when-let [x (get-in ctx [:response :representation :language])]
+                            (when-let [x (get-in ctx [:response :produces :language])]
                               {"content-language" x})
                             (when-let [x (get-in ctx [:response :last-modified])]
                               {"last-modified" x})
@@ -718,7 +742,7 @@
                                               (assoc-in [:response :body] b)
                                               (assoc-in [:response :headers "content-length"] (body/content-length b))))))
 
-                  rep (assoc-in [:response :representation] rep))
+                  rep (assoc-in [:response :produces] rep))
                 create-response))))))))
 
 (defrecord Handler []
@@ -784,7 +808,7 @@
               (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
             {} (:methods m)))))
 
-(defn expand-shorthand
+(defn expand-shorthands
   "Turns a resource into handler properties by expanding a
   human-author-friendly short-forms."
   [resource]
@@ -819,6 +843,7 @@
 
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
+         ;; See yada.resources.file-resource for an example.
          collection? (or (:collection? options)
                          (:collection? resource))
 
@@ -831,6 +856,11 @@
                              (#{:get} methods) (conj :head)
                              true (conj :options)))
 
+         ;; The point of calculating the coercers here is that
+         ;; parameters are wholly static (if schema checking is desired,
+         ;; non-declarative (dynamic, runtime) implementations can do
+         ;; their own dynamical checking!). As such, we want to
+         ;; pre-calculate them here rather than on every request.
          #_parameter-coercers
          #_(->> (for [[method schemas] parameters]
                   [method
@@ -888,7 +918,7 @@
               :collection? collection?
               }
 
-             (expand-shorthand resource)
+             (expand-shorthands resource)
 
              )))))
 

@@ -79,7 +79,7 @@
     (when-not (ctx/exists? ctx)
       (d/error-deferred (ex-info "" {:status 404})))
 
-    (when-not (:representation ctx)
+    (when-not (get-in ctx [:response :produces])
       (d/error-deferred
        (ex-info "" {:status 406})))
 
@@ -144,7 +144,7 @@
 
       (fn [exists?]
         (if exists?
-          (-> ctx :response :representation)
+          (-> ctx :response :produces)
           (d/error-deferred (ex-info "" {:status 404}))))
 
       (fn [representation]
@@ -168,7 +168,7 @@
         (interpret-get-result res ctx))
 
       (fn [ctx]
-        (let [representation (get-in ctx [:response :representation])]
+        (let [representation (get-in ctx [:response :produces])]
           ;; representation could be nil, for example, resource could be a java.io.File
           (update-in ctx [:response :body] body/to-body representation)))
 
