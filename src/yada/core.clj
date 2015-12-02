@@ -877,11 +877,12 @@
 
          known-methods (methods/known-methods)
 
+
          allowed-methods (let [methods (set
                                         (or (:allowed-methods options)
                                             (keys (:methods resource))))]
                            (cond-> methods
-                             (#{:get} methods) (conj :head)
+                             (some #{:get} methods) (conj :head)
                              true (conj :options)))
 
          ;; The point of calculating the coercers here is that
