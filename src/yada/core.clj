@@ -823,16 +823,22 @@
    ])
 
 (defn merge-schemas [m]
+  (infof "Merging schemas, m is type %s" (type m))
+  (infof "Merging schemas, methods is type %s" (type (:methods m)))
   (let [p (:parameters m)]
     (assoc m :methods
            (reduce-kv
             (fn [acc k v]
+              (assert (associative? v) (format "v is not associative: %s" v))
               (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
-            {} (:methods m)))))
+            {} (get m :methods {})))))
 
 (defn expand-shorthands
   "Turns a resource into handler properties by expanding a
   human-author-friendly short-forms."
+  ;; TODO: When structure is more stable, use coercions to achieve this
+  ;; rather than postwalk. This has the benefit of being more formally
+  ;; defined.
   [resource]
   (->> resource
        (postwalk
@@ -859,9 +865,20 @@
   ([resource options]
    (let [base resource
 
+;;         _ (assert (associative? resource) (format "Resource isn't associative (1): %s" resource))
+
+         _ (infof "Marker 0")
          resource (if (satisfies? p/ResourceCoercion resource)
-                    (p/as-resource resource)
-                    resource)
+                    (do
+                      (infof "Case 1: %s" resource)
+                      (p/as-resource resource))
+                    (do
+                      (infof "Case 2")
+                      resource))
+
+         _ (assert (associative? resource) (format "Resource isn't associative (2): %s" resource))
+
+         _ (infof "Marker A")
 
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
@@ -918,6 +935,9 @@
      (when-not (map? resource)
        (throw (ex-info "Resource is not a map" {:resource resource
                                                 :type (type resource)})))
+
+     (infof "Marker B")
+;;     (Thread/dumpStack)
 
      (map->Handler
       (merge {

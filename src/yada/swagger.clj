@@ -16,10 +16,10 @@
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
    [yada.charset :as charset]
-   [yada.methods :refer (Get GET)]
    [yada.media-type :as mt]
    [yada.protocols :as p]
-   [yada.core :as yada]
+   [yada.resource :refer [new-custom-resource]]
+   [yada.core :as yada :refer [yada]]
    [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
 
@@ -50,26 +50,22 @@
                                         {:parameters parameters})}))
                  swagger)]))
 
-(defrecord SwaggerSpec [spec created-at content-type]
-  p/Properties
-  (properties
-    [_]
-    {:representations
-     (case content-type
-       "application/json" [{:media-type #{"application/json"
-                                          "application/json;pretty=true"}
-                            :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
-       "text/html" [{:media-type "text/html"
-                     :charset charset/platform-charsets}]
-       "application/edn" [{:media-type #{"application/edn"
-                                         "application/edn;pretty=true"}
-                           :charset #{"UTF-8"}}])})
-  (properties [_ ctx]
-     {:last-modified created-at
-      :version spec})
+(defn swagger-spec [spec created-at content-type]
+  {:properties (fn [ctx] {:last-modified created-at
+                         :version spec}) ; TODO would be nice to use a
+                                         ; value rather than a lambda
+   :produces
+   (case content-type
+     "application/json" [{:media-type #{"application/json"
+                                        "application/json;pretty=true"}
+                          :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
+     "text/html" [{:media-type "text/html"
+                   :charset charset/platform-charsets}]
+     "application/edn" [{:media-type #{"application/edn"
+                                       "application/edn;pretty=true"}
+                         :charset #{"UTF-8"}}])
 
-  Get
-  (GET [_ ctx] (rs/swagger-json spec)))
+   :methods {:get {:handler (fn [ctx] (rs/swagger-json spec))}}})
 
 (defrecord Swaggered [spec route spec-handlers]
   Matched
@@ -116,4 +112,4 @@
         modified-date (to-date (now))]
     (->Swaggered spec route
                  (into {} (for [ct ["application/edn" "application/json" "text/html"]]
-                            [ct (yada/yada (->SwaggerSpec spec modified-date ct))])))))
+                            [ct (yada (swagger-spec spec modified-date ct))])))))

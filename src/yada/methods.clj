@@ -100,7 +100,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol ^:deprecated Get
+#_(defprotocol ^:deprecated Get
   (GET [_ ctx]
     "Return the state. Can be formatted to a representation of the given
   media-type and charset. Returning nil results in a 404. Get the

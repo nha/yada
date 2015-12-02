@@ -15,7 +15,6 @@
    [yada.representation :as rep]
    [yada.resource :refer [Representation RepresentationSets new-custom-resource]]
    [yada.protocols :as p]
-   [yada.methods :refer (Get GET #_Put #_PUT #_Post #_POST #_Delete #_DELETE)]
    [yada.media-type :as mt])
   (:import [java.io File]
            [java.util Date TimeZone]

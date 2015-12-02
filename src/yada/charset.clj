@@ -83,10 +83,14 @@
 (def default-platform-charset (.name (java.nio.charset.Charset/defaultCharset)))
 
 (def platform-charsets
-  (->> (concat
+  (set (concat
         [(to-charset-map default-platform-charset)]
-        (map #(assoc % :quality 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets)))))
-       ;; Tune down the number of charsets to manageable level by
-       ;; excluding those prefixed by x- and 'IBM'.
-       (filter (comp not (partial re-matches #"(x-|IBM).*") :alias))
-       set))
+
+        (->> (java.nio.charset.Charset/availableCharsets) keys
+             (map to-charset-map)
+             (map #(assoc % :quality 0.9))
+             ;; Tune down the number of charsets to manageable level by
+             ;; excluding those prefixed by x- and 'IBM'.
+             (filter (comp not (partial re-matches #"(x-|IBM).*") :alias))
+             ;; Extreme filter while developing
+             (filter #{"Shift_JIS" "ISO-8859-1" "US-ASCII"})))))
