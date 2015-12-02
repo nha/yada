@@ -51,21 +51,22 @@
                  swagger)]))
 
 (defn swagger-spec [spec created-at content-type]
-  {:properties (fn [ctx] {:last-modified created-at
-                         :version spec}) ; TODO would be nice to use a
-                                         ; value rather than a lambda
-   :produces
-   (case content-type
-     "application/json" [{:media-type #{"application/json"
-                                        "application/json;pretty=true"}
-                          :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
-     "text/html" [{:media-type "text/html"
-                   :charset charset/platform-charsets}]
-     "application/edn" [{:media-type #{"application/edn"
-                                       "application/edn;pretty=true"}
-                         :charset #{"UTF-8"}}])
+  (new-custom-resource
+   {:properties (fn [ctx] {:last-modified created-at
+                          :version spec}) ; TODO would be nice to use a
+                                        ; value rather than a lambda
+    :produces
+    (case content-type
+      "application/json" [{:media-type #{"application/json"
+                                         "application/json;pretty=true"}
+                           :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
+      "text/html" [{:media-type "text/html"
+                    :charset charset/platform-charsets}]
+      "application/edn" [{:media-type #{"application/edn"
+                                        "application/edn;pretty=true"}
+                          :charset #{"UTF-8"}}])
 
-   :methods {:get {:handler (fn [ctx] (rs/swagger-json spec))}}})
+    :methods {:get {:handler (fn [ctx] (rs/swagger-json spec))}}}))
 
 (defrecord Swaggered [spec route spec-handlers]
   Matched
