@@ -12,7 +12,6 @@
 (extend-protocol p/ResourceCoercion
   String
   (as-resource [s]
-    (infof "String as-resource")
     {:properties {:last-modified (to-date (now))
                   :version s}
      :produces [{;; Without attempting to actually parse it (which isn't completely

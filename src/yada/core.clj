@@ -823,8 +823,6 @@
    ])
 
 (defn merge-schemas [m]
-  (infof "Merging schemas, m is type %s" (type m))
-  (infof "Merging schemas, methods is type %s" (type (:methods m)))
   (let [p (:parameters m)]
     (assoc m :methods
            (reduce-kv
@@ -865,20 +863,11 @@
   ([resource options]
    (let [base resource
 
-;;         _ (assert (associative? resource) (format "Resource isn't associative (1): %s" resource))
-
-         _ (infof "Marker 0")
          resource (if (satisfies? p/ResourceCoercion resource)
-                    (do
-                      (infof "Case 1: %s" resource)
-                      (p/as-resource resource))
-                    (do
-                      (infof "Case 2")
-                      resource))
+                    (p/as-resource resource)
+                    resource)
 
-         _ (assert (associative? resource) (format "Resource isn't associative (2): %s" resource))
-
-         _ (infof "Marker A")
+         _ (assert (associative? resource) (format "Resource must be associative: %s" resource))
 
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
@@ -935,9 +924,6 @@
      (when-not (map? resource)
        (throw (ex-info "Resource is not a map" {:resource resource
                                                 :type (type resource)})))
-
-     (infof "Marker B")
-;;     (Thread/dumpStack)
 
      (map->Handler
       (merge {
