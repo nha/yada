@@ -23,13 +23,9 @@
   Lifecycle
   (start [component]
     (let [journal (atom {})
-          _ (infof "Marker v")
           error-resource (hello-error journal)]
-      (infof "Marker C")
       (dotimes [n 10]
-        (do
-          (infof "Marker (dotimes): %s" n)
-          @(error-resource (request :get "/"))))
+        @(error-resource (request :get "/")))
 
       (assoc component :journal journal :error-resource error-resource)))
 

@@ -48,9 +48,9 @@
       :status := 200
       [:headers keys set] := #{"last-modified" "content-type" "content-length" "vary" "etag"}
       [:headers "content-type"] := "application/json"
-      [:headers "content-length"] := 421
+      [:headers "content-length"] := 409
       [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "-626220722"
+      [:headers "etag"] := "-570723708"
       )
     (given (-> response :body to-string json/decode)
       ["swagger"] := "2.0"
@@ -73,21 +73,21 @@
       (let [response @(resource
                        (merge-with merge (request :get "/" )
                                    {:headers {"if-modified-since"
-                                              (format-date last-modified)}}))]
+                                              (format-date (-> last-modified .toInstant (.plusSeconds 1) Date/from))}}))]
         (given response :status := 304))
 
       (let [response @(resource
-                       (merge-with merge (request :get "/" )
-                                   {:headers {"if-modified-since"
-                                              (format-date (-> last-modified .toInstant (.minusSeconds 1) Date/from))}}))]
-        (given response :status := 200))
+                         (merge-with merge (request :get "/" )
+                                     {:headers {"if-modified-since"
+                                                (format-date (-> last-modified .toInstant (.minusSeconds 1) Date/from))}}))]
+          (given response :status := 200))
 
       (is etag)
 
       (let [response @(resource
-                       (merge-with merge (request :get "/" )
-                                   {:headers {"if-none-match" etag}}))]
-        (given response :status := 304)))))
+                         (merge-with merge (request :get "/" )
+                                     {:headers {"if-none-match" etag}}))]
+          (given response :status := 304)))))
 
 
 (deftest put-not-allowed-test

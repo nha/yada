@@ -37,6 +37,39 @@
 
 #_(def CHUNK-SIZE 16384)
 
+(defn merge-schemas [m]
+  (let [p (:parameters m)]
+    (assoc m :methods
+           (reduce-kv
+            (fn [acc k v]
+              (assert (associative? v) (format "v is not associative: %s" v))
+              (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
+            {} (get m :methods {})))))
+
+(defn expand-shorthands
+  "Turns a resource into handler properties by expanding a
+  human-author-friendly short-forms."
+  ;; TODO: When structure is more stable, use coercions to achieve this
+  ;; rather than postwalk. This has the benefit of being more formally
+  ;; defined.
+  [resource]
+  (->> resource
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :produces))
+            [:produces (-> (second x)
+                           rep/coerce-representations
+                           rep/representation-seq)]
+            x)))
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :consumes))
+            [:consumes (-> (second x)
+                           rep/coerce-representations
+                           rep/representation-seq)]
+            x)))
+       (merge-schemas)))
+
 (defn make-context [properties]
   {:properties properties
    :response (->Response)})
@@ -368,21 +401,18 @@
         ;; Otherwise
         ctx)))
 
+(defn- update-produces [props ])
+
 (defn get-properties
   [ctx]
   (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
     (d/chain
-
      (propsfn ctx)                     ; propsfn can returned a deferred
-
      (fn [props]
-       (assoc
-        ctx
-        :properties
-        (cond-> props
-          (:produces props) ; representations shorthand is expanded
-          (update-in [:produces]
-                     (comp rep/representation-seq rep/coerce-representations))))))))
+       (let [props (expand-shorthands props)]
+         (cond-> (assoc ctx :properties props)
+           (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props)))))))))
+
 
 #_(defn authentication
   "Authentication"
@@ -655,6 +685,7 @@
                             (when-let [x (get-in ctx [:response :last-modified])]
                               {"last-modified" x})
                             (when-let [x (get-in ctx [:response :vary])]
+                              (infof "vary is %s" x)
                               (when (not-empty x)
                                 {"vary" (rep/to-vary-header x)}))
                             (when-let [x (get-in ctx [:response :etag])]
@@ -822,38 +853,7 @@
    create-response
    ])
 
-(defn merge-schemas [m]
-  (let [p (:parameters m)]
-    (assoc m :methods
-           (reduce-kv
-            (fn [acc k v]
-              (assert (associative? v) (format "v is not associative: %s" v))
-              (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
-            {} (get m :methods {})))))
 
-(defn expand-shorthands
-  "Turns a resource into handler properties by expanding a
-  human-author-friendly short-forms."
-  ;; TODO: When structure is more stable, use coercions to achieve this
-  ;; rather than postwalk. This has the benefit of being more formally
-  ;; defined.
-  [resource]
-  (->> resource
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :produces))
-            [:produces (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :consumes))
-            [:consumes (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (merge-schemas)))
 
 (defn yada
   "Create a Ring handler"
@@ -868,6 +868,8 @@
                     resource)
 
          _ (assert (associative? resource) (format "Resource must be associative: %s" resource))
+
+         resource (expand-shorthands resource)
 
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
@@ -918,7 +920,10 @@
                                 ;; Default
                                 [{}])))
 
-         #_vary #_(rep/vary representations)
+         vary (when-let [produces (:produces resource)]
+                (rep/vary produces))
+
+         _(infof "vary is %s" vary)
 
          ]
 
@@ -927,6 +932,7 @@
                                                 :type (type resource)})))
 
      (map->Handler
+
       (merge {
               :id (or (:id options) (java.util.UUID/randomUUID))
 
@@ -942,11 +948,11 @@
               ;;        :parameters parameters
               ;;        :representations representations
               ;;        :properties properties
-              ;;        :vary vary
+              :vary vary
 
               :collection? collection?
               }
 
-             (expand-shorthands resource)
+             resource
 
              )))))
