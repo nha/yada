@@ -8,7 +8,8 @@ WRAPPER = sassc
 ../static/css/theme/%.css:	%.scss
 	$(WRAPPER) -I ./template $< > $@
 
-all:	../static/css/theme/juxt.css
+all:	../static/css/theme/juxt.css ../static/css/theme/base.css
 
 clean:
 	rm -f ../static/css/theme/juxt.css
+	rm -f ../static/css/theme/base.css

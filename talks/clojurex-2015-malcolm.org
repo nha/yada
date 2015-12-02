@@ -1,7 +1,7 @@
 #+EXPORT_EXCLUDE_TAGS:  noexport
-#+AUTHOR:               Thomas van der Veen, Malcolm Sparks
+#+AUTHOR:               Malcolm Sparks
 #+TITLE:                Clojure and REST Full Web
-#+EMAIL:                @thomasvdv007, @malcolmsparks
+#+EMAIL:                @malcolmsparks
 #+LANGUAGE:             en
 #+OPTIONS:              toc:nil
 #+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:nil

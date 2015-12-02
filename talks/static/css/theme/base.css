@@ -334,11 +334,3 @@ body {
 
 .reveal code span.focus span {
   border: none; }
-
-/* JUXT logo */
-body:after {
-  content: url(../../assets/pres.png);
-  width: 10 !important;
-  position: fixed;
-  bottom: 1.5em;
-  left: 1.5em; }
