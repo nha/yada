@@ -10,8 +10,8 @@
  * GLOBAL STYLES
  *********************************************/
 body {
-  background: #fff;
-  background-color: #fff; }
+  background: #f8f8f8;
+  background-color: #f8f8f8; }
 
 .reveal {
   font-family: "SwedenSans", sans-serif;
@@ -288,6 +288,10 @@ body {
 .reveal .slide-number {
   color: #f7941e; }
 
+.reveal pre code {
+  background: white;
+  color: black; }
+
 .reveal #sec-title-slide h1 i {
   font-family: yada;
   font-size: 1.25em;
@@ -334,3 +338,7 @@ body {
 
 .reveal code span.focus span {
   border: none; }
+
+.reveal section.bigity pre code {
+  font-size: 150%;
+  line-height: 150%; }

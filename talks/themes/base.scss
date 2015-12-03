@@ -25,7 +25,7 @@ $headingFont: 'News Cycle', 'SwedenSans', sans-serif;
 $headingColor: #333;
 $headingTextShadow: none;
 $headingTextTransform: none;
-$backgroundColor: #fff;
+$backgroundColor: #f8f8f8;
 $linkColor: #f7941e;
 $linkColorHover: darken( $linkColor, 20% );
 $selectionBackgroundColor: rgba(0, 0, 0, 0.99);
@@ -40,7 +40,14 @@ $heading4Size: 1.00em;
 @import "../template/theme";
 // ---------------------------------------------
 
+// BASE OVERRIDES
+
 .reveal {
+
+    pre code {
+        background: white;
+        color: black;
+    }
 
     #sec-title-slide h1 i {
         font-family: yada;
@@ -101,6 +108,11 @@ $heading4Size: 1.00em;
 
     code span.focus span {
         border: none;
+    }
+
+    section.bigity pre code {
+        font-size: 150%;
+        line-height: 150%;
     }
 
 }
