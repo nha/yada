@@ -411,7 +411,12 @@
      (fn [props]
        (let [props (expand-shorthands props)]
          (cond-> (assoc ctx :properties props)
-           (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props)))))))))
+           (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))))
+     (fn [ctx]
+       (infof "Result from get-properties is %s" (:properties ctx))
+       ctx
+       )
+     )))
 
 
 #_(defn authentication
@@ -685,7 +690,6 @@
                             (when-let [x (get-in ctx [:response :last-modified])]
                               {"last-modified" x})
                             (when-let [x (get-in ctx [:response :vary])]
-                              (infof "vary is %s" x)
                               (when (not-empty x)
                                 {"vary" (rep/to-vary-header x)}))
                             (when-let [x (get-in ctx [:response :etag])]
@@ -922,8 +926,6 @@
 
          vary (when-let [produces (:produces resource)]
                 (rep/vary produces))
-
-         _(infof "vary is %s" vary)
 
          ]
 

@@ -133,7 +133,7 @@
    :- {(s/optional-key :custom-suffices)
        {String                          ; suffix
         {(s/optional-key :reader) (s/=> s/Any File Representation)
-         :representations RepresentationSets}}
+         :produces RepresentationSets}}
        (s/optional-key :index-files) [String]}]
 
   (new-custom-resource
