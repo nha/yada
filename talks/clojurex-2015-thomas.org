@@ -40,25 +40,6 @@ Update: PUT
 
 Delete: DELETE
 
-** Compojure Routes
-
-#+BEGIN_SRC clojure
-  (defroutes app-routes
-    (GET "/v1/phonebook" [] (get-phonebook))
-    (POST "/v1/phonebook" {body :body}
-          (add-user (slurp body)))
-    (PUT "/v1/phonebook/:id"
-         {body :body params :params}
-         (update-user (:id params)
-                      (slurp body)))
-    (DELETE "/v1/phonebook/:id" [id]
-            (delete-user id))
-    (GET "/v1/phonebook/search"
-         {params :params}
-         (search-users params))
-    (route/not-found "Not Found"))
-#+END_SRC
-
 
 ** Validating input using Prismatic Schema
 
@@ -90,6 +71,25 @@ Delete: DELETE
         :phone-number "07123456"}}
 
       :last-added "38d77ce0-…"}))
+#+END_SRC
+
+** Compojure Routes
+
+#+BEGIN_SRC clojure
+  (defroutes app-routes
+    (GET "/v1/phonebook" [] (get-phonebook))
+    (POST "/v1/phonebook" {body :body}
+          (add-user (slurp body)))
+    (PUT "/v1/phonebook/:id"
+         {body :body params :params}
+         (update-user (:id params)
+                      (slurp body)))
+    (DELETE "/v1/phonebook/:id" [id]
+            (delete-user id))
+    (GET "/v1/phonebook/search"
+         {params :params}
+         (search-users params))
+    (route/not-found "Not Found"))
 #+END_SRC
 
 ** Adding a new entry
