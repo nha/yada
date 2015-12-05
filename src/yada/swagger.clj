@@ -34,21 +34,24 @@
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
         handler (-> route :handler)
-        {:keys [resource options allowed-methods parameters representations]} handler
+        {:keys [resource options allowed-methods parameters produces]} handler
         swagger (:swagger options)]
+
     [path
-     (merge-with merge
-                 (into {}
-                       (for [method allowed-methods
-                             :let [parameters (get parameters method)
-                                   representations (filter (fn [rep] (or (nil? (:method rep))
-                                                                        (contains? (:method rep) method))) representations)
-                                   produces (when (#{:get} method)
-                                              (distinct (map :name (map :media-type representations))))]]
-                         ;; Responses must be added in the static swagger section
-                         {method (merge (when produces {:produces produces})
-                                        {:parameters parameters})}))
-                 swagger)]))
+     (merge-with
+      merge
+      (into {}
+            (for [method allowed-methods
+                  :let [parameters (get parameters method)
+                        produces (distinct
+                                  (concat
+                                   (map :name (map :media-type produces))
+                                   (get-in handler [:methods method :produces])))]]
+              ;; Responses must be added in the static swagger section
+              {method (merge
+                       (when produces {:produces2 produces})
+                       {:parameters parameters})}))
+      swagger)]))
 
 (defn swagger-spec [spec created-at content-type]
   (new-custom-resource

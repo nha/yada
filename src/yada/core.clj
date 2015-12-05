@@ -925,7 +925,10 @@
                                 [{}])))
 
          vary (when-let [produces (:produces resource)]
+                (infof "static produces is %s" (pr-str produces))
                 (rep/vary produces))
+
+         _ (infof "static vary is %s" vary)
 
          ]
 

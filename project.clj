@@ -22,7 +22,7 @@
    [manifold "0.1.2-alpha1"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
-   [prismatic/schema "0.4.3" :exclusions [potemkin]]
+   [prismatic/schema "1.0.3"];;[prismatic/schema "0.4.3" :exclusions [potemkin]]
    [potemkin "0.4.1" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
@@ -67,8 +67,8 @@
           [org.slf4j/jcl-over-slf4j "1.7.2"]
           [org.slf4j/log4j-over-slf4j "1.7.2"]
 
-          [com.stuartsierra/component "0.2.3"]
-          [org.clojure/tools.namespace "0.2.5"]
+          [com.stuartsierra/component "0.3.1"]
+          [org.clojure/tools.namespace "0.2.10"]
           [org.clojure/data.zip "0.1.1"]
 
           [markdown-clj "0.9.62"]
@@ -81,7 +81,7 @@
           [aleph "0.4.1-beta2"]
           [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
           [juxt.modular/stencil "0.1.0"]
-          [juxt.modular/co-dependency "0.2.2"]
+          [juxt.modular/co-dependency "0.3.0"]
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.3"]
 
