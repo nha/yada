@@ -14,8 +14,8 @@
 (s/defschema RepresentationSet
   {:media-type #{MediaTypeMap}
    ;;(s/optional-key :charset) #{CharsetMap}
-   ;;(s/optional-key :encoding) #{String}
    ;;(s/optional-key :language) #{String}
+   ;;(s/optional-key :encoding) #{String}
    })
 
 (def resource-schema
@@ -52,6 +52,8 @@
   (as-media-type [s] (mt/string->media-type s)))
 
 (extend-protocol RepresentationSetCoercion
+  clojure.lang.PersistentHashSet
+  (as-representation-set [s] {:media-type s})
   clojure.lang.PersistentArrayMap
   (as-representation-set [m] m)
   String
@@ -68,22 +70,27 @@
                   MediaTypeMap as-media-type}]
     (sc/coercer resource-schema mappings)))
 
-(def TEXT_HTML (mt/string->media-type "text/html"))
+(def HTML (mt/string->media-type "text/html"))
+(def JSON (mt/string->media-type "application/json"))
 
 (deftest produces-test
   (let [coercer (get-coercer)]
     (testing "as-vector"
-      (is (= (coercer {:produces {:media-type #{TEXT_HTML}}})
-             {:produces [{:media-type #{TEXT_HTML}}]})))
+      (is (= (coercer {:produces {:media-type #{HTML}}})
+             {:produces [{:media-type #{HTML}}]})))
 
     (testing "to-set"
-      (is (= (coercer {:produces {:media-type TEXT_HTML}})
-             {:produces [{:media-type #{TEXT_HTML}}]})))
+      (is (= (coercer {:produces {:media-type HTML}})
+             {:produces [{:media-type #{HTML}}]})))
 
     (testing "string"
         (is (= (coercer {:produces {:media-type "text/html"}})
-               {:produces [{:media-type #{TEXT_HTML}}]})))
+               {:produces [{:media-type #{HTML}}]})))
 
     (testing "just-string"
       (is (= (coercer {:produces "text/html"})
-             {:produces [{:media-type #{TEXT_HTML}}]})))))
+             {:produces [{:media-type #{HTML}}]})))
+
+    (testing "string-set"
+      (is (= (coercer {:produces #{"text/html" "application/json"}})
+             {:produces [{:media-type #{HTML JSON}}]})))))
