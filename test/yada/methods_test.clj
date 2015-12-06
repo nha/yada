@@ -15,14 +15,14 @@
 (deftest post-test
   (let [handler (yada
                  (new-custom-resource
-                  {:method {:post
-                            {:handler (fn [ctx]
-                                        (assoc (:response ctx)
-                                               :status 201
-                                               :body "foo"))}}}))]
+                  {:methods {:post
+                             {:handler (fn [ctx]
+                                         (assoc (:response ctx)
+                                                :status 201
+                                                :body "foo"))}}}))]
     (given @(handler (mock/request :post "/"))
-      :status := 201
-      [:body bs/to-string] := "foo")))
+           :status := 201
+           [:body bs/to-string] := "foo")))
 
 (deftest dynamic-post-test
   (let [handler (yada

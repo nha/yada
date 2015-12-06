@@ -12,7 +12,7 @@
                org.clojure/tools.reader]
 
   :dependencies
-  [[bidi "1.21.0" :exclusions [ring/ring-core]]
+  [[bidi "1.23.1" :exclusions [ring/ring-core]]
    [byte-streams "0.2.1-alpha2" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.1.4"]
    [cheshire "5.4.0"]
@@ -58,7 +58,7 @@
          [[org.clojure/clojure "1.7.0"]
           [org.clojure/clojurescript "1.7.170"]
 
-          [org.clojure/tools.nrepl "0.2.12"] ; otherwise fails
+          [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
           [org.clojure/tools.trace "0.7.8"]
 
