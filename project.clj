@@ -22,7 +22,7 @@
    [manifold "0.1.2-alpha1"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
-   [prismatic/schema "1.0.3"];;[prismatic/schema "0.4.3" :exclusions [potemkin]]
+   [prismatic/schema "1.0.3"]
    [potemkin "0.4.1" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
@@ -44,7 +44,6 @@
                    ;;[lein-less "1.7.5"]
                    [lein-figwheel "0.3.7" :exclusions [[org.clojure/clojure]
                                                        [org.codehaus.plexus/plexus-utils]
-                                                       #_[org.clojure/tools.reader]
                                                        ]]]
 
          :cljsbuild {:builds
@@ -53,11 +52,13 @@
                                 :compiler {:output-to "target/cljs/console.js"
                                            :pretty-print true}}}}
 
+         :exclusions [[org.clojure/tools.nrepl]]
+
          :dependencies
          [[org.clojure/clojure "1.7.0"]
-          [org.clojure/clojurescript "1.7.58"]
+          [org.clojure/clojurescript "1.7.170"]
 
-
+          [org.clojure/tools.nrepl "0.2.12"] ; otherwise fails
           [org.clojure/tools.logging "0.3.1"]
           [org.clojure/tools.trace "0.7.8"]
 
