@@ -2,12 +2,13 @@
 
 (ns yada.schema-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer :all :exclude [deftest]]
    [juxt.iota :refer [given]]
    [yada.media-type :as mt]
    [yada.schema :refer :all]
    [schema.core :as s]
    [schema.coerce :as sc]
+   [schema.test :refer [deftest]]
    [schema.utils :refer [error?]]))
 
 (def HTML (mt/string->media-type "text/html"))
@@ -75,4 +76,9 @@
                                               :handler "Hello World!"}}})
            identity :- ResourceSchema)))
 
+(deftest unroll-test
+  (given
+   (unrolled-resource-coercer {:produces #{"text/html" "text/plain"}
+                               :methods {}})
+   [:produces count] := 2))
 

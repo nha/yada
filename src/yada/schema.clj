@@ -2,6 +2,7 @@
 
 (ns yada.schema
   (:require
+   [clojure.walk :refer [postwalk]]
    [yada.media-type :as mt]
    [schema.core :as s]
    [schema.coerce :as sc]
@@ -12,14 +13,6 @@
 
 (s/defschema Context
   {})
-
-(s/defschema RepresentationSet
-  (s/constrained
-   {:media-type #{MediaTypeMap}
-    (s/optional-key :charset) #{CharsetMap}
-    (s/optional-key :language) #{String}
-    (s/optional-key :encoding) #{String}}
-   not-empty))
 
 (s/defschema RepresentationSet
   (s/constrained
@@ -142,3 +135,66 @@
 
 (def resource-coercer (sc/coercer ResourceSchema ResourceSchemaMappings))
 
+;; ------
+
+(s/defschema Representation
+  (s/constrained
+   {:media-type MediaTypeMap
+    (s/optional-key :charset) CharsetMap
+    (s/optional-key :language) String
+    (s/optional-key :encoding) String}
+   not-empty))
+
+(s/defschema UnrolledProducesSchema
+  {(s/optional-key :produces) [Representation]})
+
+(s/defschema UnrolledConsumesSchema
+  {(s/optional-key :consumes) [Representation]})
+
+(s/defschema UnrolledMethodSchema
+  (merge {:handler HandlerFunction}
+         UnrolledProducesSchema
+         UnrolledConsumesSchema))
+
+(s/defschema UnrolledMethodsSchema
+  {:methods {s/Keyword UnrolledMethodSchema}})
+
+(def UnrolledResourceSchema
+  (merge PropertiesSchema
+         UnrolledProducesSchema
+         UnrolledConsumesSchema
+         UnrolledMethodsSchema))
+
+(defn- representation-seq
+  "Return a sequence of all possible individual representations."
+  [reps]
+  (for [rep reps
+        media-type (or (:media-type rep) [nil])
+        charset (or (:charset rep) [nil])
+        language (or (:language rep) [nil])
+        encoding (or (:encoding rep) [nil])]
+    (merge
+     (when media-type {:media-type media-type})
+     (when charset {:charset charset})
+     (when language {:language language})
+     (when encoding {:encoding encoding}))))
+
+(defn- unroll-representation-sets
+  [resource]
+  (->> resource
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :produces))
+            [:produces (representation-seq (second x))]
+            x)))
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :consumes))
+            [:consumes (representation-seq (second x))]
+            x)))
+       ))
+
+(def unrolled-resource-coercer
+  (comp (sc/coercer UnrolledResourceSchema {})
+        unroll-representation-sets
+        resource-coercer))
