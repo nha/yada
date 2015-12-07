@@ -10,9 +10,11 @@
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]))
 
+(def HTML (mt/string->media-type "text/html"))
+(def JSON (mt/string->media-type "application/json"))
+
 (deftest produces-test
   (let [coercer (sc/coercer ProducesSchema RepresentationSetMappings)]
-
     (testing "produces"
       (testing "empty spec. is an error"
         (is (error? (coercer {:produces {}}))))
@@ -67,11 +69,10 @@
                )))))
 
 (deftest combo-test
-  (let [coercer (sc/coercer ResourceSchema ResourceSchemaMappings)]
-    (testing "produces works at both levels"
-      (given (coercer {:produces "text/html"
-                       :methods {:get {:produces "text/html"
-                                       :handler "Hello World!"}}})
-             identity :- ResourceSchema))))
+  (testing "produces works at both levels"
+    (given (resource-coercer {:produces "text/html"
+                              :methods {:get {:produces "text/html"
+                                              :handler "Hello World!"}}})
+           identity :- ResourceSchema)))
 
 

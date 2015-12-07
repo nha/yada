@@ -3,13 +3,23 @@
 (ns yada.schema
   (:require
    [yada.media-type :as mt]
-   [schema.core :as s])
+   [schema.core :as s]
+   [schema.coerce :as sc]
+   [yada.charset :refer [to-charset-map]])
   (:import
    [yada.charset CharsetMap]
    [yada.media_type MediaTypeMap]))
 
 (s/defschema Context
   {})
+
+(s/defschema RepresentationSet
+  (s/constrained
+   {:media-type #{MediaTypeMap}
+    (s/optional-key :charset) #{CharsetMap}
+    (s/optional-key :language) #{String}
+    (s/optional-key :encoding) #{String}}
+   not-empty))
 
 (s/defschema RepresentationSet
   (s/constrained
@@ -63,17 +73,35 @@
   String
   (as-representation-set [s] {:media-type s}))
 
-(def HTML (mt/string->media-type "text/html"))
-(def JSON (mt/string->media-type "application/json"))
-
 (def RepresentationSetMappings
   {[RepresentationSet] as-vector
    RepresentationSet as-representation-set
    #{MediaTypeMap} as-set
-   MediaTypeMap as-media-type})
+   MediaTypeMap as-media-type
+   #{CharsetMap} as-set
+   CharsetMap to-charset-map})
+
+(defprotocol FunctionCoercion
+  (as-fn [_] "Coerce to function"))
+
+(extend-protocol FunctionCoercion
+  clojure.lang.Fn
+  (as-fn [f] f)
+  Object
+  (as-fn [o] (constantly o)))
 
 (s/defschema HandlerFunction
   (s/=> s/Any Context))
+
+(s/defschema PropertiesResultSchema
+  {(s/optional-key :last-modified) s/Inst
+   (s/optional-key :version) s/Any})
+
+(s/defschema PropertiesHandlerFunction
+  (s/=> PropertiesResultSchema Context))
+
+(s/defschema PropertiesSchema
+  {(s/optional-key :properties) PropertiesHandlerFunction})
 
 (s/defschema MethodSchema
   (merge {:handler HandlerFunction}
@@ -96,22 +124,21 @@
   (as-method-map [o] {:handler o
                       :produces "application/octet-stream"}))
 
-(defprotocol FunctionCoercion
-  (as-fn [_] "Coerce to function"))
-
-(extend-protocol FunctionCoercion
-  clojure.lang.Fn
-  (as-fn [f] f)
-  Object
-  (as-fn [o] (constantly o)))
-
-(def MethodsSchemaMappings (merge {MethodSchema as-method-map
-                                   HandlerFunction as-fn}
-                                  RepresentationSetMappings))
+(def MethodsSchemaMappings
+  (merge {MethodSchema as-method-map
+          HandlerFunction as-fn}
+         RepresentationSetMappings))
 
 (def ResourceSchema
-  (merge ProducesSchema ConsumesSchema MethodsSchema))
+  (merge PropertiesSchema
+         ProducesSchema
+         ConsumesSchema
+         MethodsSchema))
 
 (def ResourceSchemaMappings
-  (merge RepresentationSetMappings MethodsSchemaMappings))
+  (merge {PropertiesHandlerFunction as-fn}
+         RepresentationSetMappings
+         MethodsSchemaMappings))
+
+(def resource-coercer (sc/coercer ResourceSchema ResourceSchemaMappings))
 

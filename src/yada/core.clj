@@ -30,6 +30,7 @@
    [yada.response :refer [->Response]]
    [yada.resource :as resource]
    [yada.request-body :as rb]
+   [yada.schema :as ys]
    [yada.service :as service]
    [yada.media-type :as mt]
    [yada.util :as util])
@@ -45,6 +46,10 @@
               (assert (associative? v) (format "v is not associative: %s" v))
               (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
             {} (get m :methods {})))))
+
+;; TODO: We are expanding shorthands using schema, but we must now
+;; consider whether it is possible to use schema to also enact the
+;; representation-seq on the result, or to do this 'manually'.
 
 (defn expand-shorthands
   "Turns a resource into handler properties by expanding a
@@ -857,8 +862,6 @@
    create-response
    ])
 
-
-
 (defn yada
   "Create a Ring handler"
   ([resource]                   ; Single-arity form with default options
@@ -871,9 +874,10 @@
                     (p/as-resource resource)
                     resource)
 
-         _ (assert (associative? resource) (format "Resource must be associative: %s" resource))
-
-         resource (expand-shorthands resource)
+         ;; Validate the resource structure, with coercion if
+         ;; necessary.
+         resource (ys/resource-coercer resource)
+         _ (assert (not (schema.utils/error? resource)) (pr-str resource))
 
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
