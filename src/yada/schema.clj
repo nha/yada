@@ -1,6 +1,13 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.schema
+(ns ^{:doc
+      "This namespace provides the coercions to transform a wide
+variety of shorthand descriptions of a resource into a canonical
+resource map. This allows the rest of the yada code-base to remain
+agnostic to the syntax of shorthand forms, which significantly
+simplifies coding while giving the author of yada resources the
+convenience of terse, expressive short-hand descriptions."}
+    yada.schema
   (:require
    [clojure.walk :refer [postwalk]]
    [yada.media-type :as mt]
