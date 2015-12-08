@@ -475,15 +475,19 @@
              (some-> (:request ctx)
                      (get-in [:headers "if-modified-since"])
                      ring.util.time/parse-date)]
-      (if (<=
-           (.getTime last-modified)
-           (.getTime if-modified-since))
 
-        ;; exit with 304
-        (d/error-deferred
-         (ex-info "" (merge {:status 304} ctx)))
+      (do
+        (infof "last-modified=%s" last-modified)
+        (infof "if-modified-since=%s" if-modified-since)
+        (if (<=
+             (.getTime last-modified)
+             (.getTime if-modified-since))
 
-        (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
+          ;; exit with 304
+          (d/error-deferred
+           (ex-info "" (merge {:status 304} ctx)))
+
+          (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified))))
 
       (or
        (some->> last-modified
@@ -794,10 +798,7 @@
                                 [{}])))
 
          vary (when-let [produces (:produces resource)]
-                (infof "static produces is %s" (pr-str produces))
                 (rep/vary produces))
-
-         _ (infof "static vary is %s" vary)
 
          ]
 

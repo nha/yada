@@ -13,8 +13,8 @@
   String
   (as-resource [s]
     {;; TODO Would be nice if properties could be static too.
-     :properties (fn [ctx] {:last-modified (to-date (now))
-                           :version s})
+     :properties {:last-modified (to-date (now))
+                  :version s}
 
      :produces [{;; Without attempting to actually parse it (which isn't completely
                  ;; impossible) we're not able to guess the media-type of this

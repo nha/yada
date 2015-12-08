@@ -152,6 +152,9 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Properties
   {(s/optional-key :properties) PropertiesHandlerFunction})
 
+(def PropertiesMappings
+  {PropertiesHandlerFunction as-fn})
+
 (def Documentation
   {(s/optional-key :summary) String
    (s/optional-key :description) String})
@@ -202,7 +205,7 @@ convenience of terse, expressive short-hand descriptions."}
          ResourceDocumentation))
 
 (def ResourceMappings
-  (merge {PropertiesHandlerFunction as-fn}
+  (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings))
 

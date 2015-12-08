@@ -45,7 +45,8 @@
   (let [coercer (sc/coercer Parameters ParametersMappings)]
     (testing "none is not an error"
       (given (coercer {:parameters {}})
-             identity :? (comp not error?)))
+             identity :? (comp not error?)
+             identity :- Parameters))
     (testing "multiple"
       (given (coercer {:parameters {:query {:q String}
                                     :path {:q String}}})
@@ -53,6 +54,24 @@
              identity :- Parameters))))
 
 (defn invoke-with-ctx [f] (f {}))
+
+(deftest properties-test
+  (let [coercer (sc/coercer Properties PropertiesMappings)]
+    (testing "static"
+      (given (coercer {:properties {}})
+             identity :? (comp not error?)
+             identity :- Properties
+             [:properties invoke-with-ctx] :- PropertiesResult))
+    (testing "dynamic"
+      (given (coercer {:properties (fn [ctx] {})})
+             identity :? (comp not error?)
+             identity :- Properties
+             [:properties invoke-with-ctx] :- PropertiesResult))
+    (testing "nil result is illegal"
+      (given (coercer {:properties nil})
+             identity :? (comp not error?)
+             identity :- Properties
+             [:properties invoke-with-ctx] :!- Properties))))
 
 (deftest methods-test
   (let [coercer (sc/coercer Methods MethodsMappings)]

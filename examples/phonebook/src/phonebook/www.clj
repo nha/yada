@@ -47,11 +47,10 @@
   (new-custom-resource
    {:description "Phonebook entry"
     :parameters {:path {:entry Long}}
-    :produces
-    [{:media-type #{"text/html"
-                    "application/edn;q=0.9"
-                    "application/json;q=0.8"}
-      :charset "UTF-8"}]
+    :produces [{:media-type #{"text/html"
+                              "application/edn;q=0.9"
+                              "application/json;q=0.8"}
+                :charset "UTF-8"}]
     :methods
     {:get
      {:handler
