@@ -220,8 +220,6 @@
           content-length (safe-read-content-length request)]
 
       ;; TODO: Check if we consume...
-      (infof "content-type is %s" (:name content-type))
-      (infof "content-length is %s" content-length)
 
       (cond-> ctx
         ;; TODO: Check options to see if we have a maximum requested entity size, default is no.
@@ -412,13 +410,11 @@
     (d/chain
      (propsfn ctx)                     ; propsfn can returned a deferred
      (fn [props]
+       ;; TODO: don't expand shorthands, using Properties coercion in
+       ;; yada/schema so that these are validated too!
        (let [props (expand-shorthands props)]
          (cond-> (assoc ctx :properties props)
            (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))))
-     (fn [ctx]
-       (infof "Result from get-properties is %s" (:properties ctx))
-       ctx
-       )
      )))
 
 
@@ -476,18 +472,15 @@
                      (get-in [:headers "if-modified-since"])
                      ring.util.time/parse-date)]
 
-      (do
-        (infof "last-modified=%s" last-modified)
-        (infof "if-modified-since=%s" if-modified-since)
-        (if (<=
-             (.getTime last-modified)
-             (.getTime if-modified-since))
+      (if (<=
+           (.getTime last-modified)
+           (.getTime if-modified-since))
 
-          ;; exit with 304
-          (d/error-deferred
-           (ex-info "" (merge {:status 304} ctx)))
+        ;; exit with 304
+        (d/error-deferred
+         (ex-info "" (merge {:status 304} ctx)))
 
-          (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified))))
+        (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
 
       (or
        (some->> last-modified
