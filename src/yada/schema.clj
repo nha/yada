@@ -18,6 +18,9 @@ convenience of terse, expressive short-hand descriptions."}
    [yada.charset CharsetMap]
    [yada.media_type MediaTypeMap]))
 
+(s/defschema NamespacedKeyword
+  (s/constrained s/Keyword namespace))
+
 (defprotocol SetCoercion
   (as-set [_] ""))
 
@@ -144,16 +147,23 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema PropertiesResult
   {(s/optional-key :last-modified) s/Inst
-   (s/optional-key :version) s/Any})
+   (s/optional-key :version) s/Any
+   (s/optional-key :exists?) s/Bool})
 
 (s/defschema PropertiesHandlerFunction
   (s/=> PropertiesResult Context))
 
 (s/defschema Properties
-  {(s/optional-key :properties) PropertiesHandlerFunction})
+  {(s/optional-key :properties) (s/conditional
+                                 fn? PropertiesHandlerFunction
+                                 (comp not fn?) PropertiesResult
+                                 )})
 
-(def PropertiesMappings
-  {PropertiesHandlerFunction as-fn})
+(def PropertiesMappings {})
+
+(def PropertiesResultMappings {})
+
+(def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
 
 (def Documentation
   {(s/optional-key :summary) String
@@ -168,7 +178,8 @@ convenience of terse, expressive short-hand descriptions."}
          Parameters
          Produces
          Consumes
-         MethodDocumentation))
+         MethodDocumentation
+         {NamespacedKeyword s/Any}))
 
 (s/defschema Methods
   {:methods {s/Keyword Method}})
@@ -202,7 +213,8 @@ convenience of terse, expressive short-hand descriptions."}
          Produces
          Consumes
          Methods
-         ResourceDocumentation))
+         ResourceDocumentation
+         {NamespacedKeyword s/Any}))
 
 (def ResourceMappings
   (merge PropertiesMappings

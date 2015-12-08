@@ -78,5 +78,3 @@
   (-> (new-system-map config)
       (system-using (new-dependency-map))))
 
-
-(yada nil)

@@ -223,5 +223,5 @@
   (as-resource [f]
     (if (.isDirectory f)
       (new-directory-resource f {})
-      (throw (ex-info "TODO: files" {}))
-      #_(new-file-resource f {}))))
+      (new-file-resource f {})
+      )))

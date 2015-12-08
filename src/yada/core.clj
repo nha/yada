@@ -47,36 +47,6 @@
               (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
             {} (get m :methods {})))))
 
-;; TODO: We are expanding shorthands using schema, but we must now
-;; consider whether it is possible to use schema to also enact the
-;; representation-seq on the result, or to do this 'manually'.
-
-(defn expand-shorthands
-  "Turns a resource into handler properties by expanding a
-  human-author-friendly short-forms."
-  ;; TODO: When structure is more stable, use coercions to achieve this
-  ;; rather than postwalk. This has the benefit of being more formally
-  ;; defined.
-  [resource]
-  (->> resource
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :produces))
-            [:produces (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :consumes))
-            [:consumes (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (merge-schemas)))
-
-
-
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
 (def realms-xf
@@ -406,16 +376,20 @@
 
 (defn get-properties
   [ctx]
-  (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
+  (let [props (get-in ctx [:handler :properties] {})
+        props (if (fn? props) (props ctx) props)]
+    
     (d/chain
-     (propsfn ctx)                     ; propsfn can returned a deferred
+     props                           ; propsfn can returned a deferred
      (fn [props]
-       ;; TODO: don't expand shorthands, using Properties coercion in
-       ;; yada/schema so that these are validated too!
-       (let [props (expand-shorthands props)]
-         (cond-> (assoc ctx :properties props)
-           (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))))
-     )))
+       (let [props (ys/properties-result-coercer props)]
+         (if-not (schema.utils/error? props)
+           (cond-> (assoc ctx :properties props)
+             (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
+
+           (d/error-deferred
+            (ex-info "Properties malformed" {:status 500
+                                             :error (:error props)}))))))))
 
 
 #_(defn authentication

@@ -61,17 +61,13 @@
       (given (coercer {:properties {}})
              identity :? (comp not error?)
              identity :- Properties
-             [:properties invoke-with-ctx] :- PropertiesResult))
+             :properties :- PropertiesResult
+             ))
     (testing "dynamic"
       (given (coercer {:properties (fn [ctx] {})})
              identity :? (comp not error?)
              identity :- Properties
-             [:properties invoke-with-ctx] :- PropertiesResult))
-    (testing "nil result is illegal"
-      (given (coercer {:properties nil})
-             identity :? (comp not error?)
-             identity :- Properties
-             [:properties invoke-with-ctx] :!- Properties))))
+             [:properties invoke-with-ctx] :- PropertiesResult))))
 
 (deftest methods-test
   (let [coercer (sc/coercer Methods MethodsMappings)]
@@ -161,6 +157,19 @@
                     :handler (fn [ctx] "Users")
                     :responses {200 {:description "Known user"}
                                 404 {:description "Unknown user"}}}}})
+           identity :? (comp not error?)
+           identity :- Resource))
+
+  (testing "other keywords are not OK"
+    (given (resource-coercer
+            {:foo :bar
+             :methods {}})
+           identity :? error?))
+
+  (testing "namespaced keywords are OK"
+    (given (resource-coercer
+            {:ns/foo :bar
+             :methods {}})
            identity :? (comp not error?)
            identity :- Resource)))
 
