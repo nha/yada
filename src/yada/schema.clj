@@ -133,6 +133,9 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema HandlerFunction
   (s/=> s/Any Context))
 
+(s/defschema Handler
+  {:handler HandlerFunction})
+
 (s/defschema PropertiesResult
   {(s/optional-key :last-modified) s/Inst
    (s/optional-key :version) s/Any})
@@ -144,7 +147,7 @@ convenience of terse, expressive short-hand descriptions."}
   {(s/optional-key :properties) PropertiesHandlerFunction})
 
 (s/defschema Method
-  (merge {:handler HandlerFunction}
+  (merge Handler
          Parameters
          Produces
          Consumes))
