@@ -57,17 +57,25 @@
 (deftest methods-test
   (let [coercer (sc/coercer Methods MethodsMappings)]
     (testing "methods"
+
       (testing "string constant"
         (given (coercer {:methods {:get {:handler "Hello World!"}}})
                identity :? (comp not error?)
                identity :- Methods
                [:methods :get :handler invoke-with-ctx] := "Hello World!"))
 
+      
       (testing "implied handler"
         (given (coercer {:methods {:get (fn [ctx] "Hello World!")}})
                identity :? (comp not error?)
                identity :- Methods
                [:methods :get :handler invoke-with-ctx] := "Hello World!"))
+
+      (testing "nil"
+        (given (coercer {:methods {:get nil}})
+               identity :? (comp not error?)
+               identity :- Methods
+               [:methods :get :handler invoke-with-ctx] := nil))
 
       (testing "both"
         (given (coercer {:methods {:get "Hello World!"}})
@@ -116,7 +124,24 @@
     (given (resource-coercer
             {:parameters {:path {:id Long}}
              :methods {:get {:parameters {:query {:q String}}
-                             :handler "Hello World!"}}})
+                             :handler "Hello World!"}
+                       :put {:parameters {:body String}
+                             :handler (fn [ctx] nil)}}})
+           identity :? (comp not error?)
+           identity :- Resource))
+
+  (testing "swagger resource"
+    (given (resource-coercer
+            {:methods
+             {:get {:summary "Get user"
+                    :description "Get the details of a known user"
+                    :parameters {:path {:username s/Str}}
+                    :produces [{:media-type
+                                #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+                                :charset "UTF-8"}]
+                    :handler (fn [ctx] "Users")
+                    :responses {200 {:description "Known user"}
+                                404 {:description "Unknown user"}}}}})
            identity :? (comp not error?)
            identity :- Resource)))
 

@@ -77,3 +77,6 @@
 (s/defn new-selfie-app [config :- {:port UserPort}]
   (-> (new-system-map config)
       (system-using (new-dependency-map))))
+
+
+(yada nil)

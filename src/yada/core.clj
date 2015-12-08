@@ -23,16 +23,16 @@
    [yada.body :as body]
    [yada.charset :as charset]
    [yada.coerce :as coerce]
+   [yada.handler :refer [new-handler create-response]]
    [yada.journal :as journal]
    [yada.methods :as methods]
+   [yada.media-type :as mt]
    [yada.representation :as rep]
    [yada.protocols :as p]
-   [yada.response :refer [->Response]]
    [yada.resource :as resource]
    [yada.request-body :as rb]
    [yada.schema :as ys]
    [yada.service :as service]
-   [yada.media-type :as mt]
    [yada.util :as util])
   (:import [java.util Date]))
 
@@ -75,9 +75,7 @@
             x)))
        (merge-schemas)))
 
-(defn make-context [properties]
-  {:properties properties
-   :response (->Response)})
+
 
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
@@ -668,50 +666,7 @@
                 (apply str
                        (interpose ", " allow-headers))))))
 
-;; Response
-(defn create-response
-  [ctx]
-  (let [response
-        {:status (or (get-in ctx [:response :status])
-                     (service/status (-> ctx :handler :options :status) ctx)
-                     200)
-         :headers (merge
-                   (get-in ctx [:response :headers])
-                   ;; TODO: The context and its response
-                   ;; map must be documented so users are
-                   ;; clear what they can change and the
-                   ;; effect of this change.
-                   (when (not= (:method ctx) :options)
-                     (merge {}
-                            (when-let [x (get-in ctx [:response :produces :media-type])]
-                              (let [y (get-in ctx [:response :produces :charset])]
-                                (if (and y (= (:type x) "text"))
-                                  {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
-                                  {"content-type" (mt/media-type->string x)})))
-                            (when-let [x (get-in ctx [:response :produces :encoding])]
-                              {"content-encoding" x})
-                            (when-let [x (get-in ctx [:response :produces :language])]
-                              {"content-language" x})
-                            (when-let [x (get-in ctx [:response :last-modified])]
-                              {"last-modified" x})
-                            (when-let [x (get-in ctx [:response :vary])]
-                              (when (not-empty x)
-                                {"vary" (rep/to-vary-header x)}))
-                            (when-let [x (get-in ctx [:response :etag])]
-                              {"etag" x})))
-                   (when-let [x (get-in ctx [:response :content-length])]
-                     {"content-length" x})
 
-                   #_(when true
-                       {"access-control-allow-origin" "*"})
-
-                   ;; TODO: Resources can add headers via their methods
-                   (service/headers (-> ctx :handler :options :headers) ctx))
-
-         ;; TODO :status and :headers should be implemented like this in all cases
-         :body (get-in ctx [:response :body])}]
-    (debugf "Returning response: %s" (dissoc response :body))
-    response))
 
 (defn wrap-journaling [journal-entry]
   (fn [interceptor]
@@ -731,100 +686,10 @@
                                              :duration (- t1 t0)})
              output)))))))
 
-(defn error-data
-  [e]
-  (cond
-    (instance? clojure.lang.ExceptionInfo e) (ex-data e)
-    (instance? java.lang.Throwable e) nil
-    :else e))
 
-(defn default-error-handler [e]
-  (let [data (error-data e)]
-    (when-not (and (:status data) (< (:status data) 500))
-      (when (instance? java.lang.Throwable e)
-        (errorf e "Internal Error %s" (or (some-> data :status str) "")))
-      (when data (errorf "ex-data: %s" data)))))
 
-(defn- handle-request
-  "Handle Ring request"
-  [handler request]
-  (let [method (:request-method request)
-        interceptor-chain (:interceptor-chain handler)
-        options (:options handler)
-        id (java.util.UUID/randomUUID)
-        error-handler (or (:error-handler options)
-                          default-error-handler)
-        ctx (merge
-             (make-context (:properties handler))
-             {:id id
-              :method method
-              :method-wrapper (get (:known-methods handler) method)
-              :interceptor-chain interceptor-chain
-              :handler handler
-              :resource (:resource handler)
-              :request request
-              :allowed-methods (:allowed-methods handler)
-              :options options})]
 
-    (->
-     (apply d/chain ctx interceptor-chain)
 
-     (d/catch
-         clojure.lang.ExceptionInfo
-         (fn [e]
-           (error-handler e)
-           (let [data (error-data e)]
-             (let [status (or (:status data) 500)
-                   rep (rep/select-best-representation
-                        (:request ctx)
-                        (rep/representation-seq
-                         (rep/coerce-representations
-                          ;; Possibly in future it will be possible
-                          ;; to support more media-types to render
-                          ;; errors, including image and video
-                          ;; formats.
-                          [{:media-type #{"text/plain"
-                                          "text/html;q=0.8"
-                                          "application/json;q=0.75"
-                                          "application/json;pretty=true;q=0.7"
-                                          "application/edn;q=0.6"
-                                          "application/edn;pretty=true;q=0.5"}
-                            :charset charset/platform-charsets}])))]
-
-               ;; TODO: Custom error handlers
-
-               (d/chain
-                (cond-> (make-context {})
-                  status (assoc-in [:response :status] status)
-                  (:headers data) (assoc-in [:response :headers] (:headers data))
-                  (not (:body data)) ((fn [ctx]
-                                        (let [b (body/to-body (body/render-error status e rep ctx) rep)]
-                                          (-> ctx
-                                              (assoc-in [:response :body] b)
-                                              (assoc-in [:response :headers "content-length"] (body/content-length b))))))
-
-                  rep (assoc-in [:response :produces] rep))
-                create-response))))))))
-
-(defrecord Handler []
-  clojure.lang.IFn
-  (invoke [this req]
-    (handle-request this req))
-
-  ;; see new-custom-resource, want this for meta-yada, i.e. (-> x yada yada yada)
-  #_p/Properties
-  #_(properties
-      [this]
-      {:allowed-methods #{:get}
-       :representations [{:media-type #{"text/html"
-                                        "application/edn"
-                                        "application/json"
-                                        "application/edn;pretty=true"
-                                        "application/json;pretty=true"}}]})
-
-  #_(properties [_ ctx] {})
-  #_methods/Get
-  #_(GET [this ctx] (into {} this)))
 
 (defrecord NoAuthorizationSpecified []
   service/Service
@@ -940,7 +805,7 @@
        (throw (ex-info "Resource is not a map" {:resource resource
                                                 :type (type resource)})))
 
-     (map->Handler
+     (new-handler
 
       (merge {
               :id (or (:id options) (java.util.UUID/randomUUID))

@@ -4,7 +4,7 @@
   (:require
    [yada.core :refer [yada]]
    [clojure.walk :refer [postwalk]])
-  (:import [yada.core Handler]))
+  (:import [yada.handler Handler]))
 
 ;; Functions to update inner routes
 

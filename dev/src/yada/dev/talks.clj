@@ -60,3 +60,4 @@
 (defn new-talks [config]
   (-> (map->Talks {:config config})
       (co-using [:router])))
+

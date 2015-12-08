@@ -38,8 +38,12 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema Parameters
   {(s/optional-key :parameters)
-   {(s/enum :query :path :header :cookie :form :body)
-    {s/Keyword s/Any}}})
+   {(s/optional-key :query) s/Any
+    (s/optional-key :path) s/Any
+    (s/optional-key :cookie) s/Any
+    (s/optional-key :header) s/Any
+    (s/optional-key :form) s/Any
+    (s/optional-key :body) s/Any}})
 
 (def ParametersMappings {})
 
@@ -126,7 +130,9 @@ convenience of terse, expressive short-hand descriptions."}
   clojure.lang.Fn
   (as-fn [f] f)
   Object
-  (as-fn [o] (constantly o)))
+  (as-fn [o] (constantly o))
+  nil
+  (as-fn [_] (constantly nil)))
 
 (s/defschema Context {})
 
@@ -146,11 +152,20 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Properties
   {(s/optional-key :properties) PropertiesHandlerFunction})
 
+(def Documentation
+  {(s/optional-key :summary) String
+   (s/optional-key :description) String})
+
+(def MethodDocumentation
+  (merge Documentation
+         {(s/optional-key :responses) {s/Int {:description String}}}))
+
 (s/defschema Method
   (merge Handler
          Parameters
          Produces
-         Consumes))
+         Consumes
+         MethodDocumentation))
 
 (s/defschema Methods
   {:methods {s/Keyword Method}})
@@ -166,19 +181,25 @@ convenience of terse, expressive short-hand descriptions."}
                       :produces "text/plain"})
   Object
   (as-method-map [o] {:handler o
-                      :produces "application/octet-stream"}))
+                      :produces "application/octet-stream"})
+  nil
+  (as-method-map [o] {:handler nil}))
 
 (def MethodsMappings
   (merge {Method as-method-map
           HandlerFunction as-fn}
          RepresentationSeqMappings))
 
+(def ResourceDocumentation (merge Documentation))
+
 (def Resource
-  (merge Parameters
+  (merge {(s/optional-key :collection?) Boolean}
+         Parameters
          Properties
          Produces
          Consumes
-         Methods))
+         Methods
+         ResourceDocumentation))
 
 (def ResourceMappings
   (merge {PropertiesHandlerFunction as-fn}

@@ -11,17 +11,17 @@
    yada.resources.string-resource))
 
 (defn string-atom-resource [*a]
-  {:parameters {:put {:body String}}
-   :properties (let [*last-modified (atom (to-date (now)))
+  {:properties (let [*last-modified (atom (to-date (now)))
                      val (p/as-resource @*a)]
                  (add-watch
                   *a :last-modified
                   (fn [_ _ _ _]
                     (reset! *last-modified (to-date (now)))))
                  {:produces (:produces val)
-                    :properties (fn [ctx] {:last-modified @*last-modified})})
+                  :properties (fn [ctx] {:last-modified @*last-modified})})
    :methods {:get {:handler (fn [ctx] @*a)}
-             :put {:handler (fn [ctx]
+             :put {:parameters {:body String}
+                   :handler (fn [ctx]
                               ;; We can't PUT a nil, because nils mean
                               ;; no representation and yield 404s on
                               ;; GET, hence this when guard
