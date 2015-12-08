@@ -41,6 +41,17 @@
                {:produces [{:media-type JSON}
                            {:media-type HTML}]}))))))
 
+(deftest parameters-test
+  (let [coercer (sc/coercer Parameters ParametersMappings)]
+    (testing "none is not an error"
+      (given (coercer {:parameters {}})
+             identity :? (comp not error?)))
+    (testing "multiple"
+      (given (coercer {:parameters {:query {:q String}
+                                    :path {:q String}}})
+             identity :? (comp not error?)
+             identity :- Parameters))))
+
 (defn invoke-with-ctx [f] (f {}))
 
 (deftest methods-test
@@ -48,16 +59,19 @@
     (testing "methods"
       (testing "string constant"
         (given (coercer {:methods {:get {:handler "Hello World!"}}})
+               identity :? (comp not error?)
                identity :- Methods
                [:methods :get :handler invoke-with-ctx] := "Hello World!"))
 
       (testing "implied handler"
         (given (coercer {:methods {:get (fn [ctx] "Hello World!")}})
+               identity :? (comp not error?)
                identity :- Methods
                [:methods :get :handler invoke-with-ctx] := "Hello World!"))
 
       (testing "both"
         (given (coercer {:methods {:get "Hello World!"}})
+               identity :? (comp not error?)
                identity :- Methods
                [:methods :get :handler invoke-with-ctx] := "Hello World!"
                [:methods :get :produces first :media-type :name] := "text/plain"))
@@ -65,16 +79,44 @@
       (testing "produces inside method"
         (given (coercer {:methods {:get {:handler "Hello World!"
                                          :produces "text/plain"}}})
+               identity :? (comp not error?)
                identity :- Methods
                [:methods :get :handler invoke-with-ctx] := "Hello World!"
                ;;[:methods :get] := "foo"
-               )))))
+               ))
 
-(deftest combo-test
+      (testing "parameters"
+        (given (coercer {:methods {:get {:parameters {:query {:q String}}
+                                         :handler "Hello World!"}}})
+               identity :? (comp not error?)
+               identity :- Methods)))))
+
+(deftest resource-test
   (testing "produces works at both levels"
     (given (resource-coercer {:produces "text/html"
                               :methods {:get {:produces "text/html"
                                               :handler "Hello World!"}}})
-           identity :- Resource)))
+           identity :? (comp not error?)
+           identity :- Resource))
 
+  (testing "consumes works at both levels"
+    (given (resource-coercer {:consumes "multipart/form-data"
+                              :methods {:get {:consumes "multipart/form-data"
+                                              :handler "Hello World!"}}})
+           identity :? (comp not error?)
+           identity :- Resource))
+
+  (testing "top-level-parameters"
+    (given (resource-coercer {:parameters {:path {:id Long}}
+                              :methods {:get "Hello World!"}})
+           identity :? (comp not error?)
+           identity :- Resource))
+
+  (testing "method-level parameters"
+    (given (resource-coercer
+            {:parameters {:path {:id Long}}
+             :methods {:get {:parameters {:query {:q String}}
+                             :handler "Hello World!"}}})
+           identity :? (comp not error?)
+           identity :- Resource)))
 

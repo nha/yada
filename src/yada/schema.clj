@@ -18,7 +18,30 @@ convenience of terse, expressive short-hand descriptions."}
    [yada.charset CharsetMap]
    [yada.media_type MediaTypeMap]))
 
-(s/defschema Context {})
+(defprotocol SetCoercion
+  (as-set [_] ""))
+
+(extend-protocol SetCoercion
+  clojure.lang.APersistentSet
+  (as-set [s] s)
+  Object
+  (as-set [s] #{s}))
+
+(defprotocol VectorCoercion
+  (as-vector [_] ""))
+
+(extend-protocol VectorCoercion
+  clojure.lang.PersistentVector
+  (as-vector [v] v)
+  Object
+  (as-vector [o] [o]))
+
+(s/defschema Parameters
+  {(s/optional-key :parameters)
+   {(s/enum :query :path :header :cookie :form :body)
+    {s/Keyword s/Any}}})
+
+(def ParametersMappings {})
 
 (s/defschema Representation
   (s/constrained
@@ -54,26 +77,8 @@ convenience of terse, expressive short-hand descriptions."}
 (defprotocol MediaTypeCoercion
   (as-media-type [_] ""))
 
-(defprotocol SetCoercion
-  (as-set [_] ""))
-
-(defprotocol VectorCoercion
-  (as-vector [_] ""))
-
 (defprotocol RepresentationSetCoercion
   (as-representation-set [_] ""))
-
-(extend-protocol SetCoercion
-  clojure.lang.APersistentSet
-  (as-set [s] s)
-  Object
-  (as-set [s] #{s}))
-
-(extend-protocol VectorCoercion
-  clojure.lang.PersistentVector
-  (as-vector [v] v)
-  Object
-  (as-vector [o] [o]))
 
 (extend-protocol MediaTypeCoercion
   MediaTypeMap
@@ -101,6 +106,8 @@ convenience of terse, expressive short-hand descriptions."}
   (sc/coercer [RepresentationSet] RepresentationSetMappings))
 
 (def RepresentationSeqMappings
+  ;; If representation-set-coercer is an error, don't proceed with the
+  ;; representation-set-coercer
   {[Representation] (comp representation-seq representation-set-coercer)})
 
 (def representation-seq-coercer
@@ -121,6 +128,8 @@ convenience of terse, expressive short-hand descriptions."}
   Object
   (as-fn [o] (constantly o)))
 
+(s/defschema Context {})
+
 (s/defschema HandlerFunction
   (s/=> s/Any Context))
 
@@ -136,6 +145,7 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema Method
   (merge {:handler HandlerFunction}
+         Parameters
          Produces
          Consumes))
 
@@ -161,7 +171,8 @@ convenience of terse, expressive short-hand descriptions."}
          RepresentationSeqMappings))
 
 (def Resource
-  (merge Properties
+  (merge Parameters
+         Properties
          Produces
          Consumes
          Methods))
