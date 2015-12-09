@@ -14,8 +14,12 @@
 (def HTML (mt/string->media-type "text/html"))
 (def JSON (mt/string->media-type "application/json"))
 
+
+
+
 (deftest produces-test
   (let [coercer (sc/coercer Produces RepresentationSeqMappings)]
+
     (testing "produces"
       (testing "empty spec. is an error"
         (is (error? (coercer {:produces {}}))))
@@ -172,4 +176,5 @@
              :methods {}})
            identity :? (comp not error?)
            identity :- Resource)))
+
 
