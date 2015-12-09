@@ -145,10 +145,14 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Handler
   {:handler HandlerFunction})
 
-(s/defschema PropertiesResult
+(s/defschema StaticProperties
   {(s/optional-key :last-modified) s/Inst
    (s/optional-key :version) s/Any
    (s/optional-key :exists?) s/Bool})
+
+(s/defschema PropertiesResult
+  (merge StaticProperties
+         Produces))
 
 (s/defschema PropertiesHandlerFunction
   (s/=> PropertiesResult Context))
@@ -156,12 +160,11 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Properties
   {(s/optional-key :properties) (s/conditional
                                  fn? PropertiesHandlerFunction
-                                 (comp not fn?) PropertiesResult
-                                 )})
+                                 (comp not fn?) StaticProperties)})
 
 (def PropertiesMappings {})
 
-(def PropertiesResultMappings {})
+(def PropertiesResultMappings (merge RepresentationSeqMappings))
 
 (def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
 

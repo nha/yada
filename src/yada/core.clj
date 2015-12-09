@@ -409,11 +409,6 @@
   (let [produces (or (get-in ctx [:properties :produces])
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
                              (get-in ctx [:handler :produces])))
-        _ (infof "Select-representation 1: %s" (get-in ctx [:properties :produces]))
-        _ (infof "Select-representation 2a: %s" (get-in ctx [:handler :methods (:method ctx) :produces]))
-        _ (infof "Select-representation 2b: %s" (get-in ctx [:handler :produces]))
-        _ (infof "Select-representation 2: %s" (concat (get-in ctx [:handler :methods (:method ctx) :produces])
-                            (get-in ctx [:handler :produces])))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       produces (assoc :produces produces)
