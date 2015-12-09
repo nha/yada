@@ -55,9 +55,12 @@
     {:get
      {:handler
       (fn [ctx]
+        
         (let [id (get-in ctx [:parameters :path :entry])
+              _ (infof "id is %s, type is %s" id (type id))
               {:keys [firstname surname phone] :as entry} (db/get-entry db id)]
           (when entry
+            (infof "entry found")
             (case (yada/content-type ctx)
               "text/html"
               (html/entry-html

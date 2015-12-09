@@ -108,20 +108,35 @@
 
     ctx))
 
+(defn merge-parameters
+  "Merge parameters such that method parameters override resource
+  parameters, and that parameter schemas (except for the single body
+  parameter) are combined with merge."
+  [resource-params method-params]
+  (merge
+   (apply merge-with merge (map #(dissoc % :body) [resource-params method-params]))
+   (select-keys resource-params [:body])
+   (select-keys method-params [:body])))
+
 (defn parse-parameters
   "Parse request and coerce parameters."
   [ctx]
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas (get-in ctx [:handler :methods method :parameters])
+        schemas (merge-parameters (get-in ctx [:handler :parameters])
+                                  (get-in ctx [:handler :methods method :parameters]))
 
         ;; TODO: Creating coercers on every request is unnecessary and
         ;; expensive, should pre-compute them.
 
         parameters {:path (if-let [schema (:path schemas)]
-                            (rs/coerce schema (:route-params request) :query)
-                            (:route-params request))
+                            (do
+                              (infof "coercing path parameters, schema is %s" schema)
+                              (rs/coerce schema (:route-params request) :query))
+                            (do
+                              (infof "coercing path parameters but no schema...")
+                              (:route-params request)))
                     :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
                              (if-let [schema (:query schemas)]
                                (let [coercer (sc/coercer schema
