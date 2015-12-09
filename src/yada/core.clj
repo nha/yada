@@ -131,12 +131,8 @@
         ;; expensive, should pre-compute them.
 
         parameters {:path (if-let [schema (:path schemas)]
-                            (do
-                              (infof "coercing path parameters, schema is %s" schema)
-                              (rs/coerce schema (:route-params request) :query))
-                            (do
-                              (infof "coercing path parameters but no schema...")
-                              (:route-params request)))
+                            (rs/coerce schema (:route-params request) :query)
+                            (:route-params request))
                     :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
                              (if-let [schema (:query schemas)]
                                (let [coercer (sc/coercer schema
@@ -409,9 +405,15 @@
   ;; TODO: Need metadata to say whether the :produces property 'replaces'
   ;; or 'augments' the static produces declaration. Currently only
   ;; 'replaces' is supported.
+  
   (let [produces (or (get-in ctx [:properties :produces])
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
                              (get-in ctx [:handler :produces])))
+        _ (infof "Select-representation 1: %s" (get-in ctx [:properties :produces]))
+        _ (infof "Select-representation 2a: %s" (get-in ctx [:handler :methods (:method ctx) :produces]))
+        _ (infof "Select-representation 2b: %s" (get-in ctx [:handler :produces]))
+        _ (infof "Select-representation 2: %s" (concat (get-in ctx [:handler :methods (:method ctx) :produces])
+                            (get-in ctx [:handler :produces])))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       produces (assoc :produces produces)
@@ -744,10 +746,6 @@
                 (rep/vary produces))
 
          ]
-
-     (when-not (map? resource)
-       (throw (ex-info "Resource is not a map" {:resource resource
-                                                :type (type resource)})))
 
      (new-handler
 
