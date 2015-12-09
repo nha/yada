@@ -65,8 +65,15 @@
                    :exists? (.exists file)
                    :last-modified (Date. (.lastModified file))})
 
-    :methods {:get {:handler (fn [ctx] (respond-with-file ctx file reader))}
-              :put {:handler (fn [ctx] (bs/transfer (-> ctx :request :body) file))}
+    :methods {:get {:handler (fn [ctx]
+                               (infof "GET on file %s" file)
+                               (respond-with-file ctx file reader))}
+              :put {:handler (fn [ctx]
+                               (infof "Putting body to file %s" file)
+                               (bs/transfer (-> ctx :request :body) file)
+                               
+                               (infof "file length is %s" (.length file))
+                               )}
               :delete {:handler (fn [ctx] (.delete file))}}}))
 
 (defn filename-ext

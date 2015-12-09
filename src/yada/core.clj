@@ -70,8 +70,11 @@
   actually exist, e.g. the nil resource. The value of the exists?
   entry must be explicitly false not just falsey (nil)."
   [ctx]
+  (infof "interceptor: exists?")
   (if (false? (get-in ctx [:handler :exists?]))
-    (d/error-deferred (ex-info "" {:status 404}))
+    (do
+      (infof "Oh no!! 404")
+      (d/error-deferred (ex-info "" {:status 404})))
     ctx))
 
 (defn known-method?
@@ -121,6 +124,7 @@
 (defn parse-parameters
   "Parse request and coerce parameters."
   [ctx]
+  (infof "Parse parameters")
   (let [method (:method ctx)
         request (:request ctx)
 
@@ -359,6 +363,7 @@
 
 (defn get-properties
   [ctx]
+  (infof "Get properties")
   (let [props (get-in ctx [:handler :properties] {})
         props (if (fn? props) (props ctx) props)]
     (d/chain
@@ -406,6 +411,8 @@
   ;; or 'augments' the static produces declaration. Currently only
   ;; 'replaces' is supported.
   
+  (infof "Select rep")
+
   (let [produces (or (get-in ctx [:properties :produces])
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
                              (get-in ctx [:handler :produces])))
@@ -515,6 +522,8 @@
 (defn invoke-method
   "Methods"
   [ctx]
+  (infof "Invoke method")
+
   (methods/request (:method-wrapper ctx) ctx))
 
 
@@ -531,6 +540,7 @@
           (:produces props) ; representations shorthand is expanded
           (update-in [:produces]
                      (comp rep/representation-seq rep/coerce-representations)))))))
+
 (defn get-new-properties
   "If the method is unsafe, call properties again. This will
   pick up any changes that are used in subsequent interceptors, such as
