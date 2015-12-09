@@ -35,10 +35,9 @@
         :basePath "/api"}
        ["" {"/users"
             {""
-             (yada
-              (:users db)
-              {:swagger {:get {:summary "Get users"
-                               :description "Get a list of all known users"}}})
+             (merge (yada (:users db))
+                    {:swagger {:get {:summary "Get users"
+                                     :description "Get a list of all known users"}}})
 
              ["/" :username]
              {"" (yada/yada

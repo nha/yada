@@ -17,6 +17,8 @@
   (fn [ctx body-stream content-type & args]
     (:name content-type)))
 
+;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
+
 ;; We return 418 if there's a content-type which we don't
 ;; recognise. Using the multimethods :default method is a way of
 ;; returning a 418 even if the resource declares that it consumes an

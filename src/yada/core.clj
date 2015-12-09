@@ -57,7 +57,7 @@
 (defn available?
   "Is the service available?"
   [ctx]
-  (let [res (service/service-available? (-> ctx :handler :options :service-available?) ctx)]
+  (let [res (service/service-available? (-> ctx :handler :service-available?) ctx)]
     (if-not (service/interpret-service-available res)
       (d/error-deferred
        (ex-info "" (merge {:status 503}
@@ -82,7 +82,7 @@
 
 (defn uri-too-long?
   [ctx]
-  (if (service/request-uri-too-long? (-> ctx :options :request-uri-too-long?) (-> ctx :request :uri))
+  (if (service/request-uri-too-long? (-> ctx :request-uri-too-long?) (-> ctx :request :uri))
     (d/error-deferred (ex-info "" {:status 414}))
     ctx))
 
@@ -116,6 +116,9 @@
 
         schemas (get-in ctx [:handler :methods method :parameters])
 
+        ;; TODO: Creating coercers on every request is unnecessary and
+        ;; expensive, should pre-compute them.
+
         parameters {:path (if-let [schema (:path schemas)]
                             (rs/coerce schema (:route-params request) :query)
                             (:route-params request))
@@ -127,48 +130,11 @@
                                                           (rsc/coercer :query)
                                                           ))]
                                  (coercer qp))
-                               qp
-                               ))}
-
-
-
-        #_parameters #_(-> ctx :handler :parameters)
-
-        #_parameters
-        #_(when parameters
-            {:path
-             (when-let [schema (get-in parameters [method :path])]
-               (rs/coerce schema (:route-params request) :query))
-
-             :query
-             (when-let [coercer (get-in coercers [method :query])]
-               ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
-               ;; Also, read this:
-               ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-
-               (coercer
-                (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params)))
-
-             #_:form
-             #_(cond
-                 (and (req/urlencoded-form? request) (get-in coercers [method :form]))
-                 (when-let [coercer (get-in coercers [method :form])]
-                   (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                         (req/character-encoding request)))))
-
-             #_:body
-             #_(when-let [schema (get-in parameters [method :body])]
-                 (let [body (read-body (-> ctx :request))]
-                   (body/coerce-request-body
-                    body
-                    ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
-                    (or (req/content-type request) "application/octet-stream")
-                    schema)))
-
-             :header
-             (when-let [schema (get-in parameters [method :header])]
-               (let [params (-> request :headers)]
-                 (rs/coerce (assoc schema String String) params :query)))})]
+                               qp))
+                    
+                    #_:header #_(when-let [schema (get-in parameters [method :header])]
+                                  (let [params (-> request :headers)]
+                                    (rs/coerce (assoc schema String String) params :query)))}]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
       (if (not-empty errors)
@@ -377,12 +343,8 @@
            (fn [parts]
              (assoc ctx :body parts))))
 
-
-
         ;; Otherwise
         ctx)))
-
-(defn- update-produces [props ])
 
 (defn get-properties
   [ctx]
@@ -443,10 +405,7 @@
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
-  (if-let [last-modified
-           (or
-            (-> ctx :options :last-modified)
-            (-> ctx :properties :last-modified))]
+  (if-let [last-modified (-> ctx :properties :last-modified)]
 
     (if-let [if-modified-since
              (some-> (:request ctx)
@@ -625,10 +584,10 @@
     ctx))
 
 (defn access-control-headers [ctx]
-  (let [allow-origin (get-in ctx [:options :access-control :allow-origin])
+  (let [allow-origin (get-in ctx [:access-control :allow-origin])
         interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
-        expose-headers (get-in ctx [:options :access-control :expose-headers])
-        allow-headers (get-in ctx [:options :access-control :allow-headers])]
+        expose-headers (get-in ctx [:access-control :expose-headers])
+        allow-headers (get-in ctx [:access-control :allow-headers])]
 
     (cond-> ctx
       interpreted-allow-origin
@@ -708,10 +667,7 @@
 
 (defn yada
   "Create a Ring handler"
-  ([resource]                   ; Single-arity form with default options
-   (yada resource {}))
-
-  ([resource options]
+  ([resource]
    (let [base resource
 
          resource (if (satisfies? p/ResourceCoercion resource)
@@ -726,15 +682,12 @@
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
          ;; See yada.resources.file-resource for an example.
-         collection? (or (:collection? options)
-                         (:collection? resource))
+         collection? (:collection? resource)
 
          known-methods (methods/known-methods)
 
 
-         allowed-methods (let [methods (set
-                                        (or (:allowed-methods options)
-                                            (keys (:methods resource))))]
+         allowed-methods (let [methods (set (keys (:methods resource)))]
                            (cond-> methods
                              (some #{:get} methods) (conj :head)
                              true (conj :options)))
@@ -784,11 +737,10 @@
      (new-handler
 
       (merge {
-              :id (or (:id options) (java.util.UUID/randomUUID))
+              :id (java.util.UUID/randomUUID)
 
               :base base
               :resource resource
-              :options options
 
               :allowed-methods allowed-methods
               :known-methods known-methods

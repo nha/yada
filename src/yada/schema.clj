@@ -209,7 +209,8 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def Resource
   (merge {(s/optional-key :collection?) Boolean
-          (s/optional-key :exists?) Boolean}
+          (s/optional-key :exists?) Boolean
+          (s/optional-key :id) s/Any}
          Properties
          Parameters
          Produces
