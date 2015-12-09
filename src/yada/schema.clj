@@ -182,7 +182,8 @@ convenience of terse, expressive short-hand descriptions."}
          {NamespacedKeyword s/Any}))
 
 (s/defschema Methods
-  {:methods {s/Keyword Method}})
+  {(s/optional-key :methods) ; nil, for example, has no methods.
+   {s/Keyword Method}})
 
 (defprotocol MethodCoercion
   (as-method-map [_] "Coerce to Method"))

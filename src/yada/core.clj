@@ -64,6 +64,16 @@
                           (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}}))))
       ctx)))
 
+(defn exists?
+  "Does this resource exist? Can we tell without calling properties?
+  For example, this is to allow resources to declare they don't
+  actually exist, e.g. the nil resource. The value of the exists?
+  property must be false not just nil."
+  [ctx]
+  (if (false? (get-in ctx [:handler :properties :exists?]))
+    (d/error-deferred (ex-info "" {:status 404}))
+    ctx))
+
 (defn known-method?
   [ctx]
   (if-not (:method-wrapper ctx)
@@ -378,7 +388,6 @@
   [ctx]
   (let [props (get-in ctx [:handler :properties] {})
         props (if (fn? props) (props ctx) props)]
-    
     (d/chain
      props                           ; propsfn can returned a deferred
      (fn [props]
@@ -386,11 +395,9 @@
          (if-not (schema.utils/error? props)
            (cond-> (assoc ctx :properties props)
              (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
-
            (d/error-deferred
             (ex-info "Properties malformed" {:status 500
                                              :error (:error props)}))))))))
-
 
 #_(defn authentication
   "Authentication"
@@ -669,6 +676,7 @@
 
 (def default-interceptor-chain
   [available?
+   exists? 
    known-method?
    uri-too-long?
    TRACE
