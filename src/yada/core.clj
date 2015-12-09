@@ -68,9 +68,9 @@
   "Does this resource exist? Can we tell without calling properties?
   For example, this is to allow resources to declare they don't
   actually exist, e.g. the nil resource. The value of the exists?
-  property must be false not just nil."
+  entry must be explicitly false not just falsey (nil)."
   [ctx]
-  (if (false? (get-in ctx [:handler :properties :exists?]))
+  (if (false? (get-in ctx [:handler :exists?]))
     (d/error-deferred (ex-info "" {:status 404}))
     ctx))
 

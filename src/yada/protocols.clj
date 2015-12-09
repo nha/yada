@@ -19,7 +19,7 @@
 
 (extend-protocol ResourceCoercion
   nil
-  (as-resource [_] {:properties {:exists? false}}))
+  (as-resource [_] {:exists? false}))
 
 (defprotocol Properties
   (properties [_] [_ ctx] "If the semantics of the method are

@@ -208,9 +208,10 @@ convenience of terse, expressive short-hand descriptions."}
 (def ResourceDocumentation (merge Documentation))
 
 (def Resource
-  (merge {(s/optional-key :collection?) Boolean}
-         Parameters
+  (merge {(s/optional-key :collection?) Boolean
+          (s/optional-key :exists?) Boolean}
          Properties
+         Parameters
          Produces
          Consumes
          Methods
