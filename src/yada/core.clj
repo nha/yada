@@ -149,13 +149,17 @@
                     
                     #_:header #_(when-let [schema (get-in parameters [method :header])]
                                   (let [params (-> request :headers)]
-                                    (rs/coerce (assoc schema String String) params :query)))}]
+                                    (rs/coerce (assoc schema String String) params :query)))
+                    }
+
+
+        ]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
                                        :errors errors}))
-        (assoc ctx :parameters (util/remove-nil-vals parameters))))))
+        (assoc ctx :parameters (util/remove-empty-vals parameters))))))
 
 (defn safe-read-content-length [req]
   (let [len (get-in req [:headers "content-length"])]
@@ -164,6 +168,22 @@
         (Long/parseLong len)
         (catch Exception e
           (throw (ex-info "Malformed Content-Length" {:value len})))))))
+
+(defn get-properties
+  [ctx]
+  (infof "Get properties")
+  (let [props (get-in ctx [:handler :properties] {})
+        props (if (fn? props) (props ctx) props)]
+    (d/chain
+     props                           ; propsfn can returned a deferred
+     (fn [props]
+       (let [props (ys/properties-result-coercer props)]
+         (if-not (schema.utils/error? props)
+           (cond-> (assoc ctx :properties props)
+             (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
+           (d/error-deferred
+            (ex-info "Properties malformed" {:status 500
+                                             :error (:error props)}))))))))
 
 (defn process-request-body
   "Process the request body, if necessary. RFC 7230 section 3.3 states
@@ -178,14 +198,28 @@
   [{:keys [request] :as ctx}]
   (if (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
     (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
-          content-length (safe-read-content-length request)]
+          content-length (safe-read-content-length request)
 
-      ;; TODO: Check if we consume...
+          _ (infof "or: %s"
+                   (pr-str (or (get-in ctx [:properties :consumes])
+                               (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
+                                       (get-in ctx [:handler :consumes])))))
+          
+          consumes-mt (set (map (comp :name :media-type)
+                                (or (get-in ctx [:properties :consumes])
+                                    (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
+                                            (get-in ctx [:handler :consumes])))))]
 
-      (cond-> ctx
-        ;; TODO: Check options to see if we have a maximum requested entity size, default is no.
-        (and content-length (pos? content-length))
-        (rb/process-request-body (stream/map bs/to-byte-array (:body request)) content-type)))
+      (if-not (contains? consumes-mt (:name content-type))
+        (d/error-deferred
+         (ex-info "Unsupported Media Type"
+                  {:status 415
+                   :message "Method does not declare that it consumes this content-type"
+                   :consumes consumes-mt
+                   :content-type content-type}))
+        (if (and content-length (pos? content-length))
+          (rb/process-request-body ctx (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request))) (:name content-type))
+          ctx)))
 
     ;; else
     ctx))
@@ -360,22 +394,6 @@
 
         ;; Otherwise
         ctx)))
-
-(defn get-properties
-  [ctx]
-  (infof "Get properties")
-  (let [props (get-in ctx [:handler :properties] {})
-        props (if (fn? props) (props ctx) props)]
-    (d/chain
-     props                           ; propsfn can returned a deferred
-     (fn [props]
-       (let [props (ys/properties-result-coercer props)]
-         (if-not (schema.utils/error? props)
-           (cond-> (assoc ctx :properties props)
-             (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
-           (d/error-deferred
-            (ex-info "Properties malformed" {:status 500
-                                             :error (:error props)}))))))))
 
 #_(defn authentication
   "Authentication"
@@ -665,9 +683,9 @@
    method-allowed?
    parse-parameters
 
-   process-request-body
-
    get-properties
+
+   process-request-body
 
 ;;   authentication
 ;;   authorization

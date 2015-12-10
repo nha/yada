@@ -7,6 +7,7 @@
    [schema.coerce :as sc]
    [schema.utils :as su]
    [yada.representation :as rep]
+   [yada.schema :as ys]
    yada.charset
    yada.media-type
    [yada.protocols :as p])
@@ -121,4 +122,4 @@
 
 ;; TODO: Rename to simply 'resource'
 (defn new-custom-resource [m]
-  (map->CustomResource m))
+  (map->CustomResource (ys/resource-coercer m)))

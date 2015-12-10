@@ -75,7 +75,8 @@
               :firstname String
               :phone String}}
       :consumes
-      [{:media-type #{"multipart/form-data"}}]
+      [{:media-type #{"multipart/form-data"
+                      "application/x-www-form-urlencoded"}}]
       :handler
       (fn [ctx]
         (let [entry (get-in ctx [:parameters :path :entry])

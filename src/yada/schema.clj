@@ -13,6 +13,7 @@ convenience of terse, expressive short-hand descriptions."}
    [yada.media-type :as mt]
    [schema.core :as s]
    [schema.coerce :as sc]
+   [schema.utils :refer [error?]]
    [yada.charset :refer [to-charset-map]])
   (:import
    [yada.charset CharsetMap]
@@ -39,14 +40,13 @@ convenience of terse, expressive short-hand descriptions."}
   Object
   (as-vector [o] [o]))
 
-(s/defschema Parameters
+(s/defschema ResourceParameters
   {(s/optional-key :parameters)
    {(s/optional-key :query) s/Any
     (s/optional-key :path) s/Any
     (s/optional-key :cookie) s/Any
     (s/optional-key :header) s/Any
-    (s/optional-key :form) s/Any
-    (s/optional-key :body) s/Any}})
+    }})
 
 (def ParametersMappings {})
 
@@ -115,7 +115,11 @@ convenience of terse, expressive short-hand descriptions."}
 (def RepresentationSeqMappings
   ;; If representation-set-coercer is an error, don't proceed with the
   ;; representation-set-coercer
-  {[Representation] (comp representation-seq representation-set-coercer)})
+  {[Representation] (fn [x]
+                      (let [s (representation-set-coercer x)]
+                        (if (error? s)
+                          s
+                          (representation-seq s))))})
 
 (def representation-seq-coercer
   (sc/coercer [Representation] RepresentationSeqMappings))
@@ -176,9 +180,17 @@ convenience of terse, expressive short-hand descriptions."}
   (merge Documentation
          {(s/optional-key :responses) {s/Int {:description String}}}))
 
+(s/defschema MethodParameters
+  (merge-with
+   merge
+   ResourceParameters               ; Method params can override these
+   {(s/optional-key :parameters)
+    {(s/optional-key :form) s/Any
+     (s/optional-key :body) s/Any}}))
+
 (s/defschema Method
   (merge Handler
-         Parameters
+         MethodParameters
          Produces
          Consumes
          MethodDocumentation
@@ -215,7 +227,7 @@ convenience of terse, expressive short-hand descriptions."}
           (s/optional-key :exists?) Boolean
           (s/optional-key :id) s/Any}
          Properties
-         Parameters
+         ResourceParameters
          Produces
          Consumes
          Methods

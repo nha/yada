@@ -13,49 +13,54 @@
 
 (def HTML (mt/string->media-type "text/html"))
 (def JSON (mt/string->media-type "application/json"))
-
-
-
+(def FORM (mt/string->media-type "application/x-www-form-urlencoded"))
 
 (deftest produces-test
   (let [coercer (sc/coercer Produces RepresentationSeqMappings)]
+    (testing "empty spec. is an error"
+      (is (error? (coercer {:produces {}}))))
 
-    (testing "produces"
-      (testing "empty spec. is an error"
-        (is (error? (coercer {:produces {}}))))
+    (testing "as-vector"
+      (is (= (coercer {:produces {:media-type #{HTML}}})
+             {:produces [{:media-type HTML}]})))
 
-      (testing "as-vector"
-        (is (= (coercer {:produces {:media-type #{HTML}}})
-               {:produces [{:media-type HTML}]})))
+    (testing "to-set"
+      (is (= (coercer {:produces {:media-type HTML}})
+             {:produces [{:media-type HTML}]})))
 
-      (testing "to-set"
-        (is (= (coercer {:produces {:media-type HTML}})
-               {:produces [{:media-type HTML}]})))
+    (testing "string"
+      (is (= (coercer {:produces {:media-type "text/html"}})
+             {:produces [{:media-type HTML}]})))
 
-      (testing "string"
-        (is (= (coercer {:produces {:media-type "text/html"}})
-               {:produces [{:media-type HTML}]})))
+    (testing "just-string"
+      (is (= (coercer {:produces "text/html"})
+             {:produces [{:media-type HTML}]})))
 
-      (testing "just-string"
-        (is (= (coercer {:produces "text/html"})
-               {:produces [{:media-type HTML}]})))
+    (testing "string-set"
+      (is (= (coercer {:produces (sorted-set "text/html" "application/json")})
+             {:produces [{:media-type JSON}
+                         {:media-type HTML}]})))))
 
-      (testing "string-set"
-        (is (= (coercer {:produces (sorted-set "text/html" "application/json")})
-               {:produces [{:media-type JSON}
-                           {:media-type HTML}]}))))))
+(deftest consumes-test
+  (let [coercer (sc/coercer Consumes RepresentationSeqMappings)]
+    (testing "empty spec. is an error"
+      (is (error? (coercer {:consumes {}}))))
+
+    (testing "form"
+      (is (= (coercer {:consumes "application/x-www-form-urlencoded"})
+             {:consumes [{:media-type FORM}]})))))
 
 (deftest parameters-test
-  (let [coercer (sc/coercer Parameters ParametersMappings)]
+  (let [coercer (sc/coercer ResourceParameters ParametersMappings)]
     (testing "none is not an error"
       (given (coercer {:parameters {}})
              identity :? (comp not error?)
-             identity :- Parameters))
+             identity :- ResourceParameters))
     (testing "multiple"
       (given (coercer {:parameters {:query {:q String}
                                     :path {:q String}}})
              identity :? (comp not error?)
-             identity :- Parameters))))
+             identity :- ResourceParameters))))
 
 (defn invoke-with-ctx [f] (f {}))
 
