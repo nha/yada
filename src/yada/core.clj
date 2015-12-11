@@ -417,7 +417,7 @@
   [ctx]
   ;; TODO: Need metadata to say whether the :produces property 'replaces'
   ;; or 'augments' the static produces declaration. Currently only
-  ;; 'replaces' is supported.
+  ;; 'replaces' is supported. What does Swagger do?
   
   (let [produces (or (get-in ctx [:properties :produces])
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
