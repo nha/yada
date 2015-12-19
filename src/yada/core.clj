@@ -35,7 +35,7 @@
                           (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}}))))
       ctx)))
 
-#_(defn exists?
+(defn exists?
   "Does this resource exist? Can we tell without calling properties?
   For example, this is to allow resources to declare they don't
   actually exist, e.g. the nil resource, by providing static
@@ -397,7 +397,7 @@
 
 (def default-interceptor-chain
   [;;available?
-;;   exists? 
+   exists? 
    known-method?
    ;;uri-too-long?
    TRACE
