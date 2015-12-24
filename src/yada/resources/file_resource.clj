@@ -55,15 +55,15 @@
        (s/optional-key :produces) RepresentationSets}]
 
   (resource
-   {::type :file
+   {:produces (or produces
+                  [{:media-type (or (ext-mime-type (.getName file))
+                                    "application/octet-stream")}])
     :properties (fn [ctx]
                   {
                    ;; A representation can be given as a parameter, or deduced from
                    ;; the filename. The latter is unreliable, as it depends on file
                    ;; suffixes.
-                   :produces (or produces
-                                 [{:media-type (or (ext-mime-type (.getName file))
-                                                   "application/octet-stream")}])
+                   
                    :exists? (.exists file)
                    :last-modified (Date. (.lastModified file))})
 
