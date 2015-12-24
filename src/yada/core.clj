@@ -14,7 +14,7 @@
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
    [yada.coerce :as coerce]
-   [yada.handler :refer [new-handler create-response]]
+   [yada.handler :refer [new-handler create-response] :as handler]
    [yada.methods :as methods]
    [yada.media-type :as mt]
    [yada.representation :as rep]
@@ -433,24 +433,15 @@
                               :schema ys/Resource})))
 
          ;; This handler services a collection of resources
-         ;; (TODO: this is ambiguous, what do we mean exactly?)
-         ;; See yada.resources.file-resource for an example.
-         path-info? (:path-info? resource)
-
-         known-methods (methods/known-methods)
-
-
-         allowed-methods (let [methods (set (keys (:methods resource)))]
-                           (cond-> methods
-                             (some #{:get} methods) (conj :head)
-                             true (conj :options)))]
+         ;; TODO: Do we really need this in the map?
+         path-info? (:path-info? resource)]
 
      (new-handler
       (merge {:id (java.util.UUID/randomUUID)
               :base base
               :resource resource
-              :allowed-methods allowed-methods
-              :known-methods known-methods
+              :allowed-methods (handler/allowed-methods resource)
+              :known-methods (methods/known-methods)
               :interceptor-chain default-interceptor-chain
               :path-info? path-info?}
              resource)))))

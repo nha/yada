@@ -13,7 +13,7 @@
    [yada.protocols :as p]
    [yada.representation :as rep]
    [yada.response :refer [->Response]]
-   [yada.schema :refer [resource-coercer]]))
+   [yada.schema :refer [resource-coercer] :as ys]))
 
 (defn make-context []
   {:response (->Response)})
@@ -74,6 +74,12 @@
     (debugf "Returning response: %s" (dissoc response :body))
     response))
 
+(defn allowed-methods [resource]
+  (let [methods (set (keys (:methods resource)))]
+    (cond-> methods
+      (some #{:get} methods) (conj :head)
+      true (conj :options))))
+
 (defn- handle-request
   "Handle Ring request"
   [handler request match-context]
@@ -91,8 +97,21 @@
                     :resource resource  ; convenience
                     :request request})]
 
-    (if (:subresource resource)
-      (throw (ex-info "TODO: subresources" {}))
+    (if-let [subresourcefn (:subresource resource)]
+      ;; Subresource
+      (let [subresource (subresourcefn ctx)
+            resource (ys/resource-coercer (p/as-resource subresource))]
+        
+        ;; TODO: Could/should subresources, which are dynamic, be able
+        ;; to modify the interceptor-chain?
+        (handle-request
+         (assoc ctx
+                :base subresource
+                :resource resource
+                :allowed-methods (allowed-methods resource)
+                ;; TODO: Do we need this?
+                :path-info? (:path-info? resource))
+         handle-request match-context))
 
       ;; Normal resources
       (->
