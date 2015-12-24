@@ -140,6 +140,7 @@
            (tag ::phonebook-swagger-spec))]
 
       ;;Boring specs
+      ["talksdir/" (yada (io/file "talks"))] 
       [["spec/rfc" :rfc] (rfc)]]]))
 
 (defn new-docsite [& {:as opts}]

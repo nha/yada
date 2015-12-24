@@ -44,6 +44,7 @@
   ;; another file, string or other body content.
   (assoc (:response ctx)
          :body (if reader
+                 ;; FIXME: This requires intimate knowledge of the ctx structure
                  (reader file (-> ctx :response :produces))
                  file)))
 
@@ -151,54 +152,41 @@
        (s/optional-key :index-files) [String]}]
 
   (resource
-   {;; This tells the handler to match a route, even if there is some
-    ;; remaining path-info.
-    :path-info? true
+   {:path-info? true
 
-    :properties
+    :subresource
     (fn [ctx]
-      (if-let [path-info (-> ctx :request :path-info)]
-        (let [f (io/file dir path-info)
-              suffix (filename-ext (.getName f))
-              custom-suffix-args (get custom-suffices suffix)]
-          (cond
-            (.isFile f)
-            {:exists? (.exists f)
-             :produces (if custom-suffix-args
-                         (:produces custom-suffix-args)
-                         [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
-             :last-modified (Date. (.lastModified f))
-             ::reader (some-> custom-suffix-args :reader)
-             ::file f}
+      (let [path-info (-> ctx :request :path-info)
+            f (io/file dir path-info)
+            suffix (filename-ext (.getName f))
+            custom-suffix-args (get custom-suffices suffix)]
+        (cond
+          (.isFile f)
+          {:properties {:exists? (.exists f)
+                        :last-modified (Date. (.lastModified f))}
+           :produces (if custom-suffix-args
+                       (:produces custom-suffix-args)
+                       [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
+           :methods
+           {:get
+            {:handler
+             (fn [ctx] (respond-with-file ctx f (some-> custom-suffix-args :reader)))}}}
 
-            (and (.isDirectory f) (.exists f))
-            (if-let [index-file (first (filter (set (seq (.list f))) index-files))]
-              (throw
-               (ex-info "Redirect"
-                        {:status 302
-                         :headers {"Location" (str (get-in ctx [:request :uri]) index-file)}}))
-              {:exists? true
-               :produces [{:media-type #{"text/html"
-                                         "text/plain;q=0.9"}}]
-               :last-modified (Date. (.lastModified f))
-               ::file f})
+          (and (.isDirectory f) (.exists f))
+          (if-let [index-file (first (filter (set (seq (.list f))) index-files))]
+            (throw
+             (ex-info "Redirect"
+                      {:status 302 :headers {"Location" (str (get-in ctx [:request :uri]) index-file)}}))
+            {:produces [{:media-type #{"text/plain"}}]
+             :properties {:exists? true
+                          :produces [{:media-type #{"text/html"
+                                                    "text/plain;q=0.9"}}]
+                          :last-modified (Date. (.lastModified f))
+                          }
+             :methods {:get {:handler
+                             (fn [_] (dir-index f (-> ctx :response :produces :media-type)))}}})
 
-            :otherwise
-            {:exists? false}))
-
-        {:exists? false}))
-
-    :methods
-    {:get
-     {:handler
-      (fn [ctx]
-        (let [f (get-in ctx [:properties ::file])]
-          (assert f)
-          (cond
-            (.isFile f) (respond-with-file ctx f (get-in ctx [:properties ::reader]))
-            (.isDirectory f) (dir-index f
-                                        (-> ctx :response :produces :media-type)))))
-      :produces [{:media-type #{"text/plain"}}]}}}))
+          :otherwise (p/as-resource nil))))}))
 
 (extend-protocol p/ResourceCoercion
   File
@@ -207,5 +195,3 @@
       (new-directory-resource f {})
       (new-file-resource f {})
       )))
-
-
