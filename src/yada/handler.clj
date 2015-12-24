@@ -81,56 +81,61 @@
         interceptor-chain (:interceptor-chain handler)
         id (java.util.UUID/randomUUID)
         error-handler default-error-handler
+        resource (:resource handler)
         ctx (merge (make-context)
                    {:id id
                     :method method
                     :method-wrapper (get (:known-methods handler) method)
                     :interceptor-chain interceptor-chain
                     :handler (merge handler (dissoc match-context :handler))
-                    :resource (:resource handler)  ; convenience
+                    :resource resource  ; convenience
                     :request request})]
 
-    (->
-     (apply d/chain ctx interceptor-chain)
+    (if (:subresource resource)
+      (throw (ex-info "TODO: subresources" {}))
 
-     (d/catch
-         clojure.lang.ExceptionInfo
-         (fn [e]
-           (error-handler e)
-           (let [data (error-data e)]
-             (let [status (or (:status data) 500)
-                   rep (rep/select-best-representation
-                        (:request ctx)
-                        ;; TODO: Don't do this! coerce!!
-                        (rep/representation-seq
-                         (rep/coerce-representations
-                          ;; Possibly in future it will be possible
-                          ;; to support more media-types to render
-                          ;; errors, including image and video
-                          ;; formats.
+      ;; Normal resources
+      (->
+       (apply d/chain ctx interceptor-chain)
 
-                          [{:media-type #{"application/json"
-                                          "application/json;pretty=true;q=0.96"
-                                          "text/plain;q=0.9"
-                                          "text/html;q=0.8"
-                                          "application/edn;q=0.6"
-                                          "application/edn;pretty=true;q=0.5"}
-                            :charset charset/platform-charsets}])))]
+       (d/catch
+           clojure.lang.ExceptionInfo
+           (fn [e]
+             (error-handler e)
+             (let [data (error-data e)]
+               (let [status (or (:status data) 500)
+                     rep (rep/select-best-representation
+                          (:request ctx)
+                          ;; TODO: Don't do this! coerce!!
+                          (rep/representation-seq
+                           (rep/coerce-representations
+                            ;; Possibly in future it will be possible
+                            ;; to support more media-types to render
+                            ;; errors, including image and video
+                            ;; formats.
 
-               ;; TODO: Custom error handlers
+                            [{:media-type #{"application/json"
+                                            "application/json;pretty=true;q=0.96"
+                                            "text/plain;q=0.9"
+                                            "text/html;q=0.8"
+                                            "application/edn;q=0.6"
+                                            "application/edn;pretty=true;q=0.5"}
+                              :charset charset/platform-charsets}])))]
 
-               (d/chain
-                (cond-> (make-context)
-                  status (assoc-in [:response :status] status)
-                  (:headers data) (assoc-in [:response :headers] (:headers data))
-                  (not (:body data)) ((fn [ctx]
-                                        (let [b (body/to-body (body/render-error status e rep ctx) rep)]
-                                          (-> ctx
-                                              (assoc-in [:response :body] b)
-                                              (assoc-in [:response :headers "content-length"] (body/content-length b))))))
+                 ;; TODO: Custom error handlers
 
-                  rep (assoc-in [:response :produces] rep))
-                create-response))))))))
+                 (d/chain
+                  (cond-> (make-context)
+                    status (assoc-in [:response :status] status)
+                    (:headers data) (assoc-in [:response :headers] (:headers data))
+                    (not (:body data)) ((fn [ctx]
+                                          (let [b (body/to-body (body/render-error status e rep ctx) rep)]
+                                            (-> ctx
+                                                (assoc-in [:response :body] b)
+                                                (assoc-in [:response :headers "content-length"] (body/content-length b))))))
+
+                    rep (assoc-in [:response :produces] rep))
+                  create-response)))))))))
 
 (defrecord Handler []
   clojure.lang.IFn
