@@ -15,6 +15,8 @@
            [yada.media_type MediaTypeMap]
            [java.util Date]))
 
+;; Deprecated
+
 (s/defschema MediaTypeSchema
   (s/either String MediaTypeMap))
 
@@ -32,44 +34,6 @@
 
 (s/defschema StringSet
   #{String})
-
-(s/defschema RepresentationSet
-  {(s/optional-key :media-type) MediaTypeSchemaSet
-   (s/optional-key :charset) CharsetSchemaSet
-   (s/optional-key :encoding) StringSet
-   (s/optional-key :language) StringSet})
-
-(s/defschema RepresentationSets
-  [RepresentationSet])
-
-;; Final representation
-(s/defschema Representation
-  {(s/optional-key :media-type) MediaTypeMap
-   (s/optional-key :charset) CharsetMap
-   (s/optional-key :encoding) String
-   (s/optional-key :language) String})
-
-(s/defschema Properties
-  {(s/optional-key :allowed-methods)
-   (s/either [s/Keyword] #{s/Keyword})
-
-   (s/optional-key :parameters)
-   {s/Keyword ;; method
-    {(s/optional-key :query) {s/Any s/Any}
-     (s/optional-key :path) {s/Any s/Any}
-     (s/optional-key :header) {s/Any s/Any}
-     (s/optional-key :form) {s/Any s/Any}
-     (s/optional-key :body) s/Any}}
-
-   (s/optional-key :representations)
-   RepresentationSets
-
-   (s/optional-key :last-modified) Date
-   (s/optional-key :version) s/Any
-   (s/optional-key :path-info?) s/Bool
-   (s/optional-key :exists?) s/Bool
-
-   QualifiedKeyword s/Any})
 
 (defn as-set [x] (if (coll? x) x (set [x])))
 

@@ -13,9 +13,10 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.representation :as rep]
-   [yada.resource :refer [Representation RepresentationSets resource]]
+   [yada.resource :refer [resource]]
    [yada.protocols :as p]
-   [yada.media-type :as mt])
+   [yada.media-type :as mt]
+   [yada.schema :refer [Representation RepresentationSet]])
   (:import [java.io File]
            [java.nio.file Files]
            [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions]
@@ -52,7 +53,7 @@
   [file :- File
    {:keys [reader produces]}
    :- {(s/optional-key :reader) (s/=> s/Any File Representation)
-       (s/optional-key :produces) RepresentationSets}]
+       (s/optional-key :produces) [RepresentationSet]}]
 
   (resource
    {:produces (or produces
@@ -148,7 +149,7 @@
    :- {(s/optional-key :custom-suffices)
        {String                          ; suffix
         {(s/optional-key :reader) (s/=> s/Any File Representation)
-         :produces RepresentationSets}}
+         :produces [RepresentationSet]}}
        (s/optional-key :index-files) [String]}]
 
   (resource
