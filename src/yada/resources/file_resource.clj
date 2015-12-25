@@ -155,6 +155,9 @@
   (resource
    {:path-info? true
 
+    :produces "text/html"
+    :methods {:get "foo"}
+
     :subresource
     (fn [ctx]
       (let [path-info (-> ctx :request :path-info)

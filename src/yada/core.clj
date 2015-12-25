@@ -37,6 +37,7 @@
 
 (defn known-method?
   [ctx]
+  (infof "Calling known-method, method-wrapper is %s" (:method-wrapper ctx))
   (if-not (:method-wrapper ctx)
     (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))

@@ -80,42 +80,31 @@
       (some #{:get} methods) (conj :head)
       true (conj :options))))
 
-(defn- handle-request
-  "Handle Ring request"
-  [handler request match-context]
-  (let [method (:request-method request)
-        interceptor-chain (:interceptor-chain handler)
-        id (java.util.UUID/randomUUID)
-        error-handler default-error-handler
-        resource (:resource handler)
-        ctx (merge (make-context)
-                   {:id id
-                    :method method
-                    :method-wrapper (get (:known-methods handler) method)
-                    :interceptor-chain interceptor-chain
-                    :handler (merge handler (dissoc match-context :handler))
-                    :resource resource  ; convenience
-                    :request request})]
+(defn- handle-request-with-context [ctx]
+  (infof "handle-request with resource: %s" (-> ctx :handler :resource))
+  (let [resource (-> ctx :handler :resource)
+        error-handler default-error-handler]
 
     (if-let [subresourcefn (:subresource resource)]
       ;; Subresource
-      (let [subresource (subresourcefn ctx)
-            resource (ys/resource-coercer (p/as-resource subresource))]
+      (let [_ (infof "calling subresourcefn")
+            subbase (subresourcefn ctx)
+            subresource (ys/resource-coercer (p/as-resource subbase))]
         
         ;; TODO: Could/should subresources, which are dynamic, be able
         ;; to modify the interceptor-chain?
-        (handle-request
+        ;;(infof "Handing off to subresource, original ctx is %s" ctx)
+        (handle-request-with-context
          (assoc ctx
-                :base subresource
-                :resource resource
-                :allowed-methods (allowed-methods resource)
-                ;; TODO: Do we need this?
-                :path-info? (:path-info? resource))
-         handle-request match-context))
+                :base subbase
+                :resource subresource
+                :allowed-methods (allowed-methods subresource)
+                :handler (assoc (:handler ctx) :resource subresource)
+                )))
 
       ;; Normal resources
       (->
-       (apply d/chain ctx interceptor-chain)
+       (apply d/chain ctx (:interceptor-chain ctx))
 
        (d/catch
            clojure.lang.ExceptionInfo
@@ -155,6 +144,25 @@
 
                     rep (assoc-in [:response :produces] rep))
                   create-response)))))))))
+
+(defn- handle-request
+  "Handle Ring request"
+  [handler request match-context]
+  (infof "handle-request: %s" (:uri request))
+  (let [method (:request-method request)
+        interceptor-chain (:interceptor-chain handler)
+        id (java.util.UUID/randomUUID)
+        resource (:resource handler)]
+    
+    (handle-request-with-context
+     (merge (make-context)
+            {:id id
+             :request request
+             :method method
+             :method-wrapper (get (:known-methods handler) method)
+             :interceptor-chain interceptor-chain
+             :handler (merge handler (dissoc match-context :handler))
+             }))))
 
 (defrecord Handler []
   clojure.lang.IFn
