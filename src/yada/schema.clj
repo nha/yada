@@ -169,10 +169,13 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
 
-(def MethodDocumentation
+(def CommonDocumentation
   {(s/optional-key :description) String
-   (s/optional-key :summary) String
-   (s/optional-key :responses) {s/Int {:description String}}})
+   (s/optional-key :summary) String})
+
+(s/defschema MethodDocumentation
+  (merge CommonDocumentation
+         {(s/optional-key :responses) {s/Int {:description String}}}))
 
 (s/defschema MethodParameters
   (merge-with
@@ -220,14 +223,19 @@ convenience of terse, expressive short-hand descriptions."}
     (s/optional-key :expose-headers) String
     (s/optional-key :allow-headers) String}})
 
+(s/defschema ResourceDocumentation
+  CommonDocumentation)
+
 (s/defschema ResourceBase
   (merge {(s/optional-key :id) s/Any}
+         ResourceDocumentation
          AccessControl
          Properties
          ResourceParameters
          Produces
          Consumes
          Methods
+         ResourceDocumentation
          {NamespacedKeyword s/Any}))
 
 (s/defschema Resource
