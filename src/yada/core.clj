@@ -256,13 +256,11 @@
 
       ;; Create a map of representation -> etag
       (-> ctx :properties :version)
-      (let [version (-> ctx :properties :version p/to-etag)
+      (let [version (-> ctx :properties :version)
             etags (into {}
                         (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
-
-        (infof "version was %s" version)
-        (infof "etags was %s" etags)
+        
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
            (ex-info "Precondition failed"
@@ -314,7 +312,7 @@
   (let [resource (:resource ctx)]
     (if (not (methods/safe? (:method-wrapper ctx)))
 
-      (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
+      (let [propsfn (get-in ctx [:handler :resource :properties] (constantly {}))]
         (d/chain
 
          (propsfn ctx)                 ; propsfn can returned a deferred
