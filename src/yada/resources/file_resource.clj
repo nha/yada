@@ -155,11 +155,13 @@
   (resource
    {:path-info? true
 
+    ::level :outer
     :produces "text/html"
     :methods {:get "foo"}
 
     :subresource
     (fn [ctx]
+      (infof "Calling subresource fn; here")
       (let [path-info (-> ctx :request :path-info)
             f (io/file dir path-info)
             suffix (filename-ext (.getName f))

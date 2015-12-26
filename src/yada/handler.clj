@@ -8,6 +8,7 @@
    [manifold.deferred :as d]
    [schema.core :as s]
    [yada.body :as body]
+   [clojure.pprint :refer [pprint]]
    [yada.media-type :as mt]
    [yada.charset :as charset]
    [yada.protocols :as p]
@@ -81,7 +82,7 @@
       true (conj :options))))
 
 (defn- handle-request-with-context [ctx]
-  (infof "handle-request with resource: %s" (-> ctx :handler :resource))
+  (infof "handle-request with handler: %s" (with-out-str (pprint (-> ctx :handler))))
   (let [resource (-> ctx :handler :resource)
         error-handler default-error-handler]
 
@@ -89,6 +90,7 @@
       ;; Subresource
       (let [_ (infof "calling subresourcefn")
             subbase (subresourcefn ctx)
+            _ (infof "result is %s" (with-out-str (pprint subbase)))
             subresource (ys/resource-coercer (p/as-resource subbase))]
         
         ;; TODO: Could/should subresources, which are dynamic, be able
@@ -97,7 +99,6 @@
         (handle-request-with-context
          (assoc ctx
                 :base subbase
-                :resource subresource
                 :allowed-methods (allowed-methods subresource)
                 :handler (assoc (:handler ctx) :resource subresource)
                 )))

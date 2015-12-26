@@ -4,6 +4,7 @@
   (:refer-clojure :exclude [methods get])
   (:require
    [clojure.string :as str]
+   [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [yada.body :as body]
@@ -124,6 +125,8 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [this ctx]
+    (infof "GET method executing on ctx: handler is %s" (with-out-str (pprint (:handler ctx))))
+     
     (->
      (d/chain
 

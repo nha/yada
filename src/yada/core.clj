@@ -4,6 +4,7 @@
   (:require
    [clojure.set :as set]
    [clojure.string :as str]
+   [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all :exclude [trace]]
    [byte-streams :as bs]
    [manifold.deferred :as d]
@@ -37,7 +38,7 @@
 
 (defn known-method?
   [ctx]
-  (infof "Calling known-method, method-wrapper is %s" (:method-wrapper ctx))
+  (infof "Calling known-method, handler is %s" (with-out-str (pprint (:handler ctx))))
   (if-not (:method-wrapper ctx)
     (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))
@@ -202,15 +203,8 @@
   method (which we know) and the status code (which is yet to be
   determined)."
   [ctx]
-  ;; TODO: Need metadata to say whether the :produces property 'replaces'
-  ;; or 'augments' the static produces declaration. Currently only
-  ;; 'replaces' is supported. What does Swagger do?
-  
-  ;; TODO We select the representation
-
-  (let [produces (or (get-in ctx [:properties :produces])
-                     (concat (get-in ctx [:handler :methods (:method ctx) :produces])
-                             (get-in ctx [:handler :produces])))
+  (let [produces (concat (get-in ctx [:handler :resource :methods (:method ctx) :produces])
+                         (get-in ctx [:handler :resource :produces]))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       produces (assoc :produces produces)
