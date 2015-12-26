@@ -75,8 +75,8 @@
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas (util/merge-parameters (get-in ctx [:handler :parameters])
-                                       (get-in ctx [:handler :methods method :parameters]))
+        schemas (util/merge-parameters (get-in ctx [:handler :resource :parameters])
+                                       (get-in ctx [:handler :resource :methods method :parameters]))
 
         ;; TODO: Creating coercers on every request is unnecessary and
         ;; expensive, should pre-compute them.
@@ -145,9 +145,8 @@
       (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
             content-length (safe-read-content-length request)
             consumes-mt (set (map (comp :name :media-type)
-                                  (or (get-in ctx [:properties :consumes])
-                                      (concat (get-in ctx [:handler :resource :methods (:method ctx) :consumes])
-                                              (get-in ctx [:handler :resource :consumes])))))]
+                                  (concat (get-in ctx [:handler :resource :methods (:method ctx) :consumes])
+                                          (get-in ctx [:handler :resource :consumes]))))]
 
         (if-not (contains? consumes-mt (:name content-type))
           (d/error-deferred
@@ -257,11 +256,13 @@
 
       ;; Create a map of representation -> etag
       (-> ctx :properties :version)
-      (let [version (-> ctx :properties :version)
+      (let [version (-> ctx :properties :version p/to-etag)
             etags (into {}
                         (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
 
+        (infof "version was %s" version)
+        (infof "etags was %s" etags)
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
            (ex-info "Precondition failed"
@@ -303,7 +304,6 @@
 (defn invoke-method
   "Methods"
   [ctx]
-  (infof "Invoking method, ctx is %s, method-wrapper is %s" ctx (:method-wrapper ctx))
   (methods/request (:method-wrapper ctx) ctx))
 
 (defn get-new-properties

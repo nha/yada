@@ -125,8 +125,6 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [this ctx]
-    (infof "GET method executing on ctx: handler is %s" (with-out-str (pprint (:handler ctx))))
-     
     (->
      (d/chain
 

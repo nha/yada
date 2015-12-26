@@ -82,7 +82,7 @@
       true (conj :options))))
 
 (defn- handle-request-with-context [ctx]
-  (infof "handle-request with handler: %s" (with-out-str (pprint (-> ctx :handler))))
+  #_(infof "handle-request with handler: %s" (with-out-str (pprint (-> ctx :handler))))
   (let [resource (-> ctx :handler :resource)
         error-handler default-error-handler]
 
@@ -105,7 +105,7 @@
 
       ;; Normal resources
       (do
-        (infof "handle request no subresource")
+        #_(infof "handle request no subresource")
         (->
          (apply d/chain ctx (-> ctx :handler :interceptor-chain))
 
@@ -151,7 +151,7 @@
 (defn- handle-request
   "Handle Ring request"
   [handler request match-context]
-  (infof "handle-request: %s" (:uri request))
+  #_(infof "handle-request: %s" (:uri request))
   (let [method (:request-method request)]
     (handle-request-with-context
      (merge (make-context)
