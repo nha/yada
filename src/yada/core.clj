@@ -146,8 +146,8 @@
             content-length (safe-read-content-length request)
             consumes-mt (set (map (comp :name :media-type)
                                   (or (get-in ctx [:properties :consumes])
-                                      (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
-                                              (get-in ctx [:handler :consumes])))))]
+                                      (concat (get-in ctx [:handler :resource :methods (:method ctx) :consumes])
+                                              (get-in ctx [:handler :resource :consumes])))))]
 
         (if-not (contains? consumes-mt (:name content-type))
           (d/error-deferred
