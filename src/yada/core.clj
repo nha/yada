@@ -38,7 +38,7 @@
 
 (defn known-method?
   [ctx]
-  (infof "Calling known-method, handler is %s" (with-out-str (pprint (:handler ctx))))
+  #_(infof "Calling known-method, handler is %s" (with-out-str (pprint (:handler ctx))))
   (if-not (:method-wrapper ctx)
     (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))
@@ -114,7 +114,7 @@
 
 (defn get-properties
   [ctx]
-  (let [props (get-in ctx [:handler :properties] {})
+  (let [props (get-in ctx [:handler :resource :properties] {})
         props (if (fn? props) (props ctx) props)]
     (d/chain
      props                           ; propsfn can returned a deferred
@@ -303,6 +303,7 @@
 (defn invoke-method
   "Methods"
   [ctx]
+  (infof "Invoking method, ctx is %s, method-wrapper is %s" ctx (:method-wrapper ctx))
   (methods/request (:method-wrapper ctx) ctx))
 
 (defn get-new-properties
@@ -432,11 +433,10 @@
          path-info? (:path-info? resource)]
 
      (new-handler
-      (merge {:id (java.util.UUID/randomUUID)
-              :base base
-              :resource resource
-              :allowed-methods (handler/allowed-methods resource)
-              :known-methods (methods/known-methods)
-              :interceptor-chain default-interceptor-chain
-              :path-info? path-info?}
-             resource)))))
+      {:id (java.util.UUID/randomUUID)
+       :base base
+       :resource resource
+       :allowed-methods (handler/allowed-methods resource)
+       :known-methods (methods/known-methods)
+       :interceptor-chain default-interceptor-chain
+       :path-info? path-info?}))))

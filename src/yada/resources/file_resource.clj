@@ -166,6 +166,7 @@
             f (io/file dir path-info)
             suffix (filename-ext (.getName f))
             custom-suffix-args (get custom-suffices suffix)]
+        (infof "f is %s, exists? %s" f (.exists f))
         (cond
           (.isFile f)
           {:properties {:exists? (.exists f)

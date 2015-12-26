@@ -104,64 +104,61 @@
                 )))
 
       ;; Normal resources
-      (->
-       (apply d/chain ctx (:interceptor-chain ctx))
+      (do
+        (infof "handle request no subresource")
+        (->
+         (apply d/chain ctx (-> ctx :handler :interceptor-chain))
 
-       (d/catch
-           clojure.lang.ExceptionInfo
-           (fn [e]
-             (error-handler e)
-             (let [data (error-data e)]
-               (let [status (or (:status data) 500)
-                     rep (rep/select-best-representation
-                          (:request ctx)
-                          ;; TODO: Don't do this! coerce!!
-                          (rep/representation-seq
-                           (rep/coerce-representations
-                            ;; Possibly in future it will be possible
-                            ;; to support more media-types to render
-                            ;; errors, including image and video
-                            ;; formats.
+         (d/catch
+             clojure.lang.ExceptionInfo
+             (fn [e]
+               (error-handler e)
+               (let [data (error-data e)]
+                 (let [status (or (:status data) 500)
+                       rep (rep/select-best-representation
+                            (:request ctx)
+                            ;; TODO: Don't do this! coerce!!
+                            (rep/representation-seq
+                             (rep/coerce-representations
+                              ;; Possibly in future it will be possible
+                              ;; to support more media-types to render
+                              ;; errors, including image and video
+                              ;; formats.
 
-                            [{:media-type #{"application/json"
-                                            "application/json;pretty=true;q=0.96"
-                                            "text/plain;q=0.9"
-                                            "text/html;q=0.8"
-                                            "application/edn;q=0.6"
-                                            "application/edn;pretty=true;q=0.5"}
-                              :charset charset/platform-charsets}])))]
+                              [{:media-type #{"application/json"
+                                              "application/json;pretty=true;q=0.96"
+                                              "text/plain;q=0.9"
+                                              "text/html;q=0.8"
+                                              "application/edn;q=0.6"
+                                              "application/edn;pretty=true;q=0.5"}
+                                :charset charset/platform-charsets}])))]
 
-                 ;; TODO: Custom error handlers
+                   ;; TODO: Custom error handlers
 
-                 (d/chain
-                  (cond-> (make-context)
-                    status (assoc-in [:response :status] status)
-                    (:headers data) (assoc-in [:response :headers] (:headers data))
-                    (not (:body data)) ((fn [ctx]
-                                          (let [b (body/to-body (body/render-error status e rep ctx) rep)]
-                                            (-> ctx
-                                                (assoc-in [:response :body] b)
-                                                (assoc-in [:response :headers "content-length"] (body/content-length b))))))
+                   (d/chain
+                    (cond-> (make-context)
+                      status (assoc-in [:response :status] status)
+                      (:headers data) (assoc-in [:response :headers] (:headers data))
+                      (not (:body data)) ((fn [ctx]
+                                            (let [b (body/to-body (body/render-error status e rep ctx) rep)]
+                                              (-> ctx
+                                                  (assoc-in [:response :body] b)
+                                                  (assoc-in [:response :headers "content-length"] (body/content-length b))))))
 
-                    rep (assoc-in [:response :produces] rep))
-                  create-response)))))))))
+                      rep (assoc-in [:response :produces] rep))
+                    create-response))))))))))
 
 (defn- handle-request
   "Handle Ring request"
   [handler request match-context]
   (infof "handle-request: %s" (:uri request))
-  (let [method (:request-method request)
-        interceptor-chain (:interceptor-chain handler)
-        id (java.util.UUID/randomUUID)
-        resource (:resource handler)]
-    
+  (let [method (:request-method request)]
     (handle-request-with-context
      (merge (make-context)
-            {:id id
+            {:id (java.util.UUID/randomUUID)
              :request request
              :method method
              :method-wrapper (get (:known-methods handler) method)
-             :interceptor-chain interceptor-chain
              :handler (merge handler (dissoc match-context :handler))
              }))))
 
