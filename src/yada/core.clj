@@ -433,7 +433,7 @@
          path-info? (:path-info? resource)]
 
      (new-handler
-      {:id (java.util.UUID/randomUUID)
+      {:id (get resource :id (java.util.UUID/randomUUID))
        :base base
        :resource resource
        :allowed-methods (handler/allowed-methods resource)
