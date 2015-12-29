@@ -415,5 +415,4 @@
                      {"etag" x}))))
 
          :body body}]
-    (infof "Returning response: %s" (dissoc response :body))
     response))

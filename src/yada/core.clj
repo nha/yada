@@ -10,6 +10,8 @@
    [yada.protocols :as p]
    [yada.schema :as ys]))
 
+;; TODO: Move these final remnants to yada.handler and finally delete this ns!
+
 (def default-interceptor-chain
   [i/available?
    i/known-method?
@@ -19,8 +21,8 @@
    i/parse-parameters
    ac/authenticate
    i/get-properties
+   ac/authorize
    i/process-request-body
-;;   authorization
    i/check-modification-time
    i/select-representation
    ;; if-match and if-none-match computes the etag of the selected

@@ -40,8 +40,11 @@
    :allow-origin #{"http://localhost:8090"
                    "https://yada.juxt.pro"}
 
+   ;; Having limited our origins, it's now OK to relax on the methods
+   ;; we going to allow via OPTIONS.
    :allow-methods #{:get :post :put :delete}
    
+   ;; Required for the Swagger key
    :allow-headers ["api_key"]})
 
 (defn new-index-resource [db *routes]
@@ -49,7 +52,6 @@
    {:produces [{:media-type
                 #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
                 :charset "UTF-8"}]
-    
     :methods
     {:get {:parameters {:query {(s/optional-key :q) String}}
            :response (fn [ctx]
@@ -62,13 +64,13 @@
                            entries)))}
 
      :post {:parameters {:form {:surname String :firstname String :phone String}}
-            :consumes [{:media-type
-                        #{"application/x-www-form-urlencoded"}
+            :consumes [{:media-type #{"application/x-www-form-urlencoded"}
                         :charset "UTF-8"}]
-
             :response (fn [ctx]
                         (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                          (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))}}
+                          (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))
+            :authorization {:roles :phonebook/write}
+            }}
 
     :access-control access-control}))
 

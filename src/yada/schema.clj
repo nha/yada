@@ -185,11 +185,20 @@ convenience of terse, expressive short-hand descriptions."}
     {(s/optional-key :form) s/Any
      (s/optional-key :body) s/Any}}))
 
+(s/defschema Authorization
+  {(s/optional-key :authorization) {:roles #{s/Keyword}}})
+
+(def AuthorizationMappings
+  {#{s/Keyword} (fn [x] (cond (coll? x) (set x)
+                              (keyword? x) #{x}
+                            ))})
+
 (s/defschema Method
   (merge Response
          MethodParameters
          Produces
          Consumes
+         Authorization
          MethodDocumentation
          {NamespacedKeyword s/Any}))
 
@@ -215,7 +224,8 @@ convenience of terse, expressive short-hand descriptions."}
 (def MethodsMappings
   (merge {Method as-method-map
           ContextFunction as-fn}
-         RepresentationSeqMappings))
+         RepresentationSeqMappings
+         AuthorizationMappings))
 
 ;; Many HTTP headers are comma separated. We should accept these
 ;; verbatim strings in our schema.

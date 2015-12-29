@@ -37,6 +37,16 @@
   ;; move to the next scheme). Arguably this is a 400.
   nil)
 
+(defn not-authorized [realm schemes]
+  ;; Otherwise, if no authorization header, send a
+  ;; www-authenticate header back.
+  (d/error-deferred
+   (ex-info "" {:status 401
+                :headers {"www-authenticate"
+                          (apply str (interpose ", "
+                                                (for [{:keys [scheme]} schemes]
+                                                  (format "%s realm=\"%s\"" scheme realm))))}})))
+
 (defn authenticate [ctx]
   ;; If [:access-control :allow-origin] exists at all, don't block an OPTIONS pre-flight request
   (if (and (= (:method ctx) :options)
@@ -44,25 +54,27 @@
     ctx                           ; let through without authentication
 
     (if-let [auth (get-in ctx [:handler :resource :access-control :authentication])]
-      (if-let [realms (:realms auth)]
+      (if-let [realm (first (:realms auth))]
         ;; Only supports one realm currently, TODO: support multiple realms as per spec. 7235
-        (let [[realm {:keys [schemes]}] (first realms)]
-          
-          (if-let [user (some (partial authenticate-with-scheme ctx) schemes)]
-            (assoc ctx :user user)
-
-            ;; Otherwise, if no authorization header, send a
-            ;; www-authenticate header back.
-            (d/error-deferred
-             (ex-info "" {:status 401
-                          :headers {"www-authenticate"
-                                    (apply str (interpose ", "
-                                                          (for [{:keys [scheme ]} schemes]
-                                                            (format "%s realm=\"%s\"" scheme realm))))}}))))
-        ;; if no realms
-        (d/error-deferred (ex-info "" {:status 401
-                                       :headers {"www-authenticate" "Basic realm=\"simple\""}})))
+        (let [[realm {:keys [schemes]}] realm]
+          (-> ctx
+              (assoc :user (some (partial authenticate-with-scheme ctx) schemes))
+              (update-in [:response :headers]
+                         merge {"www-authenticate"
+                                (apply str (interpose ", "
+                                                      (for [{:keys [scheme]} schemes]
+                                                        (format "%s realm=\"%s\"" scheme realm))))})))
+        ;; no realms
+        ctx)
+      ;; no auth      
       ctx)))
+
+(defn authorize
+  "Given an authenticated user in the context, establish what the user
+  is authorized to do."
+  [ctx]
+  ctx
+  )
 
 (defn call-fn-maybe [x ctx]
   (when x
