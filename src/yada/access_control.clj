@@ -50,10 +50,10 @@
 (defn authenticate [ctx]
   ;; If [:access-control :allow-origin] exists at all, don't block an OPTIONS pre-flight request
   (if (and (= (:method ctx) :options)
-           (-> ctx :handler :resource :access-control :allow-origin))
+           (-> ctx :handler :resource :cors :allow-origin))
     ctx                           ; let through without authentication
 
-    (if-let [auth (get-in ctx [:handler :resource :access-control :authentication])]
+    (if-let [auth (get-in ctx [:handler :resource :authentication])]
       (if-let [realm (first (:realms auth))]
         ;; Only supports one realm currently, TODO: support multiple realms as per spec. 7235
         (let [[realm {:keys [schemes]}] realm]
@@ -93,9 +93,9 @@
 
 (defn access-control-headers [ctx]
   (if-let [origin (get-in ctx [:request :headers "origin"])]
-    (let [access-control (get-in ctx [:handler :resource :access-control])
+    (let [cors (get-in ctx [:handler :resource :cors])
           ;; We can only report one origin, so let's work that out
-          allow-origin (let [s (call-fn-maybe (:allow-origin access-control) ctx)]
+          allow-origin (let [s (call-fn-maybe (:allow-origin cors) ctx)]
                          (cond
                            (= s "*") "*"
                            (string? s) s
@@ -107,25 +107,25 @@
         allow-origin
         (assoc-in [:response :headers "access-control-allow-origin"] allow-origin)
 
-        (:allow-credentials access-control)
+        (:allow-credentials cors)
         (assoc-in [:response :headers "access-control-allow-credentials"]
-                  (to-header (:allow-credentials access-control)))
+                  (to-header (:allow-credentials cors)))
 
-        (:expose-headers access-control)
+        (:expose-headers cors)
         (assoc-in [:response :headers "access-control-expose-headers"]
-                  (to-header (call-fn-maybe (:expose-headers access-control) ctx)))
+                  (to-header (call-fn-maybe (:expose-headers cors) ctx)))
 
-        (:max-age access-control)
+        (:max-age cors)
         (assoc-in [:response :headers "access-control-max-age"]
-                  (to-header (call-fn-maybe (:max-age access-control) ctx)))
+                  (to-header (call-fn-maybe (:max-age cors) ctx)))
 
-        (:allow-methods access-control)
+        (:allow-methods cors)
         (assoc-in [:response :headers "access-control-allow-methods"]
-                  (to-header (map (comp str/upper-case name) (call-fn-maybe (:allow-methods access-control) ctx))))
+                  (to-header (map (comp str/upper-case name) (call-fn-maybe (:allow-methods cors) ctx))))
 
-        (:allow-headers access-control)
+        (:allow-headers cors)
         (assoc-in [:response :headers "access-control-allow-headers"]
-                  (to-header (call-fn-maybe (:allow-headers access-control) ctx)))))
+                  (to-header (call-fn-maybe (:allow-headers cors) ctx)))))
 
     ;; Otherwise
     ctx))
