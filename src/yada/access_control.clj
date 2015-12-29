@@ -67,11 +67,17 @@
         ;; no realms
         ctx)
       ;; no auth      
-      ctx)))
+      ctx
+
+      ;; TODO: Establish authorizations from identity
+      
+
+      )))
 
 (defn authorize
-  "Given an authenticated user in the context, establish what the user
-  is authorized to do."
+  "Given an authenticated user in the context, and the resource
+  properties in :properites, check that the user is authorized to do
+  what they are about to do."
   [ctx]
   ctx
   )
