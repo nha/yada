@@ -1,9 +1,10 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.access-control
+(ns yada.security
   (:require
    [byte-streams :as b]
    [manifold.deferred :as d]
+   [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [clojure.data.codec.base64 :as base64]
@@ -32,9 +33,11 @@
     (authenticator ctx)))
 
 (defmethod authenticate-with-scheme :default
-  [ctx {:keys [authenticator]}]
+  [ctx {:keys [scheme]}]
   ;; Scheme is not recognised by this server, we must return nil (to
-  ;; move to the next scheme). Arguably this is a 400.
+  ;; move to the next scheme). This is technically a server issue but
+  ;; we recover and add a warning in the logs.
+  (warnf "No installed support for the following scheme: %s" scheme)
   nil)
 
 (defn not-authorized [realm schemes]
@@ -50,37 +53,57 @@
 (defn authenticate [ctx]
   ;; If [:access-control :allow-origin] exists at all, don't block an OPTIONS pre-flight request
   (if (and (= (:method ctx) :options)
-           (-> ctx :handler :resource :cors :allow-origin))
-    ctx                           ; let through without authentication
+           (some-> ctx :handler :resource :cors :allow-origin))
+    ;; Let through without authentication, CORS OPTIONS is
+    ;; incompatible with authorization, since it is forbidden to send
+    ;; credentials in a pre-flight request.
+    ctx
 
-    (if-let [auth (get-in ctx [:handler :resource :authentication])]
-      (if-let [realm (first (:realms auth))]
-        ;; Only supports one realm currently, TODO: support multiple realms as per spec. 7235
-        (let [[realm {:keys [schemes]}] realm]
-          (-> ctx
-              (assoc :user (some (partial authenticate-with-scheme ctx) schemes))
-              (update-in [:response :headers]
-                         merge {"www-authenticate"
-                                (apply str (interpose ", "
-                                                      (for [{:keys [scheme]} schemes]
-                                                        (format "%s realm=\"%s\"" scheme realm))))})))
-        ;; no realms
-        ctx)
-      ;; no auth      
-      ctx
-
-      ;; TODO: Establish authorizations from identity
-      
-
-      )))
+    ;; Note that a response can have multiple challenges, one for each realm.
+    (reduce
+     (fn [ctx [realm {:keys [schemes]}]]
+       
+       (if-let [user (some (partial authenticate-with-scheme ctx) schemes)]
+         (-> ctx
+             (assoc-in [:authentication realm] user)
+             (update-in [:authentication :role]
+                        (fnil set/union #{}) (set (map (partial vector realm) (:role user)))))
+         ;; Otherwise, let the client know how they might
+         ;; authenticate in a future request. Note, this is
+         ;; not necessarily a 401, we don't know yet, we'll
+         ;; determine that later in 'authorize'. See RFC 7235
+         ;; section 4.1 - "A server generating a 401
+         ;; (Unauthorized) response MUST send a
+         ;; WWW-Authenticate header field containing at least
+         ;; one challenge.  A server MAY generate a
+         ;; WWW-Authenticate header field in other response
+         ;; messages to indicate that supplying credentials
+         ;; (or different credentials) might affect the
+         ;; response."
+         (update-in ctx [:response :headers "www-authenticate"]
+                    (fnil conj [])
+                    (str/join ", "
+                              (filter some?
+                                      (for [{:keys [scheme]} schemes]
+                                        (when scheme
+                                          (format "%s realm=\"%s\"" scheme realm))))))))
+     ctx (get-in ctx [:handler :resource :authentication :realms]))))
 
 (defn authorize
   "Given an authenticated user in the context, and the resource
   properties in :properites, check that the user is authorized to do
-  what they are about to do."
+  what they are about to do. At this point the user is already
+  authenticated and roles determined, if it is possible to do
+  so (RBAC), and the resource's properties (attributes) have been
+  loaded to make ABAC schemes also possible."
   [ctx]
-  ctx
-  )
+  (if-let [required-roles (some-> ctx :handler :resource :methods (get (:method ctx)) :role)]
+    (if (set/intersection required-roles (get-in ctx [:authentication :role]))
+      ctx
+      (d/error-deferred
+       (ex-info "Failed authorization check" {:status 401})))
+    ;; Otherwise, pass through
+    ctx))
 
 (defn call-fn-maybe [x ctx]
   (when x

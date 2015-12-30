@@ -3,7 +3,7 @@
 (ns yada.core
   (:require
    [schema.utils :refer [error?]]
-   [yada.access-control :as ac]
+   [yada.security :as sec]
    [yada.handler :refer [new-handler] :as handler]
    [yada.interceptors :as i]
    [yada.methods :as methods]
@@ -19,9 +19,9 @@
    i/TRACE
    i/method-allowed?
    i/parse-parameters
-   ac/authenticate
+   sec/authenticate
    i/get-properties
-   ac/authorize
+   sec/authorize
    i/process-request-body
    i/check-modification-time
    i/select-representation
@@ -34,7 +34,7 @@
    i/invoke-method
    i/get-new-properties
    i/compute-etag
-   ac/access-control-headers
+   sec/access-control-headers
    i/create-response])
 
 (defn yada

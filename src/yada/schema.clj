@@ -186,7 +186,7 @@ convenience of terse, expressive short-hand descriptions."}
      (s/optional-key :body) s/Any}}))
 
 (s/defschema Authorization
-  {(s/optional-key :authorization) {:roles #{s/Keyword}}})
+  {(s/optional-key :role) #{s/Keyword}})
 
 (def AuthorizationMappings
   {#{s/Keyword} (fn [x] (cond (coll? x) (set x)

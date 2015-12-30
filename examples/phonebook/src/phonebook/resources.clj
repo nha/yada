@@ -31,21 +31,44 @@
     {"phonebook"
      {:schemes
       [{:scheme "Basic"
-        :authenticator {["tom" "watson"] "tom@ibm.com"}}
+        :authenticator {["tom" "watson"] {:email "tom@ibm.com"
+                                          :role #{:phonebook/write}}
+                        ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
+                                                :role #{}}}}
+
+       ;; Here's the scheme that let's use process api-keys
        {:authenticator
         (fn [ctx]
-          (cond
-            (= (get-in ctx [:request :headers "api_key"]) "masterkey") "swagger"))}]}}}
+          (let [k (get-in ctx [:request :headers "api_key"])]
+            (cond
+              (= k "masterkey") {:user "swagger" :role #{:phonebook/write}}
+              (= k "lesserkey") {:user "swagger" :role #{}}
+              )))}]}}}
 
    :cors
-   {:allow-origin #{"http://localhost:8090"
-                    "https://yada.juxt.pro"}
-    ;; Having limited our origins, it's now OK to relax on the methods
-    ;; we going to allow via OPTIONS.
-    :allow-methods #{:get :post :put :delete}
+   {
+    ;; We want to allow read-access to our phonebook generally
+    ;; available to foreign applications (those originating from
+    ;; different hosts).
+    :allow-origin "*"
+
+    ;; Only allow origins we know about write-access, by restricting
+    ;; our mutable methods
+    :allow-methods (fn [ctx]
+                     ;; If same origin, or origin is our swagger ui,
+                     ;; we'll allow all the methods
+                     (when (#{"http://localhost:8090"
+                              "https://yada.juxt.pro"
+                              (yada/get-host-origin (:request ctx))}
+                            (get-in ctx [:request :headers "origin"]))
+                       #{:get :post :put :delete}))
+
+    ;; It's a feature of our restricted write-access policy that we don't need to
+    ;; authenticate users from other origins.
+    :allow-credentials false
+
     ;; Required for the Swagger key
     :allow-headers ["api_key"]}
-   
    })
 
 (defn new-index-resource [db *routes]
@@ -71,7 +94,7 @@
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
                            (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))
-             :authorization {:roles :phonebook/write}
+             :role :phonebook/write
              }}}
     (merge access-control))))
 
