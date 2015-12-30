@@ -66,8 +66,8 @@
        (if-let [user (some (partial authenticate-with-scheme ctx) schemes)]
          (-> ctx
              (assoc-in [:authentication realm] user)
-             (update-in [:authentication :role]
-                        (fnil set/union #{}) (set (map (partial vector realm) (:role user)))))
+             (update-in [:authentication :combined-roles]
+                        (fnil set/union #{}) (set (map (partial vector realm) (:roles user)))))
          ;; Otherwise, let the client know how they might
          ;; authenticate in a future request. Note, this is
          ;; not necessarily a 401, we don't know yet, we'll
@@ -98,7 +98,7 @@
   loaded to make ABAC schemes also possible."
   [ctx]
   (if-let [required-roles (some-> ctx :handler :resource :methods (get (:method ctx)) :role)]
-    (if (set/intersection required-roles (get-in ctx [:authentication :role]))
+    (if (set/intersection required-roles (get-in ctx [:authentication :combined-roles]))
       ctx
       (d/error-deferred
        (ex-info "Failed authorization check" {:status 401})))

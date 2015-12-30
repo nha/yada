@@ -32,7 +32,7 @@
      {:schemes
       [{:scheme "Basic"
         :authenticator {["tom" "watson"] {:email "tom@ibm.com"
-                                          :role #{:phonebook/write}}
+                                          :roles #{:phonebook/write}}
                         ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
                                                 :role #{}}}}
 
@@ -41,8 +41,8 @@
         (fn [ctx]
           (let [k (get-in ctx [:request :headers "api_key"])]
             (cond
-              (= k "masterkey") {:user "swagger" :role #{:phonebook/write}}
-              (= k "lesserkey") {:user "swagger" :role #{}}
+              (= k "masterkey") {:user "swagger" :roles #{:phonebook/write}}
+              (= k "lesserkey") {:user "swagger" :roles #{}}
               )))}]}}}
 
    :cors

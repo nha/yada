@@ -51,7 +51,7 @@
                            :authenticated false}
                           {:scheme "S2"
                            :authenticated {:user "george"
-                                           :role #{:pig}}}
+                                           :roles #{:pig}}}
                           ]}
                    "R2" {:schemes
                          [{:scheme "S1"
@@ -62,8 +62,8 @@
       
       ;; We have successfully authenticated in realm R1
       (is (= {"R1" {:user "george"
-                    :role #{:pig}}
-              :role #{["R1" :pig]}}
+                    :roles #{:pig}}
+              :combined-roles #{["R1" :pig]}}
              (:authentication result)))
 
       ;; But not in realm R2, so we tell the user-agent how to do so
