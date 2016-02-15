@@ -23,7 +23,9 @@
    [json-html "0.3.6"]
    [manifold "0.1.2-alpha2"]
    [metosin/ring-http-response "0.6.5"]
-   [metosin/ring-swagger "0.22.4" :exclusions [potemkin com.google.guava/guava]]
+   [metosin/ring-swagger "0.22.4" :exclusions [potemkin com.google.guava/guava com.fasterxml.jackson.core/jackson-databind]]
+   [com.fasterxml.jackson.core/jackson-databind "2.4.3"]   
+
    [prismatic/schema "1.0.4"]
    [potemkin "0.4.2" :exclusions [riddley]]
    
@@ -90,7 +92,7 @@
 
           [aero "0.1.5"]
 
-          
+          [clj-gatling "0.7.9"]          
 
           [juxt.modular/aleph "0.1.4"]
           [juxt.modular/bidi "0.9.4" :exclusions [bidi]]

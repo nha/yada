@@ -9,7 +9,8 @@
   :dependencies
   [[org.clojure/clojure "1.7.0"]
    [clj-gatling "0.7.9"]
-   [clj-http "2.0.1"]]
+   [clj-http "2.0.1"]
+   [byte-streams "0.2.1-alpha2" :exclusions [clj-tuple]]]
 
   :pedantic? :abort)
 
