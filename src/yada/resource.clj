@@ -1,24 +1,15 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resource
-  (:require
-   [clojure.tools.logging :refer :all]
-   [hiccup.core :refer [html]]
-   [manifold.deferred :as d]
-   [schema.core :as s]
-   [schema.coerce :as sc]
-   [schema.utils :as su]
-   [yada.representation :as rep]
-   [yada.interceptors :as i]
-   [yada.security :as sec]
-   [yada.schema :as ys]
-   [yada.context :refer [content-type]]
-   yada.charset
-   yada.media-type
-   [yada.util :refer [arity]])
-  (:import [yada.charset CharsetMap]
-           [yada.media_type MediaTypeMap]
-           [java.util Date]))
+  (:require [schema.core :as s]
+            [schema.utils :as su]
+            [yada.interceptors :as i]
+            [yada.schema :as ys]
+            [yada.security :as sec]
+            [yada.util :refer [arity]])
+  (:import java.util.Date
+           yada.charset.CharsetMap
+           yada.media_type.MediaTypeMap))
 
 (defprotocol ResourceCoercion
   (as-resource [_] "Coerce to a resource. Often, resources need to be
@@ -67,7 +58,7 @@
    i/uri-too-long?
    i/TRACE
    i/method-allowed?
-   i/parse-parameters
+   ;;i/parse-parameters
    i/capture-proxy-headers
    sec/authenticate
    i/get-properties
@@ -134,28 +125,7 @@
                            0 (f)
                            1 (f ctx)
                            (apply f ctx (repeat (dec arity) nil)))
-                         )}}})))
-
-  Exception
-  (as-resource [e]
-    (resource
-     {:produces #{"text/html" "text/plain;q=0.9"}
-      :methods
-      {:* {:response
-           (fn [ctx]
-             (case (content-type ctx)
-               "text/html"
-               (html
-                [:body
-                 (interpose [:p "Caused by"]
-                            (for [e (take-while some? (iterate (fn [x] (.getCause x)) e))]
-                              [:div
-                               [:h2 "Error: " (.getMessage e)]
-                               [:div
-                                (for [stl (.getStackTrace e)]
-                                  [:p [:tt stl]])]]))])))}}})))
-
-
+                         )}}}))))
 
 ;; Convenience functions
 

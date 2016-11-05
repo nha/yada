@@ -4,7 +4,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.xml :as xml]
-            [yada.util :refer :all]))
+            [yada.util :as u :refer [http-token]]))
 
 ;; TODO: Replace with java.nio.charset.Charset, which contains the same logic
 
@@ -12,13 +12,13 @@
   (xml/parse
    (io/input-stream (io/resource "yada/Character Sets.xml"))))
 
-(def records (comp (tag= :registry) (tag= :record)))
+(def records (comp (u/tag= :registry) (u/tag= :record)))
 
 (def index
   (for [rec (sequence (comp records) [charsets-xml-doc])]
-    {:name (first (sequence (comp (tag= :name) text) [rec]))
-     :preferred-alias (first (sequence (comp (tag= :preferred_alias) text) [rec]))
-     :aliases (sequence (comp (tagp (partial #{:alias :preferred_alias})) text) [rec])}))
+    {:name (first (sequence (comp (u/tag= :name) u/text) [rec]))
+     :preferred-alias (first (sequence (comp (u/tag= :preferred_alias) u/text) [rec]))
+     :aliases (sequence (comp (u/tagp (partial #{:alias :preferred_alias})) u/text) [rec])}))
 
 (def alias->name
   (into {} (for [{:keys [name aliases]} index alias (conj aliases name)] [(.toUpperCase alias) name])))

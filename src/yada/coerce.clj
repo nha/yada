@@ -7,9 +7,7 @@
                           string-coercion-matcher
                           string->keyword
                           keyword-enum-matcher
-                          set-matcher]]
-   [ring.swagger.coerce :as rsc]
-   [clj-time.coerce :as time])
+                          set-matcher]])
   (:import [schema.core RequiredKey OptionalKey]
            [clojure.lang Keyword]))
 
@@ -41,12 +39,8 @@
 
 ;; Parameter coercions
 
-(def +date-coercions+
-  {s/Inst (comp time/to-date time/from-string)})
-
 (defn coercion-matcher [schema]
-  (or (string-coercion-matcher schema)
-      (+date-coercions+ schema)))
+  (or (string-coercion-matcher schema)))
 
 (defprotocol ParameterKey
   "We could walk the parameters to find out whether they are ultimately

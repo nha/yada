@@ -1,33 +1,22 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.interceptors
-  (:require
-   [byte-streams :as bs]
-   [clojure.set :as set]
-   [clojure.string :as str]
-   [clojure.tools.logging :refer :all]
-   [manifold.deferred :as d]
-   [manifold.stream :as stream]
-   [ring.middleware.params :refer [assoc-query-params]]
-   [ring.swagger.coerce :as rsc]
-   [ring.swagger.schema :as rs]
-   ring.util.time
-   [schema.core :as s]
-   [schema.coerce :as sc]
-   [schema.utils :refer [error?]]
-   [yada.body :as body]
-   [yada.charset :as charset]
-   [yada.coerce :as coerce]
-   [yada.cookies :as cookies]
-   [yada.etag :as etag]
-   [yada.media-type :as mt]
-   [yada.methods :as methods]
-   [yada.multipart]
-   [yada.request-body :as rb]
-   [yada.representation :as rep]
-   [yada.schema :as ys]
-   [yada.util :as util])
-  (:import [yada.context Response]))
+  (:require [byte-streams :as bs]
+            [clojure.set :as set]
+            [clojure.string :as str]
+            [manifold.deferred :as d]
+            [manifold.stream :as stream]
+            ring.util.time
+            [schema.utils :refer [error?]]
+            [yada.body :as body]
+            [yada.charset :as charset]
+            [yada.etag :as etag]
+            [yada.media-type :as mt]
+            [yada.methods :as methods]
+            [yada.representation :as rep]
+            [yada.request-body :as rb]
+            [yada.schema :as ys]
+            [yada.util :as util]))
 
 (defn available?
   "Is the service available?"
@@ -77,11 +66,6 @@
                                         (:allowed-methods ctx)))}}))
     ))
 
-(defn capture-cookies [ctx]
-  (if-let [cookies (cookies/parse-cookies (:request ctx))]
-    (assoc ctx :cookies cookies)
-    ctx))
-
 (defn capture-proxy-headers [ctx]
 
   (let [req (:request ctx)
@@ -104,55 +88,6 @@
         req' (assoc req :scheme (keyword scheme))]
 
     (assoc ctx :request req')))
-
-(defn parse-parameters
-  "Parse request and coerce parameters. Capture cookies."
-  [ctx]
-  (assert ctx "parse-parameters, ctx is nil!")
-
-  (let [ctx (capture-cookies ctx)
-        method (:method ctx)
-        request (:request ctx)
-        matcher (fn [param-kw]
-                  (get-in ctx [:resource :parameters method :coercion-matchers param-kw]))
-
-        schemas (util/merge-parameters (get-in ctx [:resource :parameters])
-                                       (get-in ctx [:resource :methods method :parameters]))
-
-        ;; TODO: Creating coercers on every request is unnecessary and
-        ;; expensive, should pre-compute them.
-
-        parameters
-        {:path (if-let [schema (:path schemas)]
-                 (rs/coerce schema
-                            (:route-params request)
-                            (fn [schema]
-                              (or (when-let [cm (matcher :query)]
-                                    (cm schema))
-                                  ((rsc/coercer :query) schema))))
-                 (:route-params request))
-         :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
-                  (if-let [schema (:query schemas)]
-                    (let [coercion-matcher (matcher :query)
-                          coercer (sc/coercer schema
-                                              (fn [schema]
-                                                (or (when coercion-matcher
-                                                      (coercion-matcher schema))
-                                                    (coerce/+parameter-key-coercions+ schema)
-                                                    ((rsc/coercer :query) schema))))]
-                      (coercer qp))
-                    qp))
-
-         :header (when-let [schema (:header schemas)]
-                   ;; Allow any other headers
-                   (let [coercer (sc/coercer (merge schema {s/Str s/Str}) {})]
-                     (coercer (:headers request))))}]
-
-    (let [errors (filter (comp error? second) parameters)]
-      (if (not-empty errors)
-        (d/error-deferred (ex-info "" {:status 400
-                                       :errors errors}))
-        (assoc ctx :parameters (util/remove-empty-vals parameters))))))
 
 (defn safe-read-content-length [req]
   (let [len (get-in req [:headers "content-length"])]
@@ -419,13 +354,6 @@
                    (when (not= (:method ctx) :head)
                      (when-let [cl (body/content-length body)]
                        {"content-length" (str cl)}))
-
-                   (when-let [cookies (get-in ctx [:response :cookies])]
-                     (let [cookies (cookies/cookies-coercer cookies)]
-                       (if (error? cookies)
-                         (warnf "Error coercing cookies: %s" (:error cookies))
-                         (let [set-cookies (cookies/encode-cookies cookies)]
-                           {"set-cookie" set-cookies}))))
 
                    (when-let [x (:media-type produces)]
                      (when (or (= method :head) body)

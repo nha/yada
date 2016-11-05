@@ -1,12 +1,8 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.test
-  (:require
-   [byte-streams :as b]
-   [bidi.ring :as br]
-   [bidi.vhosts :as bv]
-   [yada.handler :refer [handler as-handler]]
-   [yada.resource :refer [resource]]))
+  (:require [byte-streams :as b]
+            [yada.handler :refer [as-handler]]))
 
 (defn request-for [method uri options]
   (let [uri (new java.net.URI uri)]
@@ -37,5 +33,3 @@
          response @(h (request-for method uri options))]
      (cond-> response
        (:body response) (update :body b/to-string)))))
-
-

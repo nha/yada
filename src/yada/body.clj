@@ -1,35 +1,14 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.body
-  (:require
-   [clojure.core.async]
-   [clojure.java.io :as io]
-   [clojure.pprint :refer [pprint]]
-   [clojure.tools.logging :refer :all]
-   [clojure.walk :refer [keywordize-keys]]
-   [clojure.core.async :as a]
-   [cognitect.transit :as transit]
-   [byte-streams :as bs]
-   [cheshire.core :as json]
-   [hiccup.core :refer [html h]]
-   [hiccup.page :refer [html5 xhtml]]
-   [json-html.core :as jh]
-   [manifold.stream :refer [->source transform]]
-   [manifold.stream.async]
-   [ring.util.codec :as codec]
-   [ring.util.http-status :refer [status]]
-   [schema.core :as s]
-   [yada.charset :as charset]
-   [yada.journal :as journal]
-   [yada.media-type :as mt]
-   [yada.util :refer [CRLF]])
-  (:import
-   [clojure.core.async Mult]
-   [clojure.core.async.impl.channels ManyToManyChannel]
-   [java.io File]
-   [java.net URL]
-   [manifold.stream.async CoreAsyncSource]
-   [manifold.stream SourceProxy]))
+  (:require [byte-streams :as bs]
+            [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]
+            [manifold.stream :refer [->source transform]]
+            [ring.util.http-status :refer [status]]
+            [yada.charset :as charset]
+            [yada.util :refer [CRLF]])
+  (:import java.io.File))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
@@ -77,8 +56,6 @@
   (content-length [s]
     nil)
 
-
-
   MapBody
   (to-body [mb representation]
     (to-body (:map mb) representation))
@@ -116,17 +93,6 @@
   (to-body [b _] b)
   (content-length [b] (.remaining b))
 
-  Mult
-  (to-body [mlt representation]
-    (let [ch (a/chan 10)]
-      (a/tap mlt ch)
-      (to-body ch representation)))
-  (content-length [_] nil)
-
-  ManyToManyChannel
-  (to-body [ch representation] (render-seq ch representation))
-  (content-length [_] nil)
-
   ;; The default pass-through to the web server
   Object
   (to-body [s _] s)
@@ -135,71 +101,6 @@
   nil
   (to-body [_ _] nil)
   (content-length [_] 0))
-
-;; text/html
-
-(defmethod render-map "text/html"
-  [m representation]
-  (-> (html
-       [:head [:style (slurp (io/resource "json.human.css"))]]
-         (jh/edn->html m))
-      (str \newline) ; annoying on the command-line otherwise
-      (to-body representation) ; for string encoding
-      ))
-
-(defmethod render-seq "text/html"
-  [s representation]
-  (render-map s representation))
-
-(defmethod render-seq "application/xhtml+xml"
-  [s representation]
-  (-> (xhtml s)
-      (str \newline) ; annoying on the command-line otherwise
-      (to-body representation) ; for string encoding
-      ))
-
-;; application/json
-
-(defmethod render-map "application/json"
-  [m representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (str (json/encode m {:pretty pretty}) \newline)))
-
-(defmethod render-seq "application/json"
-  [s representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (str (json/encode s {:pretty pretty}) \newline)))
-
-;; application/transit+json
-
-(defn ^:private transit-encode [v type]
-  (let [baos (java.io.ByteArrayOutputStream. 100)]
-    (transit/write (transit/writer baos type) v)
-    (.toByteArray baos)))
-
-(defn ^:private transit-json-encode [v pretty?]
-  (transit-encode v (if pretty? :json-verbose :json)))
-
-(defn ^:private transit-msgpack-encode [v]
-  (transit-encode v :msgpack))
-
-(defmethod render-map "application/transit+json"
-  [m representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (transit-json-encode m pretty)))
-
-(defmethod render-seq "application/transit+json"
-  [s representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (transit-json-encode s pretty)))
-
-(defmethod render-map "application/transit+msgpack"
-  [m representation]
-  (transit-msgpack-encode m))
-
-(defmethod render-seq "application/transit+msgpack"
-  [s representation]
-  (transit-msgpack-encode s))
 
 ;; application/edn
 
@@ -217,13 +118,6 @@
       (with-out-str (pprint s))
       (prn-str s))))
 
-;; text/event-stream
-
-(defmethod render-seq "text/event-stream"
-  [s _]
-  ;; Transduce the body to server-sent-events
-  (transform (map (partial format "data: %s\n\n")) (->source s)))
-
 ;; defaults
 
 (defmethod render-map :default
@@ -235,7 +129,6 @@
   [m representation]
   (throw (ex-info (format "No implementation for render-seq for media-type: %s" (:name (:media-type representation)))
                   {:representation representation})))
-
 
 ;; Errors
 
@@ -256,57 +149,7 @@
 (defn get-error-description [code]
   (some-> status (get code) :description))
 
-(defmethod render-error "text/html"
-  [status error representation {:keys [id options]}]
-  (html
-   [:head
-    [:title "Error"]
-    [:style {:type "text/css"}(slurp (io/resource "style.css"))]]
-   [:body
-    [:h1 (format "%d: %s" status (get-error-message status))]
-    (when-let [description (get-error-description status)]
-      [:p description])
-
-    ;; Only
-    (when *output-errors*
-      [:div
-       (when *output-stack-traces*
-         (let [baos (new java.io.ByteArrayOutputStream)
-               pw (new java.io.PrintWriter (new java.io.OutputStreamWriter baos))]
-           (.printStackTrace error pw)
-           (.flush pw)
-           (let [s (String. (.toByteArray baos))]
-             [:pre s])))])
-
-    [:div
-     [:p.footer [:span.yada
-          [:a {:href "https://yada.juxt.pro"} "yada"]]
-      " by "
-      [:a {:href "https://juxt.pro"} "JUXT"]]]]))
-
 (defmethod render-error "application/edn"
-  [status error representation {:keys [id options]}]
-  {:status status
-   :message (get-error-message status)
-   :id id
-   :error error})
-
-(cheshire.generate/add-encoder clojure.lang.ExceptionInfo
-                               (fn [ei jg]
-                                 (cheshire.generate/encode-map
-                                  {:error (str ei)
-                                   :data (pr-str (ex-data ei))} jg)))
-
-;; TODO: Check semantics, is this right? Shouldn't we be encoding to json here?
-(defmethod render-error "application/json"
-  [status error representation {:keys [id options]}]
-  {:status status
-   :message (get-error-message status)
-   :id id
-   :error error})
-
-;; TODO: Check semantics, is this right? Shouldn't we be encoding to transit+json here?
-(defmethod render-error "application/transit+json"
   [status error representation {:keys [id options]}]
   {:status status
    :message (get-error-message status)
@@ -324,7 +167,3 @@
 (defmethod render-error :default
   [status error representation {:keys [id options]}]
   nil)
-
-
-;; Expand on the idea that errors, org/markdown files, etc. can
-;; themselves be resources, yielding multiple representations.

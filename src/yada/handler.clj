@@ -1,31 +1,21 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.handler
-  (:require
-   [bidi.bidi :as bidi]
-   [bidi.ring :as br]
-   [bidi.vhosts :as bv]
-   [clojure.tools.logging :refer [errorf debugf infof]]
-   [manifold.deferred :as d]
-   [schema.core :as s]
-   [schema.utils :refer [error?]]
-   [yada.body :as body]
-   [clojure.pprint :refer [pprint]]
-   [yada.context :refer [->Response]]
-   [yada.charset :as charset]
-   [yada.interceptors :as i]
-   [yada.media-type :as mt]
-   [yada.methods :as methods]
-   [yada.representation :as rep]
-   [yada.resource :as resource :refer [resource as-resource ResourceCoercion]]
-   [yada.schema :refer [resource-coercer] :as ys]
-   [yada.security :as sec]
-   [yada.util :refer [get*]])
-  (:import
-   [bidi.vhosts VHostsModel]
-   [clojure.lang PersistentVector APersistentMap]
-   [yada.resource Resource]
-   [yada.methods AnyMethod]))
+  (:require [clojure.tools.logging :refer [errorf]]
+            [manifold.deferred :as d]
+            [schema.core :as s]
+            [schema.utils :refer [error?]]
+            [yada.body :as body]
+            [yada.charset :as charset]
+            [yada.context :refer [->Response]]
+            [yada.methods :as methods]
+            [yada.representation :as rep]
+            [yada.resource :as resource :refer [as-resource resource ResourceCoercion]]
+            [yada.schema :as ys :refer [resource-coercer]]
+            [yada.util :refer [get*]])
+  (:import clojure.lang.APersistentMap
+           yada.methods.AnyMethod
+           yada.resource.Resource))
 
 (declare new-handler)
 
@@ -186,6 +176,7 @@
   (invoke [this req]
     (handle-request this req (make-context)))
 
+  ;; Meta
   ResourceCoercion
   (as-resource [h]
     (resource-coercer
@@ -194,39 +185,7 @@
                   "application/json"
                   "application/edn;pretty=true"
                   "application/json;pretty=true"}
-      :methods {:get (fn [ctx] (into {} h))}}))
-
-  bidi/Matched
-  (resolve-handler [this m]
-    ;; If we represent a collection of resources, let's match and retain
-    ;; the remainder which we place into the request as :path-info (see
-    ;; below).
-    (if (-> this :resource :path-info?)
-      (assoc m :handler this)
-      (bidi/succeed this m)))
-
-  (unresolve-handler [this m]
-    (when
-        (or (= this (:handler m))
-            (when-let [id (:id this)] (= id (:handler m))))
-        ""))
-
-  bidi/RouteSeq
-  (gather [this context]
-    [(bidi/map->Route
-      (merge
-       (assoc context :handler this)
-       (when-let [id (some-> this :resource :id)] {:tag id})))])
-
-  br/Ring
-  (request [this req match-context]
-    (handle-request
-     this
-     (if (and (-> this :resource :path-info?)
-              (not-empty (:remainder match-context)))
-       (assoc req :path-info (:remainder match-context))
-       req)
-     match-context)))
+      :methods {:get (fn [ctx] (into {} h))}})))
 
 (s/defn new-handler [model :- ys/HandlerModel]
   (map->Handler model))
@@ -264,43 +223,6 @@
 ;; Alias
 (def yada handler)
 
-;; We also want resources to be able to be used in bidi routes without
-;; having to create yada handlers. This isn't really necessary but a
-;; useful convenience to reduce verbosity.
-
-(extend-type Resource
-  bidi/Matched
-  (resolve-handler [resource m]
-    (if (:path-info? resource)
-      (assoc m :handler resource)
-      (bidi/succeed resource m)))
-
-  (unresolve-handler [resource m]
-    (when
-        (or (= resource (:handler m))
-            (when-let [id (:id resource)] (= id (:handler m))))
-        ""))
-
-  bidi/RouteSeq
-  (gather [this context]
-    [(bidi/map->Route
-      (merge
-       (assoc context :handler this)
-       (when-let [id (:id this)] {:tag id})))])
-
-  br/Ring
-  (request [resource req match-context]
-    (br/request (new-handler
-                 (merge
-                  {:id (get resource :id (java.util.UUID/randomUUID))
-                   :resource resource
-                   :allowed-methods (allowed-methods resource)
-                   :known-methods (methods/known-methods)
-                   :interceptor-chain (:interceptor-chain resource)
-                   :error-interceptor-chain (:error-interceptor-chain resource)}))
-                req match-context)))
-
-
 ;; Coercions
 
 (defprotocol HandlerCoercion
@@ -313,9 +235,5 @@
   (as-handler [this] (handler this))
   APersistentMap
   (as-handler [route] (as-handler (resource route)))
-  PersistentVector
-  (as-handler [route] (br/make-handler route))
-  VHostsModel
-  (as-handler [model] (bv/make-handler model))
   Object
   (as-handler [this] (handler this)))

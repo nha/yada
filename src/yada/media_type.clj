@@ -2,22 +2,14 @@
 
 (ns yada.media-type
   (:refer-clojure :exclude [type])
-  (:require
-   [yada.util :refer (http-token OWS)]
-   [clojure.tools.logging :refer :all]))
+  (:require [clojure.tools.logging :refer :all]
+            [yada.util :refer [http-token OWS]]))
 
 ;; For implementation efficiency, we keep the parsed versions of media
 ;; types as records rather than encode in Strings which require
 ;; reparsing. This is the sole purpose of the MediaTypeMap record below.
 
 (defrecord MediaTypeMap [name type subtype parameters quality])
-
-(defn ^:deprecated media-type
-  "DEPRECATED: Use :name on the given media type"
-  [mt]
-  (warnf "Use of media-type function is deprecated")
-  (Thread/dumpStack)
-  (when (:type mt) (str (:type mt) "/" (:subtype mt))))
 
 (def media-type-pattern
   (re-pattern (str "(" http-token ")"

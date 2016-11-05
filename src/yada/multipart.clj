@@ -1,23 +1,19 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.multipart
-  (:require
-   [byte-streams :as b]
-   [clojure.string :as str]
-   [clojure.pprint :refer [pprint]]
-   [clojure.tools.logging :refer :all]
-   [manifold.deferred :as d]
-   [manifold.stream :as s]
-   [ring.swagger.coerce :as rsc]
-   [schema.coerce :as sc]
-   [yada.bmh :as bmh]
-   [yada.coerce :as coerce]
-   [yada.media-type :as mt]
-   [yada.request-body :refer [process-request-body]]
-   [yada.util :refer [OWS CRLF]])
-  (:import
-   [java.io ByteArrayInputStream BufferedReader InputStreamReader]
-   [java.nio.charset Charset StandardCharsets]))
+  (:require [byte-streams :as b]
+            [clojure.string :as str]
+            [clojure.tools.logging :refer :all]
+            [manifold.deferred :as d]
+            [manifold.stream :as s]
+            [schema.coerce :as sc]
+            [yada.bmh :as bmh]
+            [yada.coerce :as coerce]
+            [yada.media-type :as mt]
+            [yada.request-body :refer [process-request-body]]
+            [yada.util :refer [CRLF OWS]])
+  (:import [java.io BufferedReader ByteArrayInputStream InputStreamReader]
+           java.nio.charset.StandardCharsets))
 
 ;; Ring's multipart-params middleware wraps Apache's commons file-upload
 ;; library which expects a single input-stream for multipart/* content.
@@ -591,8 +587,7 @@
                    (or
                     (when matcher (matcher schema))
                     (coerce/+parameter-key-coercions+ schema)
-                    ((or coercion-matchers default-part-coercion-matcher) schema)
-                    ((rsc/coercer :json) schema))))
+                    ((or coercion-matchers default-part-coercion-matcher) schema))))
         params (coercer parts-by-name)]
     (if-not (schema.utils/error? params)
       (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)

@@ -1,8 +1,6 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2016, JUXT LTD.
 
-(ns yada.context
-  (:require
-   [clojure.tools.logging :refer :all]))
+(ns yada.context)
 
 (defrecord Response [])
 
@@ -26,15 +24,13 @@
 (defn language [ctx]
   (apply str (interpose "-" (get-in ctx [:response :produces :language :language]))))
 
-(defn uri-info [ctx handler & [options]]
+(defn url-info [ctx handler & [options]]
   (if-let [uri-info (:uri-info ctx)]
     (uri-info handler options)
     (throw (ex-info "Context does not contain a :uri-info entry" {:keys (keys ctx)}))))
 
-(def ^:deprecated uri-for uri-info)
-
-(def path-for (comp :path uri-info))
-(def host-for (comp :host uri-info))
-(def scheme-for (comp :scheme uri-info))
-(def href-for (comp :href uri-info))
-(def url-for (comp :uri uri-info))
+(def path-for (comp :path url-info))
+(def host-for (comp :host url-info))
+(def scheme-for (comp :scheme url-info))
+(def href-for (comp :href url-info))
+(def url-for (comp :uri url-info))
