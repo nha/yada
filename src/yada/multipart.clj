@@ -6,9 +6,7 @@
             [clojure.tools.logging :refer :all]
             [manifold.deferred :as d]
             [manifold.stream :as s]
-            [schema.coerce :as sc]
             [yada.bmh :as bmh]
-            [yada.coerce :as coerce]
             [yada.media-type :as mt]
             [yada.request-body :refer [process-request-body]]
             [yada.util :refer [CRLF OWS]])
@@ -577,23 +575,6 @@
             (let [offset (get part :body-offset 0)]
               (String. (:bytes part) offset (- (alength (:bytes part)) offset))))})
 
-(defn assoc-body-parameters [ctx parts-by-name schemas]
-  (let [coercion-matchers (get-in ctx [:resource :methods (:method ctx)
-                                       :coercion-matchers])
-        matcher (or (:form coercion-matchers) (:body coercion-matchers))
-        coercer (sc/coercer
-                 (or (:form schemas) (:body schemas))
-                 (fn [schema]
-                   (or
-                    (when matcher (matcher schema))
-                    (coerce/+parameter-key-coercions+ schema)
-                    ((or coercion-matchers default-part-coercion-matcher) schema))))
-        params (coercer parts-by-name)]
-    (if-not (schema.utils/error? params)
-      (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
-      (d/error-deferred (ex-info "Bad form fields"
-                                 {:status 400 :error (schema.utils/error-val params)})))))
-
 (defmethod process-request-body "multipart/form-data"
   [ctx body-stream media-type & args]
   (let [content-type (mt/string->media-type (get-in ctx [:request :headers "content-type"]))
@@ -641,8 +622,8 @@
            (cond-> ctx
              ;; In Swagger 2.0 you can't have both form and body
              ;; parameters, which seems reasonable
-             (or (:form schemas) (:body schemas))
-             (assoc-body-parameters parts-by-name schemas)
+             #_(or (:form schemas) (:body schemas))
+             #_(assoc-body-parameters parts-by-name schemas)
 
              ;; We add a low-level access to the actual parts (via
              ;; :yada.multipart/parts) for users with more

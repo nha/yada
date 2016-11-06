@@ -3,15 +3,12 @@
 (ns yada.handler
   (:require [clojure.tools.logging :refer [errorf]]
             [manifold.deferred :as d]
-            [schema.core :as s]
-            [schema.utils :refer [error?]]
             [yada.body :as body]
             [yada.charset :as charset]
             [yada.context :refer [->Response]]
             [yada.methods :as methods]
             [yada.representation :as rep]
             [yada.resource :as resource :refer [as-resource resource ResourceCoercion]]
-            [yada.schema :as ys :refer [resource-coercer]]
             [yada.util :refer [get*]])
   (:import clojure.lang.APersistentMap
            yada.methods.AnyMethod
@@ -49,15 +46,14 @@
 ;; errors, including image and video
 ;; formats.
 (def error-representations
-  (ys/representation-seq
-   (ys/representation-set-coercer
-    [{:media-type #{"application/json"
-                    "application/json;pretty=true;q=0.96"
-                    "text/plain;q=0.9"
-                    "text/html;q=0.8"
-                    "application/edn;q=0.6"
-                    "application/edn;pretty=true;q=0.5"}
-      :charset charset/platform-charsets}])))
+  ;; TODO conform
+  [{:media-type #{"application/json"
+                  "application/json;pretty=true;q=0.96"
+                  "text/plain;q=0.9"
+                  "text/html;q=0.8"
+                  "application/edn;q=0.6"
+                  "application/edn;pretty=true;q=0.5"}
+    :charset charset/platform-charsets}])
 
 (defn standard-error [ctx status e rep]
   (let [errbody (body/to-body (body/render-error status e rep ctx) rep)]
@@ -179,15 +175,16 @@
   ;; Meta
   ResourceCoercion
   (as-resource [h]
-    (resource-coercer
-     {:produces #{"text/html"
-                  "application/edn"
-                  "application/json"
-                  "application/edn;pretty=true"
-                  "application/json;pretty=true"}
-      :methods {:get (fn [ctx] (into {} h))}})))
+    ;; TODO conform
+    {:produces #{"text/html"
+                 "application/edn"
+                 "application/json"
+                 "application/edn;pretty=true"
+                 "application/json;pretty=true"}
+     :methods {:get (fn [ctx] (into {} h))}}))
 
-(s/defn new-handler [model :- ys/HandlerModel]
+(defn new-handler [model;; :- ys/HandlerModel
+                     ]
   (map->Handler model))
 
 (defn handler
@@ -199,13 +196,14 @@
                     {:resource resource})))
 
   ;; It's possible that we're being called with a resource that already has an error
-  (when (error? resource)
+  #_(when (error? resource)
     (throw (ex-info "yada function is being passed a resource that is an error"
                     {:error (:error resource)})))
 
-  (let [resource (ys/resource-coercer (as-resource resource))]
+  (let [resource (as-resource resource) ;; TODO conform
+        ]
 
-    (when (error? resource)
+    #_(when (error? resource)
       (throw (ex-info "Resource does not conform to schema"
                       {:resource resource
                        :error (:error resource)

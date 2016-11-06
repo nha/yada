@@ -2,7 +2,6 @@
 
 (ns yada.representation
   (:require [clojure.string :as str]
-            [schema.core :as s]
             [yada.charset :as charset]
             [yada.media-type :as mt]
             [yada.util :refer [best best-by http-token OWS parse-csv]]))
@@ -202,10 +201,9 @@
        {:language (vec (map str/lower-case (str/split lang #"-")))
         :quality (if qvalue (Float/parseFloat qvalue) (float 1.0))}))))
 
-(s/defn lang-matches?
+(defn lang-matches?
   "See RFC 4647 Basic Filtering"
-  [accepts :- [s/Str]
-   rep :- [s/Str]]
+  [accepts rep]
   (or (= rep ["i" "default"])
       (every? true?
               (map (fn [a rep]
@@ -213,20 +211,17 @@
                    (concat accepts (repeat :fail))
                    rep))))
 
-(s/defn language-acceptable?
-  [acceptable-language :- {:language [s/Str]
-                           :quality java.lang.Float}
-   rep :- {:language [s/Str]
-           :quality java.lang.Float}]
+(defn language-acceptable?
+  [acceptable-language rep]
   (when
       (and
        (lang-matches? (:language acceptable-language) (:language rep))
        (pos? (:quality acceptable-language))
        (pos? (:quality rep)))
 
-    [(:quality acceptable-language)
-     (count (:language rep)) ;; prefer more specific language tags
-     (:quality rep)]))
+      [(:quality acceptable-language)
+       (count (:language rep)) ;; prefer more specific language tags
+       (:quality rep)]))
 
 (defn highest-language-quality
   "Given a collection of acceptable languages, return a function that

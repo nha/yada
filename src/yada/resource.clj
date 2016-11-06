@@ -1,10 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resource
-  (:require [schema.core :as s]
-            [schema.utils :as su]
-            [yada.interceptors :as i]
-            [yada.schema :as ys]
+  (:require [yada.interceptors :as i]
             [yada.security :as sec]
             [yada.util :refer [arity]])
   (:import java.util.Date
@@ -20,35 +17,7 @@
   knowing the time of construction, we can precisely state its
   Last-Modified-Date."))
 
-;; Deprecated
-
-(s/defschema MediaTypeSchema
-  (s/either String MediaTypeMap))
-
-(s/defschema CharsetSchema
-  (s/either String CharsetMap))
-
-(s/defschema QualifiedKeyword
-  (s/both s/Keyword (s/pred namespace)))
-
-(s/defschema MediaTypeSchemaSet
-  #{MediaTypeSchema})
-
-(s/defschema CharsetSchemaSet
-  #{CharsetSchema})
-
-(s/defschema StringSet
-  #{String})
-
 (defn as-set [x] (if (coll? x) x (set [x])))
-
-(def +properties-coercions+
-  {Date #(condp instance? %
-           java.lang.Long (Date. %)
-           %)
-   MediaTypeSchemaSet as-set
-   CharsetSchemaSet as-set
-   StringSet as-set})
 
 ;; --
 
@@ -95,12 +64,11 @@
   (as-resource [this] this))
 
 (defn resource [model]
-  (let [r (ys/resource-coercer
-           (merge
-            {:interceptor-chain default-interceptor-chain
-             :error-interceptor-chain default-error-interceptor-chain}
-            model))]
-    (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
+  (let [r (merge ;; TODO conform
+           {:interceptor-chain default-interceptor-chain
+            :error-interceptor-chain default-error-interceptor-chain}
+           model)]
+    #_(when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 
 (extend-protocol ResourceCoercion

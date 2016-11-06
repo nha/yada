@@ -8,12 +8,13 @@
 
   :dependencies
   [[byte-streams "0.2.2"]
+   [funcool/cats "2.0.0"]
    [manifold "0.1.6-alpha3"]
    [metosin/ring-http-response "0.6.5"]
    [org.clojure/data.codec "0.1.0"]
+   [org.clojure/test.check "0.9.0"]
    [org.clojure/tools.logging "0.3.1"]
-   [potemkin "0.4.3"]
-   [prismatic/schema "1.1.1"]]
+   [potemkin "0.4.3"]]
 
   :pedantic? :abort
 
@@ -28,7 +29,7 @@
          :pedantic? :abort
 
          :dependencies
-         [[org.clojure/clojure "1.9.0-alpha13"]
+         [[org.clojure/clojure "1.9.0-alpha14"]
 
           [ch.qos.logback/logback-classic "1.1.5"
            :exclusions [org.slf4j/slf4j-api]]

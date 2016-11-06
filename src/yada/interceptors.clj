@@ -7,7 +7,6 @@
             [manifold.deferred :as d]
             [manifold.stream :as stream]
             ring.util.time
-            [schema.utils :refer [error?]]
             [yada.body :as body]
             [yada.charset :as charset]
             [yada.etag :as etag]
@@ -15,7 +14,6 @@
             [yada.methods :as methods]
             [yada.representation :as rep]
             [yada.request-body :as rb]
-            [yada.schema :as ys]
             [yada.util :as util]))
 
 (defn available?
@@ -104,14 +102,7 @@
     (d/chain
      props                           ; propsfn can returned a deferred
      (fn [props]
-       (let [props (ys/properties-result-coercer props)]
-         (if-not (error? props)
-           (cond-> ctx
-             props (assoc :properties props)
-             (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
-           (d/error-deferred
-            (ex-info "Properties malformed" {:status 500
-                                             :error (:error props)}))))))))
+       (assoc ctx :properties props)))))
 
 (defn process-request-body
   "Process the request body, if necessary. RFC 7230 section 3.3 states
@@ -170,7 +161,8 @@
   (assert ctx "select-representation, ctx is nil!")
   (let [apply-if-fn (fn [f]
                       (if (fn? f)
-                        (ys/representation-seq (ys/representation-set-coercer (f ctx)))
+                        (f ctx) ;; TODO conform
+                        ;;(ys/representation-seq (ys/representation-set-coercer (f ctx)))
                         f))
         produces (concat (apply-if-fn (get-in ctx [:resource :methods (:method ctx) :produces]))
                          (apply-if-fn (get-in ctx [:resource :produces])))
@@ -304,11 +296,12 @@
          (assoc
           ctx
           :new-properties
-          (cond-> props
+          props ;; TODO conform
+          #_(cond-> props
             (:produces props)    ; representations shorthand is
                                         ; expanded, is this necessary at this
                                         ; stage?
-            (update-in [:produces]
+            #_(update-in [:produces]
                        (comp ys/representation-seq ys/representation-set-coercer)))))))
     :otherwise ctx))
 
