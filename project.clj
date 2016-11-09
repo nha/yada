@@ -8,7 +8,6 @@
 
   :dependencies
   [[byte-streams "0.2.2"]
-   [funcool/cats "2.0.0"]
    [manifold "0.1.6-alpha3"]
    [metosin/ring-http-response "0.6.5"]
    [org.clojure/data.codec "0.1.0"]
