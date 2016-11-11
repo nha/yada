@@ -17,8 +17,6 @@
   knowing the time of construction, we can precisely state its
   Last-Modified-Date."))
 
-(defn as-set [x] (if (coll? x) x (set [x])))
-
 ;; --
 
 (def default-interceptor-chain
