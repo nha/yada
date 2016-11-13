@@ -1,19 +1,22 @@
 ;; Copyright © 2014-2016, JUXT LTD.
 
-(defproject yada.core "1.2.0-SNAPSHOT"
+(defproject yada.core "2.0.0-alpha1-SNAPSHOT"
   :description "The yada core"
   :url "http://github.com/juxt/yada"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
+  :exclusions [org.clojure/clojure]
+
   :dependencies
   [[byte-streams "0.2.2"]
    [manifold "0.1.6-alpha3"]
-   [metosin/ring-http-response "0.6.5"]
+   [metosin/ring-http-response "0.6.5" :exclusions [ring/ring-core slingshot]]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/test.check "0.9.0"]
    [org.clojure/tools.logging "0.3.1"]
-   [potemkin "0.4.3"]]
+   [potemkin "0.4.3"]
+   [ring-spec "0.0.2"]]
 
   :pedantic? :abort
 
