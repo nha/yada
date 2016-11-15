@@ -15,7 +15,8 @@
          #(re-matches #"[A-Z]+" %)))
 
 (s/def :yada/method
-  (s/keys :req [:yada/method-token]))
+  (s/keys :req [:yada/method-token]
+          :opt [:yada/response]))
 
 (s/def :yada/methods
   (s/+ :yada/method))
@@ -80,3 +81,7 @@
   model so that it passes validation."
   [model]
   (resource* (coerce-to-resource-map model)))
+
+
+(defn lookup-method [resource token]
+  (first (filter (fn [m] (= (:yada/method-token m) token)) (-> resource :yada/methods))))

@@ -20,6 +20,8 @@
 
   :pedantic? :abort
 
+  :global-vars {*warn-on-reflection* true}
+
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
 
