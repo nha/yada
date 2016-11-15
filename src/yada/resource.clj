@@ -8,21 +8,21 @@
 
 ;; Specs
 
-(s/def :yada/method-token
+(s/def :yada.resource/method-token
   (s/and string?
          ;; By convention, standardized methods are defined in all-uppercase
          ;; US-ASCII letters. -- https://tools.ietf.org/html/rfc7231#section-4
          #(re-matches #"[A-Z]+" %)))
 
-(s/def :yada/method
-  (s/keys :req [:yada/method-token]
-          :opt [:yada/response]))
+(s/def :yada.resource/method
+  (s/keys :req [:yada.resource/method-token]
+          :opt [:yada.resource/response]))
 
-(s/def :yada/methods
-  (s/+ :yada/method))
+(s/def :yada.resource/methods
+  (s/+ :yada.resource/method))
 
 (s/def :yada/resource
-  (s/keys :req [:yada/methods]))
+  (s/keys :req [:yada.resource/methods]))
 
 ;; Coercion
 
@@ -33,7 +33,7 @@
 
 (defn coerce-methods [x]
   (cond
-    (map? x) (mapv (fn [[k v]] (coerce-method (merge {:yada/method-token (str/upper-case (name k))} v))) x)
+    (map? x) (mapv (fn [[k v]] (coerce-method (merge {:yada.resource/method-token (str/upper-case (name k))} v))) x)
     (vector? x) (mapv coerce-method x)
     :otherwise x))
 
@@ -41,7 +41,7 @@
   (postwalk
    (fn [x]
      (cond
-       (matches-map-entry? :yada/methods x) [:yada/methods (coerce-methods (second x))]
+       (matches-map-entry? :yada.resource/methods x) [:yada.resource/methods (coerce-methods (second x))]
        :otherwise x))
    input))
 
@@ -84,4 +84,4 @@
 
 
 (defn lookup-method [resource token]
-  (first (filter (fn [m] (= (:yada/method-token m) token)) (-> resource :yada/methods))))
+  (first (filter (fn [m] (= (:yada.resource/method-token m) token)) (-> resource :yada.resource/methods))))

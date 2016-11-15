@@ -28,7 +28,7 @@
       (pf ctx)
       (throw (ex-info "No wrapper for method" {:method method})))))
 
-(let [res (resource {:yada/methods {"PUT" {}}})
+(let [res (resource {:yada.resource/methods {"PUT" {}}})
       req (request :get "https://localhost")
       ctx (new-context {:ring/request req})]
   @(apply d/chain ctx [perform-operation]))
