@@ -19,3 +19,10 @@
 
 (defn new-response []
   (map->Response {:ring.response/headers {}}))
+
+(defn ->ring-response [response]
+  (merge
+   {:status (or (:ring.response/status response) 500)
+    :headers (or (:ring.response/headers response) {})}
+   (when-let [body (:ring.response/body response)]
+     {:body body})))

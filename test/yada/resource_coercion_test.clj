@@ -7,5 +7,5 @@
 
 (deftest resource-map-coercion-test
   (is (=
-       {:yada/methods [{:yada/method-token "GET"} {:yada/method-token "POST"}]}
-       (coerce-to-resource-map {:yada/methods (array-map :get {} :post {})}))))
+       {:yada.resource/methods [{:yada/method-token "GET"} {:yada/method-token "POST"}]}
+       (coerce-to-resource-map {:yada.resource/methods (array-map :get {} :post {})}))))

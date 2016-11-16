@@ -2,6 +2,7 @@
   (:require
    yada.context
    yada.resource
+   yada.spec
    [clojure.spec :as s]
    [manifold.deferred :as d]))
 
@@ -13,4 +14,9 @@
                                          ;; :yada.method/proxy
                                          ]))
 
-(defmulti http-method "Return a map representing the HTTP method" identity)
+(defmulti http-method "Return a map representing the HTTP method" (fn [token] token))
+
+(defn ^:interceptor perform-method [ctx]
+  (let [method (http-method (yada.context/method-token ctx))]
+    (when-let [pf (:yada.method/wrapper method)]
+      (pf ctx))))

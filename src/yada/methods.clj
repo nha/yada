@@ -1,2 +1,4 @@
 (ns yada.methods
-  (:require [yada.methods.get]))
+  (:require [yada.context :as ctx :refer [context]]
+            [yada.methods.get]
+            ))

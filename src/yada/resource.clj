@@ -4,18 +4,13 @@
   (:require
    [clojure.walk :refer [postwalk]]
    [clojure.string :as str]
-   [clojure.spec :as s]))
+   [clojure.spec :as s]
+   yada.spec))
 
 ;; Specs
 
-(s/def :yada.resource/method-token
-  (s/and string?
-         ;; By convention, standardized methods are defined in all-uppercase
-         ;; US-ASCII letters. -- https://tools.ietf.org/html/rfc7231#section-4
-         #(re-matches #"[A-Z]+" %)))
-
 (s/def :yada.resource/method
-  (s/keys :req [:yada.resource/method-token]
+  (s/keys :req [:yada/method-token]
           :opt [:yada.resource/response]))
 
 (s/def :yada.resource/methods
@@ -33,7 +28,7 @@
 
 (defn coerce-methods [x]
   (cond
-    (map? x) (mapv (fn [[k v]] (coerce-method (merge {:yada.resource/method-token (str/upper-case (name k))} v))) x)
+    (map? x) (mapv (fn [[k v]] (coerce-method (merge {:yada/method-token (str/upper-case (name k))} v))) x)
     (vector? x) (mapv coerce-method x)
     :otherwise x))
 
@@ -84,4 +79,4 @@
 
 
 (defn lookup-method [resource token]
-  (first (filter (fn [m] (= (:yada.resource/method-token m) token)) (-> resource :yada.resource/methods))))
+  (first (filter (fn [m] (= (:yada/method-token m) token)) (-> resource :yada.resource/methods))))

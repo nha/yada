@@ -18,12 +18,13 @@
 (s/def :yada/context
   (s/keys :req [:ring/request
                 :yada/method-token
-                :yada/profile]))
+                :yada/profile
+                :yada/handler]))
 
 (defn method-token [ctx]
   (-> ctx :yada/method-token))
 
-(defn new-context [init-context]
+(defn context [init-context]
   (let [input-spec (s/keys :req [:ring/request])]
     (when-not (s/valid? input-spec init-context)
       (throw

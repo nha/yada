@@ -40,7 +40,9 @@
 (defn wrapper [ctx]
   (let [method (yada.context/lookup-method ctx)
         response-fn (:yada/response method)]
+
     (cond
+      (nil? method) (d/error-deferred (ex-info "No matching method in resource" {:ring.response/status 405}))
       (nil? response-fn) (profile/nil-response-fn ctx)
       :otherwise
       (d/chain
