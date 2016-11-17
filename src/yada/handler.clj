@@ -47,17 +47,12 @@
 (defrecord ^{:doc ""} Handler []
   clojure.lang.IFn
   (invoke [this req]
-    (apply-interceptors
-     (ctx/context (assoc this :ring/request req)))))
+    ;; Create (and optionally validate) a context
+    (let [ctx (ctx/context (merge this {:ring/request req}))]
+      (apply-interceptors ctx))))
 
 (defn handler [model]
-  (when-not (s/valid? :yada/handler model)
-    (throw
-     (ex-info
-      (format "Handler model is not valid: %s" (s/explain-str :yada/handler model))
-      {:model model :explain (s/explain-data :yada/handler model)})))
   (map->Handler model))
-
 
 (defn accept-request [^Handler handler req]
   (.invoke handler req))

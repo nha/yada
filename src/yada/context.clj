@@ -8,12 +8,6 @@
    yada.response
    [ring.core.spec :as rs]))
 
-(defrecord
-    ^{:doc "This record represents the request context, which
-    contains per-request information and is threaded through each of
-    the interceptors."}
-    Context [])
-
 (s/def :yada/context
   (s/keys :req [:yada/resource
                 :ring/request
@@ -45,7 +39,7 @@
         (format "Context is not valid: %s"
                 (s/explain-str :yada/context context))
         {:context context :explain (s/explain-data :yada/context context)})))
-    (map->Context context)))
+    context))
 
 (defn lookup-method [ctx]
   (yada.resource/lookup-method
