@@ -36,7 +36,7 @@
              (->
               (apply d/chain (cond-> ctx
                                e (assoc :yada/error e)
-                               (reveal-exception-messages? ctx) (assoc-in [:yada/response :ring.response/body] (.getMessage e))
+                               (reveal-exception-messages? ctx) (assoc-in [:yada/response :ring.response/body] (.getMessage ^Exception e))
                                error-data (update :yada/response merge error-data))
                      chain)
               (d/catch Exception

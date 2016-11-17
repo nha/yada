@@ -7,20 +7,26 @@
             [yada.handler :refer [handler accept-request]]
             [yada.resource :refer [resource]]
             [yada.method :refer [perform-method]]
-            [yada.test-util :refer [request]]))
+            [yada.profile :refer [profiles]]
+            [yada.test-util :refer [request]]
+            [clojure.spec :as s]))
 
 (require 'yada.methods)
 
 (deftest profile-test
-  )
+  (let [res (resource {:yada.resource/methods {:get {}}})
+        req (request :get "https://localhost")
+        h {:yada/resource res
+           :yada.handler/interceptor-chain [perform-method yada.handler/terminate]}]
 
+    (testing "dev profile"
+      (let [h (handler (assoc h :yada/profile (:dev profiles)))
+            response @(accept-request h req)]
+        (is (= 500 (:status response)))
+        (is (= "No response function declared in resource for method GET" (:body response)))))
 
-(let [res (resource {:yada.resource/methods {:get {}}})
-      req (request :get "https://localhost")
-      h (handler {:yada/resource res
-                  :yada.handler/interceptor-chain [perform-method yada.handler/terminate]
-                  :yada/profile :dev})
-      ]
-  @(accept-request h req)
-
-  )
+    (testing "prod profile"
+      (let [h (handler (assoc h :yada/profile (:prod profiles)))
+            response @(accept-request h req)]
+        (is (= 500 (:status response)))
+        (is (= "" (:body response)))))))

@@ -27,7 +27,7 @@
   (-> ctx :yada/method-token))
 
 (defn context [init-context]
-  (let [input-spec (s/keys :req [:yada/resource :ring/request])]
+  (let [input-spec (s/keys :req [:yada/resource :ring/request :yada/profile])]
     (when-not (s/valid? input-spec init-context)
       (throw
        (ex-info
@@ -38,8 +38,7 @@
   (let [context
         (assoc init-context
                :yada/method-token (-> init-context :ring/request :request-method name clojure.string/upper-case)
-               :yada/response (yada.response/new-response)
-               :yada/profile :dev)]
+               :yada/response (yada.response/new-response))]
     (when-not (s/valid? :yada/context context)
       (throw
        (ex-info
@@ -49,7 +48,6 @@
     (map->Context context)))
 
 (defn lookup-method [ctx]
-  (println "ctx keys are" (keys ctx))
   (yada.resource/lookup-method
    (:yada/resource ctx)
    (:yada/method-token ctx)))
