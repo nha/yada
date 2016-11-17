@@ -20,27 +20,6 @@
 (defn method-token [ctx]
   (-> ctx :yada/method-token))
 
-(defn context [init-context]
-  (let [input-spec (s/keys :req [:yada/resource :ring/request :yada/profile])]
-    (when-not (s/valid? input-spec init-context)
-      (throw
-       (ex-info
-        (format "Initial context is not valid: %s"
-                (s/explain-str input-spec init-context))
-        {:init-context init-context :explain (s/explain-data input-spec init-context)}))))
-
-  (let [context
-        (assoc init-context
-               :yada/method-token (-> init-context :ring/request :request-method name clojure.string/upper-case)
-               :yada/response (yada.response/new-response))]
-    (when-not (s/valid? :yada/context context)
-      (throw
-       (ex-info
-        (format "Context is not valid: %s"
-                (s/explain-str :yada/context context))
-        {:context context :explain (s/explain-data :yada/context context)})))
-    context))
-
 (defn lookup-method [ctx]
   (yada.resource/lookup-method
    (:yada/resource ctx)

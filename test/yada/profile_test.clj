@@ -3,7 +3,7 @@
 (ns yada.profile-test
   (:require [clojure.test :refer :all]
             [manifold.deferred :as d]
-            [yada.context :as ctx :refer [context]]
+            [yada.context :as ctx]
             [yada.handler :refer [handler accept-request]]
             [yada.resource :refer [resource]]
             [yada.method :refer [perform-method]]

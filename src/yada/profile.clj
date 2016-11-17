@@ -10,6 +10,7 @@
 
 (s/def :yada.profile/nil-response-fn fn?)
 (s/def :yada.profile/reveal-exception-messages? (s/or :boolean boolean? :fn fn?))
+(s/def :yada.profile/validate-context? boolean?)
 
 (s/def :yada/profile (s/keys :req [:yada.profile/nil-response-fn
                                    :yada.profile/reveal-exception-messages?]))
@@ -24,6 +25,9 @@
       (boolean? f) f
       (fn? f) (f ctx))))
 
+(defn validate-context? [ctx]
+  (get-in ctx [:yada/profile :yada.profile/validate-context?]))
+
 (def profiles
   {:dev
    {:yada.profile/nil-response-fn
@@ -31,11 +35,13 @@
       (d/error-deferred
        (ex-info (format "No response function declared in resource for method %s" (ctx/method-token ctx))
                 {:ring.response/status 500})))
-    :yada.profile/reveal-exception-messages? true}
+    :yada.profile/reveal-exception-messages? true
+    :yada.profile/validate-context? true}
 
    :prod
    {:yada.profile/nil-response-fn
     (fn [ctx]
       (d/error-deferred
        (ex-info "" {:ring.response/status 500})))
-    :yada.profile/reveal-exception-messages? false}})
+    :yada.profile/reveal-exception-messages? false
+    :yada.profile/validate-context? false}})

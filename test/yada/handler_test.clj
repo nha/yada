@@ -18,4 +18,5 @@
                     :yada/profile (profiles :dev)})]
     (is (= 405 (:status @(accept-request h req))))))
 
+
 ;; Work out a safe/debug way to call interceptors by using monads (bind and return)
