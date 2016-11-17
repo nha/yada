@@ -8,13 +8,10 @@
 
 (def chain
   [(fn [ctx]
-     (println "Executing a, ctx is " ctx)
      (future (update ctx :marks conj :a)))
    (fn [ctx]
-     (println "Executing b, ctx is " ctx)
      (update ctx :marks conj :b))
    (fn [ctx]
-     (println "Executing c, ctx is " ctx)
      (future (update ctx :marks conj :c)))])
 
 (defn synchronous-executor [chain]
