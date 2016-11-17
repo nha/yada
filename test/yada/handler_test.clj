@@ -1,15 +1,12 @@
 ;; Copyright © 2014-2016, JUXT LTD.
 
 (ns yada.handler-test
-  (:require [manifold.deferred :as d]
-            [yada.context :as ctx :refer [context]]
-            [yada.method :refer [http-method perform-method]]
-            [yada.handler :refer [handler accept-request]]
-            [yada.resource :refer [resource]]
+  (:require [clojure.test :refer :all]
+            [yada.handler :refer [accept-request handler]]
+            [yada.method :refer [perform-method]]
             [yada.profile :refer [profiles]]
-            [yada.test-util :refer [request]]
-            [clojure.spec :as s]
-            [clojure.test :refer :all]))
+            [yada.resource :refer [resource]]
+            [yada.test-util :refer [request]]))
 
 (require 'yada.methods)
 
