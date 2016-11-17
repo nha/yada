@@ -15,7 +15,8 @@
 (deftest various-features
   (let [res (resource {:yada.resource/methods {"PUT" {}}})
         req (request :get "https://localhost")
-        h (handler {:yada.handler/interceptor-chain [perform-method yada.handler/terminate]})]
+        h (handler {:yada/resource res
+                    :yada.handler/interceptor-chain [perform-method yada.handler/terminate]})]
     (is (= 405 (:status @(accept-request h req))))))
 
 ;; Work out a safe/debug way to call interceptors by using monads (bind and return)

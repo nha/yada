@@ -6,6 +6,7 @@
             [manifold.deferred :as d]
             [yada.method :refer [perform-method]]
             [yada.context :as ctx]
+            [yada.profile :refer [reveal-exception-messages?]]
             yada.response))
 
 (s/def :yada.handler/interceptor
@@ -15,24 +16,27 @@
   (s/coll-of :yada.handler/interceptor))
 
 (s/def :yada/handler
-  (s/keys :req [:yada.handler/interceptor-chain]
+  (s/keys :req [:yada/resource
+                :yada.handler/interceptor-chain
+                :yada/profile]
           :opt [:yada.handler/error-interceptor-chain]))
 
 (defn ^:interceptor terminate [ctx]
   (yada.response/->ring-response (:yada/response ctx)))
 
 (defn apply-interceptors [ctx]
-  (let [chain (-> ctx :yada/handler :yada.handler/interceptor-chain)]
+  (let [chain (:yada.handler/interceptor-chain ctx)]
     (->
      (apply d/chain ctx chain)
      (d/catch Exception
          (fn [e]
            (let [error-data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))
-                 chain (or (get-in ctx [:yada/handler :yada.handler/error-interceptor-chain])
+                 chain (or (:yada.handler/error-interceptor-chain ctx)
                            [terminate])]
              (->
               (apply d/chain (cond-> ctx
                                e (assoc :yada/error e)
+                               (reveal-exception-messages? ctx) (assoc-in [:yada/response :ring.response/body] (.getMessage e))
                                error-data (update :yada/response merge error-data))
                      chain)
               (d/catch Exception
@@ -44,9 +48,7 @@
   clojure.lang.IFn
   (invoke [this req]
     (apply-interceptors
-     (ctx/context
-      {:yada/handler this
-       :ring/request req}))))
+     (ctx/context (assoc this :ring/request req)))))
 
 (defn handler [model]
   (when-not (s/valid? :yada/handler model)

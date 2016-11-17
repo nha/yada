@@ -6,7 +6,6 @@
    clojure.string
    yada.resource
    yada.response
-   yada.profile
    [ring.core.spec :as rs]))
 
 (defrecord
@@ -16,16 +15,19 @@
     Context [])
 
 (s/def :yada/context
-  (s/keys :req [:ring/request
+  (s/keys :req [:yada/resource
+                :ring/request
+
                 :yada/method-token
+                :yada/response
                 :yada/profile
-                :yada/handler]))
+                ]))
 
 (defn method-token [ctx]
   (-> ctx :yada/method-token))
 
 (defn context [init-context]
-  (let [input-spec (s/keys :req [:ring/request])]
+  (let [input-spec (s/keys :req [:yada/resource :ring/request])]
     (when-not (s/valid? input-spec init-context)
       (throw
        (ex-info
@@ -47,6 +49,7 @@
     (map->Context context)))
 
 (defn lookup-method [ctx]
+  (println "ctx keys are" (keys ctx))
   (yada.resource/lookup-method
    (:yada/resource ctx)
    (:yada/method-token ctx)))
