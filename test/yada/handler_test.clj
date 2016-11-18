@@ -10,7 +10,7 @@
 
 (require 'yada.methods)
 
-(deftest happy-path
+(deftest ok
   (let [res (resource {:yada.resource/methods
                        {"GET" {:yada.resource/response (fn [ctx] "Hello World!")}}})
         h (handler {:yada/resource res
