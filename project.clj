@@ -11,7 +11,6 @@
   :dependencies
   [[byte-streams "0.2.2"]
    [manifold "0.1.6-alpha3"]
-   [metosin/ring-http-response "0.6.5" :exclusions [ring/ring-core slingshot]]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/test.check "0.9.0"]
    [org.clojure/tools.logging "0.3.1"]
