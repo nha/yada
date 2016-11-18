@@ -7,6 +7,7 @@
             [yada.method :refer [perform-method]]
             [yada.context :as ctx]
             [yada.spec :refer [validate]]
+            [yada.status :refer [status]]
             [yada.profile :as profile]))
 
 (s/def :yada.handler/interceptor
@@ -44,7 +45,9 @@
              (->
               (apply d/chain (cond-> ctx
                                e (assoc :yada/error e)
-                               (yada.profile/reveal-exception-messages? ctx) (assoc-in [:yada/response :ring.response/body] (.getMessage ^Exception e))
+                               (:ring.response/status error-data) (assoc-in [:yada/response :ring.response/body] (get-in status [(:ring.response/status error-data) :name]))
+                               ;; TODO: We want dev errors back
+                               ;; (yada.profile/reveal-exception-messages? ctx) (assoc-in [:yada/response :ring.response/body] (.getMessage ^Exception e))
                                error-data (update :yada/response merge error-data))
                      chain)
               (d/catch Exception

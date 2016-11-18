@@ -23,10 +23,10 @@
       (let [h (handler (assoc h :yada/profile (:dev profiles)))
             response @(accept-request h req)]
         (is (= 500 (:status response)))
-        (is (= "No response function declared in resource for method GET" (:body response)))))
+        (is (= "Internal Server Error" (:body response)))))
 
     (testing "prod profile"
       (let [h (handler (assoc h :yada/profile (:prod profiles)))
             response @(accept-request h req)]
         (is (= 500 (:status response)))
-        (is (= "" (:body response)))))))
+        (is (= "Internal Server Error" (:body response)))))))

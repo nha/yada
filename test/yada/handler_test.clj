@@ -27,7 +27,7 @@
                     :yada/profile (profiles :dev)})
         response @(accept-request h (request :get "https://localhost"))]
     (is (= 405 (:status response)))
-    (is (= "No matching method in resource" (:body response)))))
+    (is (= "Method Not Allowed" (:body response)))))
 
 (deftest not-implemented
   (let [res (resource {:yada.resource/methods {"BREW" {}}})
@@ -36,4 +36,4 @@
                     :yada/profile (profiles :dev)})
         response @(accept-request h (request :brew "https://localhost"))]
     (is (= 501 (:status response)))
-    (is (= "No defmethod defined for BREW" (:body response)))))
+    (is (= "Not Implemented" (:body response)))))
