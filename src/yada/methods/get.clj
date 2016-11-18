@@ -5,10 +5,11 @@
    [manifold.deferred :as d]
    [yada.method :refer [http-method]]
    [yada.profile :as profile]
-   yada.response
-   yada.context)
+   [yada.spec :refer [validate]]
+   yada.context
+   [yada.context :as ctx])
   (:import
-   (yada.response Response)))
+   (yada.context Response)))
 
 (defprotocol ResultHandler
   "The ResultHandler protocol is intended to allow for user extension and override"
@@ -22,11 +23,13 @@
 
   Response
   (handle-result [response ctx]
-    (assoc ctx :yada/response response))
+    (assoc ctx :ring/response response))
 
   Object
   (handle-result [o ctx]
-    (assoc-in ctx [:yada/response :yada.response/body] o))
+    (-> ctx
+        (ctx/add-status 200)
+        (ctx/add-body o)))
 
   nil
   (handle-result [_ ctx]
@@ -39,7 +42,7 @@
 
 (defn wrapper [ctx]
   (let [method (yada.context/lookup-method ctx)
-        response-fn (:yada/response method)]
+        response-fn (:yada.resource/response method)]
 
     (cond
       (nil? method) (d/error-deferred (ex-info "No matching method in resource" {:ring.response/status 405}))
@@ -49,7 +52,8 @@
 
        ;; Call the response function
        (try
-         (response-fn ctx)
+         (->
+          (response-fn ctx))
          (catch Exception e
            (d/error-deferred e)))
 

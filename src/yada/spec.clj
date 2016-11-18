@@ -10,3 +10,12 @@
 
    (s/with-gen
      (fn [] (s/gen #{"ACL" "BASELINE-CONTROL" "BIND" "BREW" "CHECKIN" "CHECKOUT" "CONNECT" "COPY" "DELETE" "GET" "HEAD" "LABEL" "LINK" "LOCK" "MERGE" "MKACTIVITY" "MKCALENDAR" "MKCOL" "MKREDIRECTREF" "MKWORKSPACE" "MOVE" "OPTIONS" "ORDERPATCH" "PATCH" "POST" "PRI" "PROPFIND" "PROPPATCH" "PUT" "REBIND" "REPORT" "SEARCH" "TRACE" "UNBIND" "UNCHECKOUT" "UNLINK" "UNLOCK" "UPDATE" "UPDATEREDIRECTREF" "VERSION-CONTROL"})))))
+
+
+(defn validate [data spec error]
+  (when-not (s/valid? spec data)
+    (throw
+     (ex-info (format "%s: %s" error (s/explain-str spec data))
+              {:explain (s/explain-data spec data)
+               :data data})))
+  data)

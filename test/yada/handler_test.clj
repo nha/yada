@@ -10,13 +10,25 @@
 
 (require 'yada.methods)
 
-(deftest various-features
+(deftest happy-path
+  (let [res (resource {:yada.resource/methods
+                       {"GET" {:yada.resource/response (fn [ctx] "Hello World!")}}})
+        req (request :get "https://localhost")
+        h (handler {:yada/resource res
+                    :yada.handler/interceptor-chain [perform-method yada.handler/terminate]
+                    :yada/profile (profiles :dev)})
+        response @(accept-request h req)]
+
+    (is (= 200 (:status response)))
+    (is (= "Hello World!" (:body response)))))
+
+(deftest no-such-method
   (let [res (resource {:yada.resource/methods {"PUT" {}}})
         req (request :get "https://localhost")
         h (handler {:yada/resource res
                     :yada.handler/interceptor-chain [perform-method yada.handler/terminate]
-                    :yada/profile (profiles :dev)})]
-    (is (= 405 (:status @(accept-request h req))))))
-
-
-;; Work out a safe/debug way to call interceptors by using monads (bind and return)
+                    :yada/profile (profiles :dev)})
+        response @(accept-request h req)
+        ]
+    (is (= 405 (:status response)))
+    (is (= "No matching method in resource" (:body response)))))

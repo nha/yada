@@ -6,8 +6,7 @@
             [manifold.deferred :as d]
             [yada.method :refer [perform-method]]
             [yada.context :as ctx]
-            yada.profile
-            yada.response
+            [yada.spec :refer [validate]]
             [yada.profile :as profile]))
 
 (s/def :yada.handler/interceptor
@@ -23,47 +22,39 @@
           :opt [:yada.handler/error-interceptor-chain]))
 
 (defn ^:interceptor terminate [ctx]
-  (yada.response/->ring-response (:yada/response ctx)))
+  (ctx/->ring-response ctx))
+
+(defn wrap-interceptors [chain wrapper]
+  (if wrapper (map wrapper chain) chain))
 
 (defn apply-interceptors [ctx]
-
   ;; Have to validate the ctx here, it's the last chance.
   ;; Can't do this in prod
-  (let [ctx (assoc ctx
-                   :yada/method-token (-> ctx :ring/request :request-method name clojure.string/upper-case)
-                   :yada/response (yada.response/new-response))]
-    (when (and (profile/validate-context? ctx))
-      (when-not (s/valid? :yada/context ctx)
-        (throw
-         (ex-info
-          (format "Context is not valid: %s"
-                  (s/explain-str :yada/context ctx))
-          {:explain (s/explain-data :yada/context ctx)
-           :context ctx}))))
+  (when (and (profile/validate-context? ctx))
+    (validate ctx :yada/context "Context is not valid"))
 
-    (let [chain (:yada.handler/interceptor-chain ctx)]
-      (->
-       (apply d/chain ctx chain)
-       (d/catch Exception
-           (fn [e]
-             (let [error-data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))
-                   chain (or (:yada.handler/error-interceptor-chain ctx)
-                             [terminate])]
-               (->
-                (apply d/chain (cond-> ctx
-                                 e (assoc :yada/error e)
-                                 (yada.profile/reveal-exception-messages? ctx) (assoc-in [:yada/response :ring.response/body] (.getMessage ^Exception e))
-                                 error-data (update :yada/response merge error-data))
-                       chain)
-                (d/catch Exception
-                    (fn [e] ;; TODO
-                      e
-                      ))))))))))
+  (let [chain (:yada.handler/interceptor-chain ctx)]
+    (->
+     (apply d/chain ctx (wrap-interceptors chain (profile/interceptor-wrapper ctx)))
+     (d/catch Exception
+         (fn [e]
+           (let [error-data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))
+                 chain (or (:yada.handler/error-interceptor-chain ctx)
+                           [terminate])]
+             (->
+              (apply d/chain (cond-> ctx
+                               e (assoc :yada/error e)
+                               (yada.profile/reveal-exception-messages? ctx) (assoc-in [:yada/response :ring.response/body] (.getMessage ^Exception e))
+                               error-data (update :yada/response merge error-data))
+                     chain)
+              (d/catch Exception
+                  (fn [e] ;; TODO: Error in error chain, log the original error and politely return a 500
+                    e)))))))))
 
-(defrecord ^{:doc ""} Handler []
+(defrecord Handler []
   clojure.lang.IFn
   (invoke [this req]
-    (apply-interceptors (merge this {:ring/request req}))))
+    (apply-interceptors (ctx/context (into {} this) req))))
 
 (defn handler [model]
   (map->Handler model))

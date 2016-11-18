@@ -77,6 +77,5 @@
   [model]
   (resource* (coerce-to-resource-map model)))
 
-
 (defn lookup-method [resource token]
   (first (filter (fn [m] (= (:yada/method-token m) token)) (-> resource :yada.resource/methods))))
