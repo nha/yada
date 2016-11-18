@@ -3,7 +3,7 @@
 (ns yada.handler-test
   (:require [clojure.test :refer :all]
             [yada.handler :refer [accept-request handler]]
-            [yada.method :refer [perform-method]]
+            [yada.method :as method]
             [yada.profile :refer [profiles]]
             [yada.resource :refer [resource]]
             [yada.test-util :refer [request]]))
@@ -14,7 +14,7 @@
   (let [res (resource {:yada.resource/methods
                        {"GET" {:yada.resource/response (fn [ctx] "Hello World!")}}})
         h (handler {:yada/resource res
-                    :yada.handler/interceptor-chain [perform-method yada.handler/terminate]
+                    :yada.handler/interceptor-chain [method/perform-method yada.handler/terminate]
                     :yada/profile (profiles :dev)})
         response @(accept-request h (request :get "https://localhost"))]
     (is (= 200 (:status response)))
@@ -23,8 +23,17 @@
 (deftest no-such-method
   (let [res (resource {:yada.resource/methods {"PUT" {}}})
         h (handler {:yada/resource res
-                    :yada.handler/interceptor-chain [perform-method yada.handler/terminate]
+                    :yada.handler/interceptor-chain [method/perform-method yada.handler/terminate]
                     :yada/profile (profiles :dev)})
         response @(accept-request h (request :get "https://localhost"))]
     (is (= 405 (:status response)))
     (is (= "No matching method in resource" (:body response)))))
+
+(deftest not-implemented
+  (let [res (resource {:yada.resource/methods {"BREW" {}}})
+        h (handler {:yada/resource res
+                    :yada.handler/interceptor-chain [method/check-method-implemented yada.handler/terminate]
+                    :yada/profile (profiles :dev)})
+        response @(accept-request h (request :brew "https://localhost"))]
+    (is (= 501 (:status response)))
+    (is (= "No defmethod defined for BREW" (:body response)))))
