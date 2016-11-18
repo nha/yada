@@ -13,18 +13,16 @@ It has the following features:
 yada is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
 
 The user-manual for the latest (1.1.x) release is available at
-[https://juxt.pro/yada](https://juxt.pro/yada) and offline (see below).
-
-The user-manual is also available as an e-book or PDF, at
-[Leanpub](https://leanpub.com/yada).
+[https://juxt.pro/yada](https://juxt.pro/yada) also available as an e-book or PDF, at [Leanpub](https://leanpub.com/yada).
 
 ## Installation
 
 Add the following dependency to your
 `project.clj` file
 
-[![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
-[![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
+```clojure
+[yada "2.0.0-alpha1"]
+```
 
 ## Create a yada handler
 
