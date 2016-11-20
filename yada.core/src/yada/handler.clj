@@ -36,7 +36,7 @@
 
   (let [chain (:yada.handler/interceptor-chain ctx)]
     (->
-     (apply d/chain ctx (wrap-interceptors chain (profile/interceptor-wrapper ctx)))
+     (apply d/chain ctx (wrap-interceptors (concat chain [terminate]) (profile/interceptor-wrapper ctx)))
      (d/catch Exception
          (fn [e]
            (let [error-data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))

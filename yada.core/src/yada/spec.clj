@@ -14,6 +14,7 @@
 
 (defn validate [data spec error]
   (when-not (s/valid? spec data)
+    (println (format "%s: %s" error (s/explain-str spec data)))
     (throw
      (ex-info (format "%s: %s" error (s/explain-str spec data))
               {:explain (s/explain-data spec data)

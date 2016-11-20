@@ -17,7 +17,7 @@
   (let [res (resource {:yada.resource/methods {:get {}}})
         req (request :get "https://localhost")
         h {:yada/resource res
-           :yada.handler/interceptor-chain [perform-method yada.handler/terminate]}]
+           :yada.handler/interceptor-chain [perform-method]}]
 
     (testing "dev profile"
       (let [h (handler (assoc h :yada/profile (:dev profiles)))
