@@ -69,3 +69,6 @@
   (yada.resource/lookup-method
    (:yada/resource ctx)
    (:yada/method-token ctx)))
+
+(defn authentication-schemes [ctx]
+  (-> ctx :yada/resource :yada.resource/authentication-schemes))

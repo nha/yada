@@ -16,8 +16,18 @@
 (s/def :yada.resource/methods
   (s/+ :yada.resource/method))
 
+(s/def :yada.resource/realm string?)
+
+(s/def :yada.resource/authenticate fn?)
+
+(s/def :yada.resource/authentication-schemes
+  (s/+ (s/keys :req [:yada.resource/scheme
+                     :yada.resource/authenticate]
+               :opt [:yada.resource/realm])))
+
 (s/def :yada/resource
-  (s/keys :req [:yada.resource/methods]))
+  (s/keys :req [:yada.resource/methods]
+          :opt [:yada.resource/authentication-schemes]))
 
 ;; Coercion
 
