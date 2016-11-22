@@ -40,7 +40,7 @@
     (is (= "Not Implemented" (:body response)))))
 
 (defmethod authentication/authenticate-with-scheme "Test" [scheme ctx]
-  {:yada/creds {:username "foo"}})
+  {:credentials {:username "alice"}})
 
 (deftest authentication []
   (let [res (resource {:yada.resource/authentication-schemes
@@ -49,7 +49,7 @@
                          :yada.resource/authenticate (fn [ctx] ctx)}]
                        :yada.resource/methods {"GET" {:yada.resource/response (fn [ctx] "Hi")}}})
         ctx (authentication/authenticate {:yada/resource res})]
-    (is (= [{:yada/creds {:username "foo"},
+    (is (= [{:credentials {:username "alice"},
              :yada.request/scheme "Test",
              :yada.request/realm "default"}]
            (:yada.request/authentication ctx)))))
