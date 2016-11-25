@@ -9,7 +9,7 @@
    yada.context
    [yada.context :as ctx])
   (:import
-   (yada.context Response)))
+   [yada.response Response]))
 
 (defprotocol ResultHandler
   "The ResultHandler protocol is intended to allow for user extension and override"
@@ -23,7 +23,7 @@
 
   Response
   (handle-result [response ctx]
-    (assoc ctx :ring/response response))
+    (assoc ctx :yada/response (merge {:ring.response/status 200} response)))
 
   Object
   (handle-result [o ctx]

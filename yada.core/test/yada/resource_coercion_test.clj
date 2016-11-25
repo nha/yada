@@ -11,9 +11,6 @@
        {:yada.resource/methods [{:yada/method-token "GET"} {:yada/method-token "POST"}]}
        (coerce-to-resource-map {:yada.resource/methods (array-map :get {} :post {})}))))
 
-
-
-
 #_(s/explain-str :yada/resource {:yada.resource/authentication-schemes
                                [{:yada.resource/scheme "Basic"
                                  :yada.resource/realm "default"
@@ -22,5 +19,4 @@
 
 #_(coerce-to-resource-map {:yada.resource/access-control
                          {:yada.resource/realms []}
-
                          :yada.resource/methods (array-map :get {} :post {})})

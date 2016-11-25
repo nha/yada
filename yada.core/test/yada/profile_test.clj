@@ -2,31 +2,28 @@
 
 (ns yada.profile-test
   (:require [clojure.test :refer :all]
-            [manifold.deferred :as d]
-            [yada.context :as ctx]
-            [yada.handler :refer [handler accept-request]]
-            [yada.resource :refer [resource]]
+            [yada.handler :refer [new-handler accept-request]]
             [yada.method :refer [perform-method]]
-            [yada.profile :refer [profiles]]
-            [yada.test-util :refer [request]]
-            [clojure.spec :as s]))
+            [yada.profiles :refer [profiles]]
+            [yada.resource :refer [new-resource]]
+            [yada.test-util :refer [new-request]]))
 
 (require 'yada.methods)
 
 (deftest profile-test
-  (let [res (resource {:yada.resource/methods {:get {}}})
-        req (request :get "https://localhost")
+  (let [res (new-resource {:yada.resource/methods {:get {}}})
+        req (new-request :get "https://localhost")
         h {:yada/resource res
            :yada.handler/interceptor-chain [perform-method]}]
 
     (testing "dev profile"
-      (let [h (handler (assoc h :yada/profile (:dev profiles)))
+      (let [h (new-handler (assoc h :yada/profile (:dev profiles)))
             response @(accept-request h req)]
         (is (= 500 (:status response)))
         (is (= "Internal Server Error" (:body response)))))
 
     (testing "prod profile"
-      (let [h (handler (assoc h :yada/profile (:prod profiles)))
+      (let [h (new-handler (assoc h :yada/profile (:prod profiles)))
             response @(accept-request h req)]
         (is (= 500 (:status response)))
         (is (= "Internal Server Error" (:body response)))))))

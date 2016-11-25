@@ -59,7 +59,7 @@
   (invoke [this req]
     (apply-interceptors (ctx/context (into {} this) req))))
 
-(defn handler [model]
+(defn new-handler [model]
   (map->Handler model))
 
 (defn accept-request [^Handler handler req]

@@ -71,7 +71,7 @@
   would be harmless, so this can be considered a performance
   optimisation."}
 
-  resource* [model]
+  new-resource* [model]
 
   (when-not (s/valid? :yada/resource model)
     (throw
@@ -81,11 +81,11 @@
   ;; TODO: Must also pre-compute anything that is pre-computable, everything else will be per-request
   (map->Resource model))
 
-(defn resource
+(defn new-resource
   "Create a resource record. An attempt is made to coerce the given
   model so that it passes validation."
   [model]
-  (resource* (coerce-to-resource-map model)))
+  (new-resource* (coerce-to-resource-map model)))
 
 (defn lookup-method [resource token]
   (first (filter (fn [m] (= (:yada/method-token m) token)) (-> resource :yada.resource/methods))))

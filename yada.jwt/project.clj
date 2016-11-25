@@ -6,13 +6,13 @@
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
-  :exclusions [org.clojure/clojure]
+;;  :exclusions [org.clojure/clojure]
 
   :plugins [[lein-modules "0.3.11"]]
 
   :dependencies
-  [[yada.core "2.0.0-alpha1"]
-   [buddy/buddy-sign "0.9.0"]]
+  [[yada.core :version]
+   [buddy/buddy-sign "1.3.0"]]
 
 ;;  :pedantic? :abort
 
@@ -29,7 +29,7 @@
 ;;         :pedantic? :abort
 
          :dependencies
-         [[org.clojure/clojure :version]
+         [[org.clojure/clojure "1.9.0-alpha14"]
 
           [ch.qos.logback/logback-classic "1.1.5"
            :exclusions [org.slf4j/slf4j-api]]

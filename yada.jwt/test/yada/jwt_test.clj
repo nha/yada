@@ -1,35 +1,22 @@
 ;; Copyright © 2014-2016, JUXT LTD.
 
 (ns yada.jwt-test
-  (:require
-   [clojure.test :refer :all]
-   [yada.resource :refer [resource]]
-   [yada.handler :refer [accept-request handler]]
-   [yada.method :as method]
-   [yada.profile :refer [profiles]]
-   [yada.test-util :refer [request]]))
+  (:require [clojure.test :refer :all]
+            [yada.authentication :as a]
+            [yada.resource :refer [new-resource]]
+            [buddy.sign.jwt :as jwt]
+            [yada.test-util :refer [new-request]]))
 
-(deftest ok
-  (let [res (resource {:yada.resource/methods
-                       {"GET" {:yada.resource/response (fn [ctx] "Hello World!")}}})
-        h (handler {:yada/resource res
-                    :yada.handler/interceptor-chain [method/perform-method]
-                    :yada/profile (profiles :dev)})
-        response @(accept-request h (request :get "https://localhost"))]
-    (is (= 200 (:status response)))
-    (is (= "Hello World!" (:body response)))
-    ))
+(jwt/sign {:foo 1} "secret")
 
-
-(let [res (resource {:yada.resource/authentication-schemes
-                     [{:yada.resource/scheme "Basic"
-                       :yada.resource/realm "default"
-                       :yada.resource/authenticate (fn [ctx] ctx)}]
-                     :yada.resource/methods
-                     {"GET" {:yada.resource/response (fn [ctx] "Hello World!")}}})
-      h (handler {:yada/resource res
-                  :yada.handler/interceptor-chain [method/perform-method]
-                  :yada/profile (profiles :dev)})
-      response @(accept-request h (request :get "https://localhost"))]
-  response
-  )
+(deftest authentication []
+  (let [res (new-resource {:yada.resource/authentication-schemes
+                           [{:yada.resource/scheme :jwt
+                             :yada.resource/realm "default"
+                             :yada.resource/authenticate (fn [ctx] ctx)}]
+                           :yada.resource/methods {"GET" {:yada.resource/response (fn [ctx] "Hi")}}})
+        ctx (a/authenticate {:yada/resource res})]
+    (is (= [{:credentials {:username "alice"},
+             :yada.request/scheme "Test",
+             :yada.request/realm "default"}]
+           (:yada.request/authentication ctx)))))

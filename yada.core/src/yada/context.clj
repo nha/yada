@@ -6,32 +6,26 @@
    [clojure.spec :as s]
    clojure.string
    yada.resource
-   [ring.core.spec :as rs]))
+   [yada.profile :as p]
+   [ring.core.spec :as rs]
+   [yada.spec :refer [validate]]
+   yada.cookies
+   [yada.response :refer [new-response]]
+   [ring.middleware.cookies :refer [cookies-request cookies-response]])
+  (:import [yada.response Response]))
 
-;; Differs slightly from :ring/response in that status is not
-;; mandatory.
-(s/def :yada/response (s/keys :req [:ring.response/headers]
-                              :opt [:ring.response/status
-                                    :ring.response/body]))
-
-(defrecord
-    ^{:doc "This record is used as an escape mechanism users to
-    return it in method responses. Doing this indicates to yada that
-    the user knows what they are doing and want fine grained control
-    over the response, perhaps setting cookies, response headers and
-    so on."}
-    Response [])
-
-(defn response []
-  (map->Response {:ring.response/headers {}}))
+(s/def :yada/request (s/keys :req []))
 
 (defn ->ring-response [ctx]
   (let [response (:yada/response ctx)]
     (merge
      {:status (or (:ring.response/status response) 500)
-      :headers (or (:ring.response/headers response) {})}
+      :headers (merge (when-let [cookies (:yada.response/cookies response)]
+                        (yada.cookies/->headers cookies))
+                      (or (:ring.response/headers response) {}))}
      (when-let [body (:ring.response/body response)]
-       {:body body}))))
+       {:body body})
+     )))
 
 (defn add-status [ctx status]
   (assoc-in ctx [:yada/response :ring.response/status] status))
@@ -44,13 +38,9 @@
 
 (s/def :yada/context
   (s/keys :req [:yada/resource
-
-                :ring/request
-                ;; This would be ring/response but we like to be able
-                ;; to return the response as a record for escape
-                ;; hatches
+                :ring/request ; original Ring request
+                :yada/request ; request extras, like cookies
                 :yada/response
-
                 :yada/method-token
                 :yada/profile]))
 
@@ -58,8 +48,9 @@
   [init-ctx req]
   (merge
    {:ring/request req
-    :yada/response (response)
-    :yada/method-token (-> req :request-method name str/upper-case)}
+    :yada/response (new-response)
+    :yada/method-token (-> req :request-method name str/upper-case)
+    :yada/request {:yada.request/cookies* (delay (:cookies (cookies-request req)))}}
    init-ctx))
 
 (defn method-token [ctx]
@@ -72,3 +63,14 @@
 
 (defn authentication-schemes [ctx]
   (-> ctx :yada/resource :yada.resource/authentication-schemes))
+
+(defn response [ctx]
+  (:yada/response ctx))
+
+(defn set-status [response status]
+  (assert (instance? Response response) "Response parameter is not a response record")
+  (assoc-in response [:ring.response/status] status))
+
+(defn set-body [response body]
+  (assert (instance? Response response) "Response parameter is not a response record")
+  (assoc-in response [:ring.response/body] body))
