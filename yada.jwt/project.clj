@@ -1,17 +1,10 @@
 ;; Copyright © 2014-2016, JUXT LTD.
 
 (defproject yada.jwt "2.0.0-alpha1"
-  :description ""
-  :url "http://github.com/juxt/yada"
-  :license {:name "The MIT License"
-            :url "http://opensource.org/licenses/MIT"}
-
-;;  :exclusions [org.clojure/clojure]
-
   :plugins [[lein-modules "0.3.11"]]
 
   :dependencies
-  [[yada.core :version]
+  [[yada.core "_"]
    [buddy/buddy-sign "1.3.0"]]
 
 ;;  :pedantic? :abort

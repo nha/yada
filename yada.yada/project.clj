@@ -1,18 +1,11 @@
 ;; Copyright © 2014-2016, JUXT LTD.
 
 (defproject yada "2.0.0-alpha1"
-  :description "The yada bundle"
-  :url "http://github.com/juxt/yada"
-  :license {:name "The MIT License"
-            :url "http://opensource.org/licenses/MIT"}
-
-  :exclusions [org.clojure/clojure]
-
   :plugins [[lein-modules "0.3.11"]]
 
   :dependencies
-  [[yada.core :version]
-   [yada.jwt :version]]
+  [[yada.core "_"]
+   [yada.jwt "_"]]
 
   :global-vars {*warn-on-reflection* true}
 
@@ -27,7 +20,7 @@
 ;;         :pedantic? :abort
 
          :dependencies
-         [[org.clojure/clojure :version]
+         [[org.clojure/clojure "1.9.0-alpha14"]
 
           [ch.qos.logback/logback-classic "1.1.5"
            :exclusions [org.slf4j/slf4j-api]]

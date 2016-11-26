@@ -1,9 +1,9 @@
 /target/
-/.nrepl-port
-/.lein-failures
-/pom.xml
-/pom.xml.asc
-/.lein-repl-history
+.nrepl-port
+.lein-failures
+pom.xml
+pom.xml.asc
+.lein-repl-history
 /.idea/
 /*.iml
 /todo.org
@@ -21,5 +21,5 @@
 /talks/clojurex-2015-thomas.tex
 /talks/clojurex-2015-malcolm.pdf
 /talks/clojurex-2015-malcolm.tex
-target/
+target
 pom.xml

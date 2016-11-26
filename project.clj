@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2016, JUXT LTD.
 
-(defproject yada "2.0.0-alpha1-SNAPSHOT"
+(defproject yada-parent "2.0.0-alpha1-SNAPSHOT"
   :description "The yada core"
   :url "http://github.com/juxt/yada"
   :license {:name "The MIT License"
@@ -8,10 +8,24 @@
 
   :plugins [[lein-modules "0.3.11"]]
 
-  :modules {:dirs ["yada.core"
+
+
+  :profiles {:provided
+             {:dependencies [[org.clojure/clojure "_"]]}}
+
+  :modules {:inherited
+            {:url "http://github.com/juxt/yada"
+             :license {:name "The MIT License"
+                       :url "http://opensource.org/licenses/MIT"}}
+
+            :versions {org.clojure/clojure "1.9.0-alpha14"
+                       yada.core "2.0.0-alpha1"
+                       yada.jwt "2.0.0-alpha1"
+                       yada "2.0.0-alpha1"}
+
+            :dirs ["yada.core"
                    "yada.jwt"
-                   "yada.yada"]
-            :versions {org.clojure/clojure "1.9.0-alpha14"}}
+                   "yada.yada"]}
 
 ;;  :exclusions [org.clojure/clojure]
 
