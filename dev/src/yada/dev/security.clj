@@ -1,32 +1,23 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.dev.security
-  (:require
-   [aleph.http :as http]
-   [bidi.bidi :refer [RouteProvider tag]]
-   [bidi.ring :refer [redirect]]
-   [bidi.vhosts :refer [uri-for]]
-   [buddy.core.hash :as hash]
-   [buddy.sign.jws :as jws]
-   [buddy.sign.jwe :as jwe]
-   [clojure.java.io :as io]
-   [clojure.string :as str]
-   [cheshire.core :as json]
-   [clj-time.core :as time]
-   [clojure.tools.logging :refer :all]
-   [com.stuartsierra.component :refer [Lifecycle using]]
-   [hiccup.core :refer (html h)]
-   [manifold.deferred :as d]
-   [ring.util.codec :as codec]
-   [schema.core :as s]
-   yada.jwt
-   [yada.dev.template :refer [new-template-resource]]
-   [yada.security :refer [verify]]
-   [yada.yada :as yada :refer [yada resource as-resource handler]]
-   [yada.oauth :as oauth]
-   )
-  (:import [modular.bidi Router]
-           [clojure.lang ExceptionInfo]))
+  (:require [aleph.http :as http]
+            [bidi.bidi :refer [RouteProvider]]
+            [bidi.ring :refer [redirect]]
+            [buddy.core.hash :as hash]
+            [buddy.sign.jws :as jws]
+            [cheshire.core :as json]
+            [clj-time.core :as time]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [clojure.tools.logging :refer :all]
+            [hiccup.core :refer [html]]
+            [manifold.deferred :as d]
+            [schema.core :as s]
+            [yada.dev.template :refer [new-template-resource]]
+            yada.jwt
+            [yada.oauth :as oauth]
+            [yada.yada :as yada :refer [as-resource resource yada]]))
 
 (defn- login-form-parameters [fields]
   {:form
