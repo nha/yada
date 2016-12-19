@@ -253,6 +253,8 @@
              :client-id github-client-id
              :client-secret "5e4dbc37ce2e323fb2df7fcfb2de39b65f0c82b3"
              :secret secret
+             :cookie {:path "/"
+                      :expires (time/days 1)}
              :access-token-url "https://github.com/login/oauth/access_token"
              :access-token-handler
              (fn [access-token]
