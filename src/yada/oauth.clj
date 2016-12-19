@@ -192,7 +192,7 @@
            (let [state (jwe/decrypt (-> ctx :parameters :query :state) secret)
                  target-uri (:target-uri state)]
 
-             ;; Make API calls to GitHub without blocking the request thread
+             ;; Make API calls to Google without blocking the request thread
              (d/chain
               (http/post
                access-token-url
