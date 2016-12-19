@@ -20,6 +20,7 @@
    [schema.core :as s]
    [yada.body :refer [render-error]]
    [yada.yada :refer [resource uri-info]]
+   [yada.cookies :refer [CookieValue]]
    [yada.security :refer [verify]]))
 
 ;; http://ncona.com/2015/02/consuming-a-google-id-token-from-a-server/
@@ -69,6 +70,20 @@
                :parameters {:form {(s/optional-key :target-uri) s/Str}}
                :response (fn [ctx] (initiate ctx opts (-> ctx :parameters :form :target-uri)))}}}))))
 
+(s/defschema ^:private CookieOptions (merge
+                                      {(s/optional-key :expires) org.joda.time.Period}
+                                      (select-keys CookieValue [(s/optional-key :max-age)
+                                                                (s/optional-key :domain)
+                                                                (s/optional-key :path)
+                                                                (s/optional-key :secure)])))
+
+(defn- session-cookie [cookie data secret]
+  (let [expires (time/plus (time/now) (or (:expires cookie) (time/days 30)))]
+    (merge cookie
+           {:value (jwe/encrypt data secret)
+            :expires expires
+            :http-only true})))
+
 (s/defn oauth2-callback-resource-github
   [opts :- {(s/optional-key :id) s/Keyword
             :client-id s/Str
@@ -79,9 +94,9 @@
             ;; First argument is the access-token
             :access-token-handler (s/=> {s/Any s/Any} s/Str)
             :access-token-url s/Str
-            (s/optional-key :cookie-expiry-period) org.joda.time.Period}]
+            (s/optional-key :cookie) CookieOptions}]
 
-  (let [{:keys [client-id client-secret secret access-token-handler access-token-url cookie-expiry-period]} opts]
+  (let [{:keys [client-id client-secret secret access-token-handler access-token-url cookie]} opts]
     (assert access-token-handler)
     (resource
      (merge
@@ -137,14 +152,9 @@
                     (d/error-deferred (ex-info "Forbidden" {:status 403}))
 
                     ;; TODO: Refresh tokens
-                    (let [expires (time/plus (time/now) (or cookie-expiry-period (time/days 30)))
-                          cookie {:value (jwe/encrypt data secret)
-                                  :expires expires
-                                  :http-only true}]
-
-                      (merge (:response ctx)
-                             {:cookies {"session" cookie}} ; TODO parameterize?
-                             (response/redirect target-uri)))))))))}}}))))
+                    (merge (:response ctx)
+                           {:cookies {"session" (session-cookie cookie data secret)}}
+                           (response/redirect target-uri))))))))}}}))))
 
 (s/defn oauth2-callback-resource-google
   [opts :- {(s/optional-key :id) s/Keyword
@@ -157,10 +167,10 @@
             ;; The function that will ultimately call the third-party API for user-details.
             ;; First argument is the access-token
             :handler (s/=> {s/Any s/Any} {:access-token s/Str :openid-claims {s/Str s/Str}})
-            (s/optional-key :cookie-expiry-period) org.joda.time.Period
+            (s/optional-key :cookie) CookieOptions
             }]
 
-  (let [{:keys [access-token-url client-id client-secret secret redirect-uri handler cookie-expiry-period]} opts]
+  (let [{:keys [access-token-url client-id client-secret secret redirect-uri handler cookie]} opts]
     (assert handler)
     (resource
      (merge
@@ -217,14 +227,9 @@
                     (d/error-deferred (ex-info "Forbidden" {:status 403}))
 
                     ;; TODO: Refresh tokens
-                    (let [expires (time/plus (time/now) (or cookie-expiry-period (time/days 30))) ; TODO parameterize
-                          cookie {:value (jwe/encrypt data secret)
-                                  :expires expires
-                                  :http-only true}]
-
-                      (merge (:response ctx)
-                             {:cookies {"session" cookie}} ; TODO parameterize?
-                             (response/redirect target-uri))))))))}}
+                    (merge (:response ctx)
+                           {:cookies {"session" (session-cookie cookie data secret)}}
+                           (response/redirect target-uri)))))))}}
 
        ;; If you don't want this behavior, replace the :responses
        ;; value in the resource with your own.
