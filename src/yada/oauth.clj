@@ -71,14 +71,14 @@
                :response (fn [ctx] (initiate ctx opts (-> ctx :parameters :form :target-uri)))}}}))))
 
 (s/defschema ^:private CookieOptions (merge
-                                      {(s/optional-key :expires) org.joda.time.Period}
+                                      {(s/optional-key :expiry-period) org.joda.time.Period}
                                       (select-keys CookieValue [(s/optional-key :max-age)
                                                                 (s/optional-key :domain)
                                                                 (s/optional-key :path)
                                                                 (s/optional-key :secure)])))
 
 (defn- session-cookie [cookie data secret]
-  (let [expires (time/plus (time/now) (or (:expires cookie) (time/days 30)))]
+  (let [expires (time/plus (time/now) (or (:expiry-period cookie) (time/days 30)))]
     (merge cookie
            {:value (jwe/encrypt data secret)
             :expires expires
