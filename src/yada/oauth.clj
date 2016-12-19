@@ -35,7 +35,7 @@
             ;; Where to send the user after authorization, use a keyword here for yada's uri-for function
             :redirect-uri s/Keyword
             :scope s/Str
-            :secret s/Str
+            :secret (Class/forName "[B")
             :authorization-uri s/Str
             ;; The default target URI to redirect to on successful
             ;; authentication, can be overridden via full URIs passed
@@ -88,8 +88,7 @@
   [opts :- {(s/optional-key :id) s/Keyword
             :client-id s/Str
             :client-secret s/Str
-            :secret s/Str
-
+            :secret (Class/forName "[B")
             ;; The function that will ultimately call the third-party API for user-details.
             ;; First argument is the access-token
             :access-token-handler (s/=> {s/Any s/Any} s/Str)
@@ -161,7 +160,7 @@
             :access-token-url s/Str
             :client-id s/Str
             :client-secret s/Str
-            :secret s/Str
+            :secret (Class/forName "[B")
             :redirect-uri s/Keyword
 
             ;; The function that will ultimately call the third-party API for user-details.
