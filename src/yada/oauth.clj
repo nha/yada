@@ -182,7 +182,7 @@
          :parameters
          {:query
           {:authuser s/Str
-           :hd s/Str
+           (s/optional-key :hd) s/Str
            (s/required-key "session_state") s/Str
            :prompt s/Str
            :state s/Str
