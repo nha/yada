@@ -69,17 +69,20 @@
                :parameters {:form {(s/optional-key :target-uri) s/Str}}
                :response (fn [ctx] (initiate ctx opts (-> ctx :parameters :form :target-uri)))}}}))))
 
+
 (s/defschema ^:private CookieOptions (merge
                                       {(s/optional-key :expiry-period) org.joda.time.Period}
-                                      (select-keys CookieValue [(s/optional-key :max-age)
+                                      (select-keys CookieValue [;;(s/optional-key :expires)
+                                                                (s/optional-key :max-age)
                                                                 (s/optional-key :domain)
                                                                 (s/optional-key :path)
                                                                 (s/optional-key :secure)])))
 
 (defn- session-cookie [cookie data secret]
-  (let [expires (time/plus (time/now) (or (:expiry-period cookie) (time/days 30)))]
-    (merge cookie
-           {:value (jwe/encrypt data secret)
+  (let [expires (or ;; (:expires cookie) ;; TODO either expires (string or date?) or expiry-period (joda time period) in the schema
+                 (time/plus (time/now) (or (:expiry-period cookie) (time/days 30))))]
+    (merge (dissoc cookie :expiry-period)
+           {:value (jwt/encrypt data secret)
             :expires expires
             :http-only true})))
 
